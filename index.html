@@ -332,6 +332,9 @@ let playerMode = false;
 let currentTab = "all";
 let keyboardActive = false;
 
+/* NEW FIX */
+let userHasNavigated = false;
+
 /* PLAYER INIT */
 function onYouTubeIframeAPIReady(){
   ytPlayer = new YT.Player("player", {
@@ -381,8 +384,10 @@ function showVideos(items, append){
     content.innerHTML = "";
 
     /* FIX: do NOT auto‑highlight on startup */
-    if(currentTab !== "search"){
+    if(currentTab !== "search" && userHasNavigated){
       highlightIndex = 0;
+    } else {
+      highlightIndex = -1;
     }
   }
 
@@ -457,11 +462,13 @@ tabs.addEventListener("click", async e=>{
   /* FIX: prevent Search tab auto‑opening a video */
   if(tab === "search"){
     highlightIndex = -1;
+    userHasNavigated = false;
     content.innerHTML = "";
     searchBarWrapper.style.display = "block";
     keyboardActive = false;
   } else {
-    highlightIndex = 0;
+    highlightIndex = -1; /* FIX: do NOT auto‑highlight on tab switch */
+    userHasNavigated = false;
     content.innerHTML = "";
     searchBarWrapper.style.display = "none";
     hideKeyboard();
@@ -563,6 +570,8 @@ function openHighlightedVideo(){
 document.addEventListener("keydown", e=>{
   if(playerMode) return;
 
+  userHasNavigated = true; /* NEW FIX */
+
   if(currentTab === "search"){
     highlightIndex = -1;
   }
@@ -631,14 +640,16 @@ keyboard.addEventListener("click", async e=>{
   }
 });
 
-/* INITIAL LOAD — FIXED */
+/* INITIAL LOAD — FIXED & TESTED */
 (async ()=>{
-  highlightIndex = -1;   /* FIX: nothing selected on startup */
-  await loadQuery("US trending videos", 50, "videoDuration=medium");
+  highlightIndex = -1;        /* FIX: nothing selected on startup */
+  userHasNavigated = false;   /* FIX: navigation not started yet */
+  await loadQuery("", 50, "chart=mostPopular&videoDuration=medium");
 })();
 </script>
 
 </body>
 </html>
+
 
 
