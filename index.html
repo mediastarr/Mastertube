@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>ViewTube – GlassOS Edition</title>
+<title>ViewTube – Stealth Glass Edition</title>
 
 <style>
   html, body {
@@ -30,14 +30,15 @@
     flex-direction: column;
   }
 
-  /* GlassOS Frosted Panel */
+  /* D3 Stealth Transparent Glass */
   .glass {
-    background: rgba(255,255,255,0.08);
-    backdrop-filter: blur(18px) saturate(180%);
-    -webkit-backdrop-filter: blur(18px) saturate(180%);
-    border: 1px solid rgba(255,255,255,0.15);
+    background: rgba(0, 0, 0, 0.28);
+    backdrop-filter: blur(14px) saturate(160%);
+    -webkit-backdrop-filter: blur(14px) saturate(160%);
+    border: 1px solid rgba(255,255,255,0.08);
     border-radius: 16px;
-    box-shadow: 0 8px 30px rgba(0,0,0,0.35);
+    box-shadow: 0 6px 22px rgba(0,0,0,0.55);
+    color: #fff;
   }
 
   /* Banner */
@@ -57,7 +58,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 0 12px rgba(255,0,0,0.6);
+    box-shadow: 0 0 10px rgba(255,0,0,0.45);
   }
 
   .yt-logo::before {
@@ -91,8 +92,9 @@
     font-size: 12px;
     cursor: pointer;
     transition: all 0.25s ease;
-    border: 1px solid rgba(255,255,255,0.25);
-    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.18);
+    background: rgba(0,0,0,0.35);
+    color: #fff;
   }
 
   .tab:hover {
@@ -102,7 +104,7 @@
   .tab.active {
     background: rgba(255,0,0,0.75);
     border-color: rgba(255,0,0,0.9);
-    box-shadow: 0 0 12px rgba(255,0,0,0.6);
+    box-shadow: 0 0 12px rgba(255,0,0,0.45);
     font-weight: 600;
   }
 
@@ -126,7 +128,7 @@
     gap: 12px;
   }
 
-  /* Video Card (GlassOS style) */
+  /* Video Card */
   .video-item {
     display: flex;
     gap: 12px;
@@ -134,9 +136,9 @@
     border-radius: 14px;
     cursor: pointer;
     transition: all 0.25s ease;
-    background: rgba(255,255,255,0.06);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(0,0,0,0.35);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.1);
   }
 
   .video-item:hover {
@@ -303,7 +305,7 @@ async function loadAll() {
   setStatus("Loading All…");
   const key = getApiKey();
   const url =
-    "https://www.googleapis.com/youtube/v3/videos?part=snippet&chart=mostPopular&regionCode=US&maxResults=50&key=" + key;
+    "https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&order=viewCount&regionCode=US&relevanceLanguage=en&maxResults=50&key=" + key;
   const data = await ytFetch(url);
   if (data?.items) renderVideos(data.items);
 }
