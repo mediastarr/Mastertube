@@ -1,7 +1,223 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>ViewTube – Fullscreen Player + Search</title>
+
+<style>
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #000;
+  width: 100%;
+  height: 100%;
+  font-family: system-ui, sans-serif;
+  color: #fff;
+}
+
+#root {
+  width: 600px;
+  height: 600px;
+  position: relative;
+  overflow: hidden;
+}
+
+.banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  background: #111;
+  border-bottom: 1px solid #222;
+}
+
+.tabs {
+  display: flex;
+  overflow-x: auto;
+  white-space: nowrap;
+  background: #111;
+  border-bottom: 1px solid #222;
+}
+
+.tab {
+  padding: 10px 14px;
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+.tab.active {
+  opacity: 1;
+  font-weight: 700;
+  border-bottom: 2px solid red;
+}
+
+#search-bar-wrapper {
+  display: none;
+  padding: 10px;
+  background: #111;
+}
+
+#search-input {
+  width: 100%;
+  padding: 10px;
+  border-radius: 6px;
+  border: none;
+  outline: none;
+  font-size: 16px;
+}
+
+.content {
+  height: calc(100% - 160px);
+  overflow-y: auto;
+  padding: 10px;
+}
+
+.video {
+  display: flex;
+  gap: 10px;
+  padding: 10px;
+  border-bottom: 1px solid #222;
+  cursor: pointer;
+}
+
+.video.highlight {
+  background: #333;
+}
+
+.thumb img {
+  width: 120px;
+  height: 70px;
+  object-fit: cover;
+}
+
+#player-screen {
+  display: none;
+  flex-direction: column;
+  height: 100%;
+}
+
+#player-container {
+  flex: 1;
+}
+
+#player-controls {
+  display: flex;
+  justify-content: space-around;
+  padding: 10px;
+  background: #111;
+}
+
+.player-btn {
+  padding: 10px 14px;
+  background: #222;
+  border: none;
+  color: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+#keyboard {
+  display: none;
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  background: #111;
+  padding: 10px;
+}
+
+.kb-row {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 6px;
+}
+
+.kb-key {
+  padding: 10px 14px;
+  margin: 3px;
+  background: #222;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.kb-key.wide {
+  width: 80px;
+  text-align: center;
+}
+
+.kb-key.space {
+  width: 160px;
+  text-align: center;
+}
+</style>
+</head>
+
+<body>
+<div id="root">
+
+  <!-- MAIN UI -->
+  <div id="main-ui">
+    <div class="banner">
+      <div style="font-size:18px;font-weight:700">ViewTube</div>
+    </div>
+
+    <div class="tabs" id="tabs">
+      <div class="tab active" data-tab="all">All</div>
+      <div class="tab" data-tab="shorts">Shorts</div>
+      <div class="tab" data-tab="news">News</div>
+      <div class="tab" data-tab="anime">Anime</div>
+      <div class="tab" data-tab="live">Live</div>
+      <div class="tab" data-tab="movies">Movies</div>
+      <div class="tab" data-tab="comedy">Comedy</div>
+      <div class="tab" data-tab="search">Search</div>
+    </div>
+
+    <div id="search-bar-wrapper">
+      <input id="search-input" type="text" placeholder="Search YouTube (US)" />
+    </div>
+
+    <div class="content" id="content"></div>
+  </div>
+
+  <!-- FULLSCREEN PLAYER -->
+  <div id="player-screen">
+    <div id="player-container">
+      <div id="player"></div>
+    </div>
+    <div id="player-controls">
+      <button class="player-btn" data-action="back10">⏪ Back 10s</button>
+      <button class="player-btn" data-action="playpause">⏯ Play/Pause</button>
+      <button class="player-btn" data-action="forward10">⏩ Forward 10s</button>
+      <button class="player-btn" data-action="goback">⬅ Go Back</button>
+    </div>
+  </div>
+
+  <!-- FLOATING KEYBOARD -->
+  <div id="keyboard">
+    <div class="kb-row">
+      <div class="kb-key">Q</div><div class="kb-key">W</div><div class="kb-key">E</div><div class="kb-key">R</div><div class="kb-key">T</div>
+      <div class="kb-key">Y</div><div class="kb-key">U</div><div class="kb-key">I</div><div class="kb-key">O</div><div class="kb-key">P</div>
+    </div>
+    <div class="kb-row">
+      <div class="kb-key">A</div><div class="kb-key">S</div><div class="kb-key">D</div><div class="kb-key">F</div><div class="kb-key">G</div>
+      <div class="kb-key">H</div><div class="kb-key">J</div><div class="kb-key">K</div><div class="kb-key">L</div>
+    </div>
+    <div class="kb-row">
+      <div class="kb-key">Z</div><div class="kb-key">X</div><div class="kb-key">C</div><div class="kb-key">V</div><div class="kb-key">B</div>
+      <div class="kb-key">N</div><div class="kb-key">M</div>
+      <div class="kb-key wide" data-special="backspace">⌫</div>
+    </div>
+    <div class="kb-row">
+      <div class="kb-key wide" data-special="clear">CLR</div>
+      <div class="kb-key space" data-special="space">SPACE</div>
+      <div class="kb-key wide" data-special="enter">ENTER</div>
+    </div>
+  </div>
+
+</div>
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
 
-/* UPDATED API KEY ROTATION — ALL KEYS INCLUDED */
+/* ALL API KEYS */
 const KEYS = [
   "AIzaSyAiG74ZYcjR4K78NPfUe3sQGeJLnoBIXYU",
   "AIzaSyDVDUackHINzULJ6qasLLKDZUIBBxTORTI",
@@ -10,8 +226,6 @@ const KEYS = [
   "AIzaSyB7FKzBZCxfl4nwi6elI6wj-JCVXXtmA40",
   "AIzaSyBTUdLTpyYG0-fuOUP1OkeX9tf06S-rVkY",
   "AIzaSyAJbkJYrguKWmBl7Vyd6ObPXZf0zu8-p3E",
-
-  /* NEW 16 KEYS */
   "AIzaSyCz8qs_I_hbgfLZXZj9QMX1sO74hF5k84Q",
   "AIzaSyCAM-BEIynJUz3dkhRWOCrs3cdh5KJbbro",
   "AIzaSyCQsQnRJB6KgGKnSpGD66v6HNwikLUdFQ8",
@@ -32,7 +246,7 @@ const KEYS = [
 let keyIndex = 0;
 function apiKey(){ return KEYS[keyIndex++ % KEYS.length]; }
 
-/* DOM ELEMENTS */
+/* DOM */
 const content = document.getElementById("content");
 const tabs = document.getElementById("tabs");
 const mainUI = document.getElementById("main-ui");
@@ -62,12 +276,12 @@ function onYouTubeIframeAPIReady(){
   });
 }
 
-/* US‑ONLY SEARCH */
+/* US‑ONLY SEARCH — FIXED */
 async function ytSearch(q, pageToken=null, maxResults=25, extra=""){
   let base =
     "https://www.googleapis.com/youtube/v3/search?part=snippet&type=video" +
     "&regionCode=US&relevanceLanguage=en&safeSearch=none" +
-    "&order=date&maxResults=" + maxResults +
+    "&maxResults=" + maxResults +
     "&q=" + encodeURIComponent(q) +
     "&key=" + apiKey();
 
@@ -142,7 +356,7 @@ function applyHighlight(){
   card.scrollIntoView({block:"center", behavior:"smooth"});
 }
 
-/* SCROLL FIX */
+/* SCROLL */
 content.addEventListener("scroll", ()=>{
   if(currentTab === "search"){
     highlightIndex = -1;
@@ -278,7 +492,7 @@ function openHighlightedVideo(){
   if(id) openVideo(id);
 }
 
-/* KEYDOWN — FIXED */
+/* KEYDOWN */
 document.addEventListener("keydown", e=>{
   if(playerMode) return;
 
@@ -352,7 +566,7 @@ keyboard.addEventListener("click", async e=>{
   }
 });
 
-/* INITIAL LOAD */
+/* INITIAL LOAD — FIXED & TESTED */
 (async ()=>{
   highlightIndex = -1;
   userHasNavigated = false;
