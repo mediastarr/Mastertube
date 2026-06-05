@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Meta Ray-Ban Display – YouTube AR</title>
+  <title>Meta Ray‑Ban YouTube AR</title>
+
   <style>
     html, body {
       margin: 0;
@@ -16,7 +17,6 @@
       position: relative;
       width: 600px;
       height: 600px;
-      margin: 0;
       overflow: hidden;
       border-radius: 24px;
     }
@@ -27,16 +27,15 @@
       display: flex;
       flex-direction: column;
       backdrop-filter: blur(12px);
-      background: rgba(0, 0, 0, 0.25);
+      background: rgba(0,0,0,0.25);
       border-radius: 24px;
-      box-shadow: 0 0 24px rgba(0, 0, 0, 0.6);
     }
 
     .top-bar {
       display: flex;
       align-items: center;
       padding: 8px 12px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
     }
 
     .logo {
@@ -55,11 +54,9 @@
       padding: 4px 10px;
       border-radius: 999px;
       font-size: 12px;
-      border: 1px solid rgba(255, 255, 255, 0.25);
-      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255,255,255,0.25);
+      background: rgba(0,0,0,0.4);
       cursor: pointer;
-      user-select: none;
-      white-space: nowrap;
     }
 
     .tab.active {
@@ -69,14 +66,15 @@
 
     .content {
       display: grid;
-      grid-template-rows: 220px 1fr;
-      padding: 8px 12px 10px;
+      grid-template-rows: 1fr;
+      padding: 8px 12px;
       gap: 8px;
       height: calc(600px - 40px);
     }
 
-    /* Floating AR player */
-    .player {
+    /* FLOATING AR VIDEO PLAYER — HIDDEN BY DEFAULT */
+    #player {
+      display: none; /* <-- IMPORTANT */
       position: fixed;
       top: 40px;
       right: 40px;
@@ -101,53 +99,19 @@
       pointer-events: none;
     }
 
-    .player-top {
-      display: flex;
-      justify-content: space-between;
-      font-size: 11px;
-      opacity: 0.9;
-    }
-
-    .player-bottom {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .player-title {
-      font-size: 12px;
-      font-weight: 600;
-      text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
-    }
-
     .player-controls {
       display: flex;
       align-items: center;
       gap: 8px;
-      font-size: 11px;
-    }
-
-    .progress-bar {
-      flex: 1;
-      height: 3px;
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.2);
-      overflow: hidden;
-    }
-
-    .progress-fill {
-      width: 30%;
-      height: 100%;
-      background: #ff0000;
     }
 
     .control-pill {
       padding: 4px 10px;
       border-radius: 999px;
-      background: rgba(0, 0, 0, 0.7);
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      pointer-events: auto;
+      background: rgba(0,0,0,0.7);
+      border: 1px solid rgba(255,255,255,0.3);
       cursor: pointer;
+      pointer-events: auto;
     }
 
     .list {
@@ -159,58 +123,19 @@
       display: flex;
       gap: 8px;
       margin-bottom: 10px;
-      padding: 4px 4px;
+      padding: 4px;
       border-radius: 10px;
       cursor: pointer;
-    }
-
-    .thumb {
-      width: 80px;
-      height: 45px;
-      border-radius: 8px;
-      background: #111;
-      overflow: hidden;
-      flex-shrink: 0;
-    }
-
-    .thumb img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .meta {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-    }
-
-    .meta-title {
-      font-size: 12px;
-      font-weight: 500;
-      line-height: 1.2;
-    }
-
-    .meta-channel {
-      font-size: 10px;
-      opacity: 0.7;
-    }
-
-    .meta-extra {
-      font-size: 10px;
-      opacity: 0.6;
     }
 
     .floating-card {
       transform-style: preserve-3d;
       animation: float 3.5s ease-in-out infinite;
-      box-shadow: 0 12px 24px rgba(0,0,0,0.45);
       background: rgba(0,0,0,0.55);
       backdrop-filter: blur(14px);
       border: 1px solid rgba(255,255,255,0.25);
       opacity: 0;
-      transition: opacity 0.4s ease-out, transform 0.3s ease-out, box-shadow 0.3s;
+      transition: opacity 0.4s ease-out, transform 0.3s ease-out;
     }
 
     .floating-card.ready {
@@ -219,138 +144,36 @@
     }
 
     @keyframes float {
-      0%   { transform: translateY(0px); }
-      50%  { transform: translateY(-6px); }
+      0% { transform: translateY(0px); }
+      50% { transform: translateY(-6px); }
       100% { transform: translateY(0px); }
     }
 
-    .floating-card.rotating {
-      box-shadow: 0 0 20px rgba(255,255,255,0.6);
-    }
-
-    .search-bar {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      margin-bottom: 6px;
-    }
-
-    .search-input {
-      flex: 1;
-      padding: 4px 8px;
-      border-radius: 999px;
-      border: 1px solid rgba(255, 255, 255, 0.4);
-      background: rgba(0, 0, 0, 0.6);
-      color: #fff;
-      font-size: 12px;
-      outline: none;
-    }
-
-    .search-button {
-      padding: 4px 10px;
-      border-radius: 999px;
-      border: 1px solid rgba(255, 255, 255, 0.4);
-      background: rgba(255, 255, 255, 0.1);
-      font-size: 12px;
-      cursor: pointer;
-    }
-
-    .keyboard-overlay {
-      position: absolute;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      height: 180px;
-      background: rgba(0, 0, 0, 0.85);
-      backdrop-filter: blur(10px);
-      display: none;
-      flex-direction: column;
-      padding: 8px;
-      gap: 6px;
-    }
-
-    .keyboard-row {
-      display: flex;
-      justify-content: center;
-      gap: 4px;
-    }
-
-    .key {
-      padding: 6px 8px;
-      border-radius: 6px;
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      font-size: 11px;
-      cursor: pointer;
-      user-select: none;
-    }
-
-    .key.special {
-      background: rgba(255, 0, 0, 0.4);
-      border-color: rgba(255, 0, 0, 0.7);
-    }
-
-    .list::-webkit-scrollbar {
-      width: 4px;
-    }
-    .list::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.3);
-      border-radius: 999px;
-    }
-
-    /* Radial menu */
-    #radialMenu {
+    /* HUD */
+    #hud {
       position:absolute;
       top:50%;
       left:50%;
-      transform:translate(-50%, -50%) scale(0);
-      width:260px;
-      height:260px;
-      border-radius:50%;
-      background:rgba(0,0,0,0.55);
-      backdrop-filter:blur(12px);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      transition:transform 0.25s ease-out, opacity 0.25s;
+      transform:translate(-50%, -50%);
+      padding:10px 16px;
+      background:rgba(0,0,0,0.6);
+      border-radius:12px;
+      font-size:14px;
+      color:white;
       opacity:0;
+      transition:opacity 0.25s;
       pointer-events:none;
-    }
-
-    .radial-btn {
-      position:absolute;
-      width:60px;
-      height:60px;
-      border-radius:50%;
-      background:rgba(255,255,255,0.15);
-      border:1px solid rgba(255,255,255,0.35);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-size:26px;
-      cursor:pointer;
-      transform:
-        rotate(var(--angle))
-        translate(100px)
-        rotate(calc(var(--angle) * -1));
-      transition:background 0.2s, transform 0.2s;
-    }
-
-    .radial-btn:hover {
-      background:rgba(255,255,255,0.35);
-      transform:
-        rotate(var(--angle))
-        translate(100px)
-        rotate(calc(var(--angle) * -1))
-        scale(1.15);
     }
   </style>
 </head>
+
 <body>
+
   <div id="rayban-display">
     <div class="ui-shell">
       <div class="top-bar">
         <div class="logo">YouTube • Meta Ray‑Ban</div>
+
         <div class="tabs" id="tabs">
           <div class="tab active" data-tab="home">Home</div>
           <div class="tab" data-tab="shorts">Shorts</div>
@@ -367,75 +190,29 @@
       <div class="content">
         <div class="list" id="list"></div>
       </div>
-
-      <div class="keyboard-overlay" id="keyboard">
-        <div class="keyboard-row">
-          <div class="key">Q</div><div class="key">W</div><div class="key">E</div><div class="key">R</div>
-          <div class="key">T</div><div class="key">Y</div><div class="key">U</div><div class="key">I</div><div class="key">O</div><div class="key">P</div>
-        </div>
-        <div class="keyboard-row">
-          <div class="key">A</div><div class="key">S</div><div class="key">D</div><div class="key">F</div>
-          <div class="key">G</div><div class="key">H</div><div class="key">J</div><div class="key">K</div><div class="key">L</div>
-        </div>
-        <div class="keyboard-row">
-          <div class="key">Z</div><div class="key">X</div><div class="key">C</div><div class="key">V</div>
-          <div class="key">B</div><div class="key">N</div><div class="key">M</div>
-        </div>
-        <div class="keyboard-row">
-          <div class="key special" data-action="space">Space</div>
-          <div class="key special" data-action="backspace">⌫</div>
-          <div class="key special" data-action="enter">Enter</div>
-        </div>
-      </div>
     </div>
 
-    <!-- Radial AR menu -->
-    <div id="radialMenu">
-      <div class='radial-btn' data-action="home" style="--angle:0deg;">🏠</div>
-      <div class='radial-btn' data-action="search" style="--angle:60deg;">🔍</div>
-      <div class='radial-btn' data-action="refresh" style="--angle:120deg;">🔄</div>
-      <div class='radial-btn' data-action="brightness" style="--angle:180deg;">💡</div>
-      <div class='radial-btn' data-action="volume" style="--angle:240deg;">🔊</div>
-      <div class='radial-btn' data-action="settings" style="--angle:300deg;">⚙️</div>
-    </div>
-
-    <!-- HUD -->
-    <div id="hud"
-         style="
-           position:absolute;
-           top:50%;
-           left:50%;
-           transform:translate(-50%, -50%);
-           padding:10px 16px;
-           background:rgba(0,0,0,0.6);
-           border-radius:12px;
-           font-size:14px;
-           color:white;
-           opacity:0;
-           transition:opacity 0.25s;
-           pointer-events:none;
-         ">
-    </div>
+    <div id="hud"></div>
   </div>
 
-  <!-- Floating AR player -->
-  <div class="player" id="player">
+  <!-- FLOATING VIDEO PLAYER -->
+  <div id="player">
     <div id="playerFrame"></div>
+
     <div class="player-overlay">
       <div class="player-top">
         <div id="playerChannel">Channel</div>
         <div id="playerStats">0 views</div>
       </div>
+
       <div class="player-bottom">
         <div class="player-title" id="playerTitle">Select a video…</div>
+
         <div class="player-controls">
           <div class="control-pill" id="btnBack">⟲ -10s</div>
           <div class="control-pill" id="btnPlayPause">▶ Play</div>
           <div class="control-pill" id="btnForward">⟳ +10s</div>
           <div class="control-pill" id="btnClose">⟵ Back</div>
-          <div class="progress-bar">
-            <div class="progress-fill"></div>
-          </div>
         </div>
       </div>
     </div>
@@ -443,581 +220,317 @@
 
   <!-- YouTube IFrame API -->
   <script src="https://www.youtube.com/iframe_api"></script>
-  <script>
-    const API_KEYS = [
-      "AIzaSyAiG74ZYcjR4K78NPfUe3sQGeJLnoBIXYU",
-      "AIzaSyDVDUackHINzULJ6qasLLKDZUIBBxTORTI",
-      "AIzaSyApAIjVvwL8DQMe5-B5z815hdJtpj3YLDg",
-      "AIzaSyAUKic3SobVT3S60-H9fWmdHZJVgdOzRPg",
-      "AIzaSyB7FKzBZCxfl4nwi6elI6wj-JCVXXtmA40",
-      "AIzaSyBTUdLTpyYG0-fuOUP1OkeX9tf06S-rVkY",
-      "AIzaSyAJbkJYrguKWmBl7Vyd6ObPXZf0zu8-p3E",
-      "AIzaSyCz8qs_I_hbgfLZXZj9QMX1sO74hF5k84Q",
-      "AIzaSyCAM-BEIynJUz3dkhRWOCrs3cdh5KJbbro",
-      "AIzaSyCQsQnRJB6KgGKnSpGD66v6HNwikLUdFQ8",
-      "AIzaSyCb6lnHEoOXWd0TWfJK71T_mOiM8O2kfrI",
-      "AIzaSyC6qu4BiEbQJ1uoy49GcvAy9_QxHKUE6Go",
-      "AIzaSyAtk1KIeZ9kFLNfhrqgNhmPzU4VJqTPeR8",
-      "AIzaSyCkq9rnLzqpfnr-LHUg-1AuIDb-GkWukPM",
-      "AIzaSyCzjoJptOBNzhkaxnNrkDZRP4SzsmTgTKQ",
-      "AIzaSyBt2YQ-X408_Ep3EYV4B70SgXeeADe_L08",
-      "AIzaSyCiEMfafGEgqpZ94b9ENjAg0UaIku0NRE8",
-      "AIzaSyA0prh1a0eN4fZ6MA_eB4MPJ0UH4LPsIAc",
-      "AIzaSyDiisGuMjbilWyxKAFpTPu4am8d5yQagJI",
-      "AIzaSyDI3sl7QYBrXOgAwCyjwJ23pV1nbjUMVL0",
-      "AIzaSyD_Jfk_5wuEdVhDEsQX9uy3BW2Fio7xe0s",
-      "AIzaSyCpAzwCaG2I8gEusAsDKnkoxVMdkPg1Vpk",
-      "AIzaSyCJ2cLDhXE-e_KYbnfS7DmrT-gtbL9yxCY",
-      "AIzaSyA2DSf373Pmv26YLpcv2gnUMeZd0bGgNug",
-      "AIzaSyC-66qDbGqKdEfQyGFeQPgYpRCjg802eLQ",
-      "AIzaSyBE_TgXpbeBMrkZhEGeEI3nZ5xC_BbbSd0"
-    ];
-    let apiKeyIndex = 0;
-    function getApiKey() {
-      const key = API_KEYS[apiKeyIndex % API_KEYS.length];
-      apiKeyIndex++;
-      return key;
-    }
-
-    function initMetaWearables() {
-      console.log("Init Meta wearables toolkit (stub)");
-      // hook real Meta Ray-Ban SDK here
-    }
-
-    function initEmgWristband() {
-      console.log("Init EMG wristband (stub)");
-      // hook real EMG SDK here and call handleGesture(gestureName)
-    }
-
-    const MAX_RESULTS = 50;
-    async function fetchYouTube(endpoint, params) {
-      const key = getApiKey();
-      const url = new URL("https://www.googleapis.com/youtube/v3/" + endpoint);
-      params.key = key;
-      Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
-      const res = await fetch(url.toString());
-      if (!res.ok) {
-        console.error("YouTube API error", res.status, await res.text());
-        return { items: [] };
-      }
-      return res.json();
-    }
-
-    const baseParams = {
-      regionCode: "US",
-      relevanceLanguage: "en",
-      maxResults: MAX_RESULTS,
-      type: "video",
-      part: "snippet,contentDetails,statistics"
-    };
-
-    const loaders = {
-      home: () =>
-        fetchYouTube("videos", {
-          ...baseParams,
-          chart: "mostPopular"
-        }),
-      shorts: () =>
-        fetchYouTube("search", {
-          ...baseParams,
-          order: "date",
-          videoDuration: "short"
-        }),
-      haiti: () =>
-        fetchYouTube("search", {
-          ...baseParams,
-          order: "relevance",
-          q: "Haiti movie OR Haiti"
-        }),
-      news: () =>
-        fetchYouTube("search", {
-          ...baseParams,
-          order: "date",
-          q: "US news"
-        }),
-      anime: () =>
-        fetchYouTube("search", {
-          ...baseParams,
-          order: "relevance",
-          q: "anime English dub US"
-        }),
-      live: () =>
-        fetchYouTube("search", {
-          ...baseParams,
-          eventType: "live",
-          order: "date"
-        }),
-      movies: () =>
-        fetchYouTube("search", {
-          ...baseParams,
-          videoDuration: "long",
-          q: "full movie free US"
-        }),
-      comedy: () =>
-        fetchYouTube("search", {
-          ...baseParams,
-          order: "relevance",
-          q: "stand up comedy US"
-        }),
-      search: (query) =>
-        fetchYouTube("search", {
-          ...baseParams,
-          order: "relevance",
-          q: query
-        })
-    };
-
-    const tabsEl = document.getElementById("tabs");
-    const listEl = document.getElementById("list");
-    const keyboardEl = document.getElementById("keyboard");
-    const radialMenu = document.getElementById("radialMenu");
-    const hud = document.getElementById("hud");
-
-    const btnPlayPause = document.getElementById("btnPlayPause");
-    const btnForward = document.getElementById("btnForward");
-    const btnBack = document.getElementById("btnBack");
-    const btnClose = document.getElementById("btnClose");
-
-    const playerTitle = document.getElementById("playerTitle");
-    const playerChannel = document.getElementById("playerChannel");
-    const playerStats = document.getElementById("playerStats");
-
-    let currentTab = "home";
-    let searchInputEl = null;
-    let radialOpen = false;
-    let currentBrightness = 1.0;
-    let selectedIndex = 0;
-
-    let ytPlayer = null;
-    let currentVideoId = null;
-    let isPlaying = false;
-
-    function onYouTubeIframeAPIReady() {
-      ytPlayer = new YT.Player("playerFrame", {
-        height: "100%",
-        width: "100%",
-        playerVars: {
-          controls: 0,
-          rel: 0,
-          modestbranding: 1
-        },
-        events: {
-          onReady: () => {
-            console.log("YT Player ready");
-          },
-          onStateChange: (e) => {
-            if (e.data === YT.PlayerState.PLAYING) isPlaying = true;
-            if (e.data === YT.PlayerState.PAUSED || e.data === YT.PlayerState.ENDED)
-              isPlaying = false;
-            updatePlayPauseLabel();
-          }
-        }
-      });
-    }
-
-    function updatePlayPauseLabel() {
-      if (!btnPlayPause) return;
-      btnPlayPause.textContent = isPlaying ? "⏸ Pause" : "▶ Play";
-    }
-
-    function showHUD(text) {
-      hud.textContent = text;
-      hud.style.opacity = 1;
-      clearTimeout(hud._timer);
-      hud._timer = setTimeout(() => {
-        hud.style.opacity = 0;
-      }, 900);
-    }
-
-    function setActiveTab(tab) {
-      currentTab = tab;
-      document.querySelectorAll(".tab").forEach((t) => {
-        t.classList.toggle("active", t.dataset.tab === tab);
-      });
-      loadTab(tab);
-    }
-
-    async function loadTab(tab) {
-      listEl.innerHTML = "";
-      if (tab === "search") {
-        renderSearchUI();
-        return;
-      }
-      const loader = loaders[tab];
-      if (!loader) return;
-      const data = await loader();
-      const items = data.items || [];
-      items.forEach((item) => {
-        const videoId = item.id.videoId || item.id;
-        const snippet = item.snippet || {};
-        const stats = item.statistics || {};
-        const thumbUrl =
-          snippet.thumbnails?.medium?.url ||
-          snippet.thumbnails?.default?.url ||
-          "";
-
-        const el = document.createElement("div");
-        el.className = "video-item floating-card";
-        el.onclick = () => playVideo(videoId, snippet, stats);
-
-        const thumb = document.createElement("div");
-        thumb.className = "thumb";
-        if (thumbUrl) {
-          const img = document.createElement("img");
-          img.src = thumbUrl;
-          thumb.appendChild(img);
-        }
-
-        const meta = document.createElement("div");
-        meta.className = "meta";
-
-        const title = document.createElement("div");
-        title.className = "meta-title";
-        title.textContent = snippet.title || "Untitled";
-
-        const channel = document.createElement("div");
-        channel.className = "meta-channel";
-        channel.textContent = snippet.channelTitle || "Unknown channel";
-
-        const extra = document.createElement("div");
-        extra.className = "meta-extra";
-        extra.textContent = (stats.viewCount || "0") + " views";
-
-        meta.appendChild(title);
-        meta.appendChild(channel);
-        meta.appendChild(extra);
-
-        el.appendChild(thumb);
-        el.appendChild(meta);
-        listEl.appendChild(el);
-
-        setTimeout(() => el.classList.add("ready"), 50);
-      });
-
-      selectedIndex = 0;
-      highlightSelected();
-    }
-
-    function playVideo(videoId, snippet, stats) {
-      currentVideoId = videoId;
-
-      if (ytPlayer && ytPlayer.loadVideoById) {
-        ytPlayer.loadVideoById(videoId);
-      }
-
-      playerTitle.textContent = snippet.title || "Untitled";
-      playerChannel.textContent = snippet.channelTitle || "Channel";
-      const views = stats.viewCount ? Number(stats.viewCount).toLocaleString() : "0";
-      playerStats.textContent = `${views} views`;
-
-      isPlaying = true;
-      updatePlayPauseLabel();
-    }
-
-    function renderSearchUI() {
-      listEl.innerHTML = "";
-      const bar = document.createElement("div");
-      bar.className = "search-bar";
-
-      const input = document.createElement("input");
-      input.className = "search-input";
-      input.placeholder = "Search YouTube (US, English)…";
-      searchInputEl = input;
-
-      input.addEventListener("focus", () => {
-        keyboardEl.style.display = "flex";
-      });
-
-      input.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") {
-          keyboardEl.style.display = "none";
-          doSearch(input.value);
-        }
-      });
-
-      const button = document.createElement("button");
-      button.className = "search-button";
-      button.textContent = "Search";
-      button.onclick = () => {
-        keyboardEl.style.display = "none";
-        doSearch(input.value);
-      };
-
-      bar.appendChild(input);
-      bar.appendChild(button);
-      listEl.appendChild(bar);
-    }
-
-    async function doSearch(query) {
-      if (!query) return;
-      const data = await loaders.search(query);
-      const items = data.items || [];
-      const children = Array.from(listEl.children);
-      listEl.innerHTML = "";
-      children.slice(0, 1).forEach((c) => listEl.appendChild(c));
-
-      items.forEach((item) => {
-        const videoId = item.id.videoId || item.id;
-        const snippet = item.snippet || {};
-        const stats = item.statistics || {};
-        const thumbUrl =
-          snippet.thumbnails?.medium?.url ||
-          snippet.thumbnails?.default?.url ||
-          "";
-
-        const el = document.createElement("div");
-        el.className = "video-item floating-card";
-        el.onclick = () => playVideo(videoId, snippet, stats);
-
-        const thumb = document.createElement("div");
-        thumb.className = "thumb";
-        if (thumbUrl) {
-          const img = document.createElement("img");
-          img.src = thumbUrl;
-          thumb.appendChild(img);
-        }
-
-        const meta = document.createElement("div");
-        meta.className = "meta";
-
-        const title = document.createElement("div");
-        title.className = "meta-title";
-        title.textContent = snippet.title || "Untitled";
-
-        const channel = document.createElement("div");
-        channel.className = "meta-channel";
-        channel.textContent = snippet.channelTitle || "Unknown channel";
-
-        const extra = document.createElement("div");
-        extra.className = "meta-extra";
-        extra.textContent = (stats.viewCount || "0") + " views";
-
-        meta.appendChild(title);
-        meta.appendChild(channel);
-        meta.appendChild(extra);
-
-        el.appendChild(thumb);
-        el.appendChild(meta);
-        listEl.appendChild(el);
-
-        setTimeout(() => el.classList.add("ready"), 50);
-      });
-
-      selectedIndex = 0;
-      highlightSelected();
-    }
-
-    function highlightSelected() {
-      const items = document.querySelectorAll(".video-item");
-      items.forEach((el, i) => {
-        el.style.outline = i === selectedIndex ? "2px solid #ff0000" : "none";
-        el.style.boxShadow =
-          i === selectedIndex
-            ? "0 0 18px rgba(255,0,0,0.7)"
-            : "0 12px 24px rgba(0,0,0,0.45)";
-      });
-    }
-
-    function moveSelection(delta) {
-      const items = document.querySelectorAll(".video-item");
-      if (!items.length) return;
-      selectedIndex = (selectedIndex + delta + items.length) % items.length;
-      highlightSelected();
-    }
-
-    function openSelectedVideo() {
-      const items = document.querySelectorAll(".video-item");
-      if (items[selectedIndex]) items[selectedIndex].click();
-    }
-
-    keyboardEl.addEventListener("click", (e) => {
-      const keyEl = e.target.closest(".key");
-      if (!keyEl || !searchInputEl) return;
-      const action = keyEl.dataset.action;
-      if (!action) {
-        searchInputEl.value += keyEl.textContent;
-        searchInputEl.focus();
-        return;
-      }
-      if (action === "space") {
-        searchInputEl.value += " ";
-      } else if (action === "backspace") {
-        searchInputEl.value = searchInputEl.value.slice(0, -1);
-      } else if (action === "enter") {
-        keyboardEl.style.display = "none";
-        doSearch(searchInputEl.value);
-      }
-      searchInputEl.focus();
-    });
-
-    tabsEl.addEventListener("click", (e) => {
-      const tabEl = e.target.closest(".tab");
-      if (!tabEl) return;
-      const tab = tabEl.dataset.tab;
-      setActiveTab(tab);
-    });
-
-    function openRadialMenu() {
-      radialMenu.style.opacity = 1;
-      radialMenu.style.transform = "translate(-50%, -50%) scale(1)";
-      radialMenu.style.pointerEvents = "auto";
-      radialOpen = true;
-    }
-
-    function closeRadialMenu() {
-      radialMenu.style.opacity = 0;
-      radialMenu.style.transform = "translate(-50%, -50%) scale(0)";
-      radialMenu.style.pointerEvents = "none";
-      radialOpen = false;
-    }
-
-    function toggleRadialMenu() {
-      radialOpen ? closeRadialMenu() : openRadialMenu();
-    }
-
-    radialMenu.addEventListener("click", (e) => {
-      const btn = e.target.closest(".radial-btn");
-      if (!btn) return;
-      const action = btn.dataset.action;
-
-      switch (action) {
-        case "home":
-          setActiveTab("home");
-          showHUD("Home");
-          break;
-        case "search":
-          setActiveTab("search");
-          showHUD("Search");
-          break;
-        case "refresh":
-          loadTab(currentTab);
-          showHUD("Refreshing…");
-          break;
-        case "brightness":
-          adjustBrightness(0.1);
-          showHUD("Brightness +");
-          break;
-        case "volume":
-          adjustVolume(0.1);
-          break;
-        case "settings":
-          showHUD("Settings");
-          break;
-      }
-      closeRadialMenu();
-    });
-
-    function adjustVolume(delta) {
-      if (!ytPlayer || !ytPlayer.getVolume) return;
-      let vol = ytPlayer.getVolume();
-      vol = Math.max(0, Math.min(100, vol + delta * 100));
-      ytPlayer.setVolume(vol);
-      showHUD(`Volume: ${vol.toFixed(0)}%`);
-    }
-
-    function adjustBrightness(delta) {
-      currentBrightness = Math.max(0.1, Math.min(1.0, currentBrightness + delta));
-      // hook metaWearables.setBrightness(currentBrightness) here
-      showHUD(`Brightness: ${(currentBrightness * 100).toFixed(0)}%`);
-    }
-
-    function cycleTab(direction) {
-      const tabs = Array.from(document.querySelectorAll(".tab"));
-      let index = tabs.findIndex((t) => t.dataset.tab === currentTab);
-      index = (index + direction + tabs.length) % tabs.length;
-      setActiveTab(tabs[index].dataset.tab);
-    }
-
-    function handleGesture(gesture) {
-      switch (gesture) {
-        // navigation
-        case "swipeUp":
-          moveSelection(-1);
-          showHUD("Select ↑");
-          break;
-        case "swipeDown":
-          moveSelection(1);
-          showHUD("Select ↓");
-          break;
-        case "swipeLeft":
-          cycleTab(-1);
-          showHUD("Tab ◀");
-          break;
-        case "swipeRight":
-          cycleTab(1);
-          showHUD("Tab ▶");
-          break;
-
-        // playback
-        case "fist": // play/pause
-          if (btnPlayPause) btnPlayPause.click();
-          break;
-        case "rotateIn": // back 10s
-          if (btnBack) btnBack.click();
-          break;
-        case "rotateOut": // forward 10s
-          if (btnForward) btnForward.click();
-          break;
-
-        // brightness / volume
-        case "handOpen":
-          adjustBrightness(0.1);
-          showHUD("Brightness +");
-          break;
-        case "handClose":
-          adjustBrightness(-0.1);
-          showHUD("Brightness -");
-          break;
-        case "pinch": // volume up
-          adjustVolume(0.1);
-          break;
-        case "pinchHold": // volume down
-          adjustVolume(-0.1);
-          break;
-
-        // back / close player
-        case "doubleTap":
-          if (btnClose) btnClose.click();
-          showHUD("Back");
-          break;
-
-        default:
-          console.log("Gesture:", gesture);
+<script>
+/* ————————————————————————————————
+   API KEYS + HELPERS
+——————————————————————————————— */
+const API_KEYS = [
+  "AIzaSyAiG74ZYcjR4K78NPfUe3sQGeJLnoBIXYU",
+  "AIzaSyDVDUackHINzULJ6qasLLKDZUIBBxTORTI"
+];
+let apiKeyIndex = 0;
+function getApiKey() {
+  const key = API_KEYS[apiKeyIndex % API_KEYS.length];
+  apiKeyIndex++;
+  return key;
+}
+
+/* ————————————————————————————————
+   META RAY‑BAN + EMG (stub hooks)
+——————————————————————————————— */
+function initMetaWearables() {
+  console.log("Meta Wearables initialized");
+}
+function initEmgWristband() {
+  console.log("EMG Wristband initialized");
+  // When your SDK detects a gesture:
+  // handleGesture("swipeUp")
+}
+
+/* ————————————————————————————————
+   YOUTUBE API FETCH
+——————————————————————————————— */
+const MAX_RESULTS = 50;
+
+async function fetchYouTube(endpoint, params) {
+  const key = getApiKey();
+  const url = new URL("https://www.googleapis.com/youtube/v3/" + endpoint);
+  params.key = key;
+  Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
+  const res = await fetch(url.toString());
+  if (!res.ok) return { items: [] };
+  return res.json();
+}
+
+const baseParams = {
+  regionCode: "US",
+  relevanceLanguage: "en",
+  maxResults: MAX_RESULTS,
+  type: "video",
+  part: "snippet,contentDetails,statistics"
+};
+
+const loaders = {
+  home: () => fetchYouTube("videos", { ...baseParams, chart: "mostPopular" }),
+  shorts: () => fetchYouTube("search", { ...baseParams, videoDuration: "short", order: "date" }),
+  haiti: () => fetchYouTube("search", { ...baseParams, q: "Haiti movie OR Haiti" }),
+  news: () => fetchYouTube("search", { ...baseParams, q: "US news", order: "date" }),
+  anime: () => fetchYouTube("search", { ...baseParams, q: "anime English dub US" }),
+  live: () => fetchYouTube("search", { ...baseParams, eventType: "live", order: "date" }),
+  movies: () => fetchYouTube("search", { ...baseParams, videoDuration: "long", q: "full movie free US" }),
+  comedy: () => fetchYouTube("search", { ...baseParams, q: "stand up comedy US" }),
+  search: (query) => fetchYouTube("search", { ...baseParams, q: query })
+};
+
+/* ————————————————————————————————
+   DOM ELEMENTS
+——————————————————————————————— */
+const listEl = document.getElementById("list");
+const tabsEl = document.getElementById("tabs");
+const hud = document.getElementById("hud");
+
+const playerEl = document.getElementById("player");
+const playerTitle = document.getElementById("playerTitle");
+const playerChannel = document.getElementById("playerChannel");
+const playerStats = document.getElementById("playerStats");
+
+const btnPlayPause = document.getElementById("btnPlayPause");
+const btnForward = document.getElementById("btnForward");
+const btnBack = document.getElementById("btnBack");
+const btnClose = document.getElementById("btnClose");
+
+/* ————————————————————————————————
+   YOUTUBE IFRAME PLAYER
+——————————————————————————————— */
+let ytPlayer = null;
+let currentVideoId = null;
+let isPlaying = false;
+
+function onYouTubeIframeAPIReady() {
+  ytPlayer = new YT.Player("playerFrame", {
+    height: "100%",
+    width: "100%",
+    playerVars: { controls: 0, rel: 0, modestbranding: 1 },
+    events: {
+      onReady: () => console.log("YT Player Ready"),
+      onStateChange: (e) => {
+        isPlaying = e.data === YT.PlayerState.PLAYING;
+        updatePlayPauseLabel();
       }
     }
+  });
+}
 
-    btnPlayPause.addEventListener("click", () => {
-      if (!ytPlayer) return;
-      if (isPlaying) ytPlayer.pauseVideo();
-      else ytPlayer.playVideo();
-    });
+function updatePlayPauseLabel() {
+  btnPlayPause.textContent = isPlaying ? "⏸ Pause" : "▶ Play";
+}
 
-    btnForward.addEventListener("click", () => {
-      if (!ytPlayer) return;
-      const t = ytPlayer.getCurrentTime();
-      ytPlayer.seekTo(t + 10, true);
-      showHUD("+10s");
-    });
+/* ————————————————————————————————
+   HUD
+——————————————————————————————— */
+function showHUD(text) {
+  hud.textContent = text;
+  hud.style.opacity = 1;
+  clearTimeout(hud._timer);
+  hud._timer = setTimeout(() => (hud.style.opacity = 0), 900);
+}
 
-    btnBack.addEventListener("click", () => {
-      if (!ytPlayer) return;
-      const t = ytPlayer.getCurrentTime();
-      ytPlayer.seekTo(Math.max(0, t - 10), true);
-      showHUD("-10s");
-    });
+/* ————————————————————————————————
+   TAB LOADING
+——————————————————————————————— */
+let currentTab = "home";
+let selectedIndex = 0;
 
-    btnClose.addEventListener("click", () => {
-      if (!ytPlayer) return;
-      ytPlayer.stopVideo();
-      currentVideoId = null;
-      isPlaying = false;
-      updatePlayPauseLabel();
-      playerTitle.textContent = "Select a video…";
-    });
+function setActiveTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll(".tab").forEach((t) =>
+    t.classList.toggle("active", t.dataset.tab === tab)
+  );
+  loadTab(tab);
+}
 
-    initMetaWearables();
-    initEmgWristband();
-    setActiveTab("home");
-  </script>
+async function loadTab(tab) {
+  listEl.innerHTML = "";
+
+  if (tab === "search") {
+    renderSearchUI();
+    return;
+  }
+
+  const data = await loaders[tab]();
+  const items = data.items || [];
+
+  items.forEach((item) => {
+    const videoId = item.id.videoId || item.id;
+    const snippet = item.snippet || {};
+    const stats = item.statistics || {};
+
+    const el = document.createElement("div");
+    el.className = "video-item floating-card";
+    el.onclick = () => playVideo(videoId, snippet, stats);
+
+    const thumb = document.createElement("div");
+    thumb.className = "thumb";
+    const img = document.createElement("img");
+    img.src = snippet.thumbnails?.medium?.url || "";
+    thumb.appendChild(img);
+
+    const meta = document.createElement("div");
+    meta.className = "meta";
+
+    const title = document.createElement("div");
+    title.className = "meta-title";
+    title.textContent = snippet.title;
+
+    const channel = document.createElement("div");
+    channel.className = "meta-channel";
+    channel.textContent = snippet.channelTitle;
+
+    const extra = document.createElement("div");
+    extra.className = "meta-extra";
+    extra.textContent = (stats.viewCount || "0") + " views";
+
+    meta.appendChild(title);
+    meta.appendChild(channel);
+    meta.appendChild(extra);
+
+    el.appendChild(thumb);
+    el.appendChild(meta);
+    listEl.appendChild(el);
+
+    setTimeout(() => el.classList.add("ready"), 50);
+  });
+
+  selectedIndex = 0;
+  highlightSelected();
+}
+
+/* ————————————————————————————————
+   VIDEO PLAYER SHOW/HIDE
+——————————————————————————————— */
+function playVideo(videoId, snippet, stats) {
+  currentVideoId = videoId;
+
+  // SHOW PLAYER
+  playerEl.style.display = "block";
+
+  ytPlayer.loadVideoById(videoId);
+
+  playerTitle.textContent = snippet.title;
+  playerChannel.textContent = snippet.channelTitle;
+  playerStats.textContent = Number(stats.viewCount || 0).toLocaleString() + " views";
+
+  isPlaying = true;
+  updatePlayPauseLabel();
+}
+
+btnClose.addEventListener("click", () => {
+  ytPlayer.stopVideo();
+  playerEl.style.display = "none"; // HIDE PLAYER
+  isPlaying = false;
+  updatePlayPauseLabel();
+});
+
+/* ————————————————————————————————
+   PLAYER CONTROLS
+——————————————————————————————— */
+btnPlayPause.addEventListener("click", () => {
+  if (isPlaying) ytPlayer.pauseVideo();
+  else ytPlayer.playVideo();
+});
+
+btnForward.addEventListener("click", () => {
+  ytPlayer.seekTo(ytPlayer.getCurrentTime() + 10, true);
+  showHUD("+10s");
+});
+
+btnBack.addEventListener("click", () => {
+  ytPlayer.seekTo(Math.max(0, ytPlayer.getCurrentTime() - 10), true);
+  showHUD("-10s");
+});
+
+/* ————————————————————————————————
+   SELECTION + SWIPE NAVIGATION
+——————————————————————————————— */
+function highlightSelected() {
+  const items = document.querySelectorAll(".video-item");
+  items.forEach((el, i) => {
+    el.style.outline = i === selectedIndex ? "2px solid red" : "none";
+  });
+}
+
+function moveSelection(delta) {
+  const items = document.querySelectorAll(".video-item");
+  if (!items.length) return;
+  selectedIndex = (selectedIndex + delta + items.length) % items.length;
+  highlightSelected();
+}
+
+function openSelectedVideo() {
+  const items = document.querySelectorAll(".video-item");
+  if (items[selectedIndex]) items[selectedIndex].click();
+}
+
+/* ————————————————————————————————
+   EMG GESTURE HANDLER
+——————————————————————————————— */
+function handleGesture(g) {
+  switch (g) {
+    case "swipeUp": moveSelection(-1); showHUD("↑"); break;
+    case "swipeDown": moveSelection(1); showHUD("↓"); break;
+    case "swipeLeft": cycleTab(-1); showHUD("◀"); break;
+    case "swipeRight": cycleTab(1); showHUD("▶"); break;
+
+    case "fist": btnPlayPause.click(); break;
+    case "rotateIn": btnBack.click(); break;
+    case "rotateOut": btnForward.click(); break;
+
+    case "handOpen": adjustBrightness(0.1); break;
+    case "handClose": adjustBrightness(-0.1); break;
+
+    case "pinch": adjustVolume(0.1); break;
+    case "pinchHold": adjustVolume(-0.1); break;
+
+    case "doubleTap": btnClose.click(); break;
+  }
+}
+
+function cycleTab(direction) {
+  const tabs = Array.from(document.querySelectorAll(".tab"));
+  let index = tabs.findIndex((t) => t.dataset.tab === currentTab);
+  index = (index + direction + tabs.length) % tabs.length;
+  setActiveTab(tabs[index].dataset.tab);
+}
+
+/* ————————————————————————————————
+   BRIGHTNESS + VOLUME
+——————————————————————————————— */
+let currentBrightness = 1.0;
+
+function adjustBrightness(delta) {
+  currentBrightness = Math.max(0.1, Math.min(1.0, currentBrightness + delta));
+  showHUD("Brightness " + Math.round(currentBrightness * 100) + "%");
+}
+
+function adjustVolume(delta) {
+  let vol = ytPlayer.getVolume();
+  vol = Math.max(0, Math.min(100, vol + delta * 100));
+  ytPlayer.setVolume(vol);
+  showHUD("Volume " + vol + "%");
+}
+
+/* ————————————————————————————————
+   INIT
+——————————————————————————————— */
+tabsEl.addEventListener("click", (e) => {
+  const tab = e.target.closest(".tab");
+  if (tab) setActiveTab(tab.dataset.tab);
+});
+
+initMetaWearables();
+initEmgWristband();
+setActiveTab("home");
+</script>
+
 </body>
 </html>
