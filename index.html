@@ -23,7 +23,6 @@
     overflow: hidden;
   }
 
-  /* Ultra-light glass, mostly transparent */
   .glass {
     background: rgba(0, 0, 0, 0.12);
     backdrop-filter: blur(8px);
@@ -40,6 +39,8 @@
     background: transparent;
     border: none;
     box-shadow: none;
+    position: relative;
+    z-index: 5;
   }
 
   .yt {
@@ -71,6 +72,8 @@
     backdrop-filter: blur(6px);
     border-radius: 999px;
     border: 1px solid rgba(255,255,255,0.05);
+    position: relative;
+    z-index: 5;
   }
 
   .tab {
@@ -88,7 +91,6 @@
     box-shadow: 0 0 10px rgba(255,0,0,0.7);
   }
 
-  /* S1: scroll inside content, tuned for ~4 visible cards */
   .content {
     margin: 0 10px 10px 10px;
     padding: 10px;
@@ -97,9 +99,10 @@
     background: rgba(0, 0, 0, 0.06);
     backdrop-filter: blur(4px);
     border: none;
+    position: relative;
+    z-index: 1;
   }
 
-  /* Floating video tiles */
   .video {
     display: flex;
     gap: 10px;
@@ -125,7 +128,6 @@
     object-fit: cover;
   }
 
-  /* H1: red glow highlight */
   .video.highlight {
     border: 2px solid rgba(255,0,0,0.9);
     box-shadow: 0 0 14px rgba(255,0,0,0.8);
@@ -175,6 +177,52 @@
     background: rgba(0,255,0,0.35);
     border-color: rgba(0,255,0,0.6);
   }
+
+  /* Player overlay */
+  #player-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(10px);
+    display: none;
+    z-index: 30;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #player-container {
+    width: 480px;
+    height: 270px;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 12px 24px rgba(0,0,0,0.8);
+    margin-bottom: 16px;
+  }
+
+  #player-controls {
+    display: flex;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: rgba(0,0,0,0.7);
+    border: 1px solid rgba(255,255,255,0.15);
+  }
+
+  .player-btn {
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.2);
+    font-size: 12px;
+    cursor: pointer;
+  }
+
+  .player-btn.highlight {
+    border: 2px solid rgba(255,0,0,0.9);
+    box-shadow: 0 0 10px rgba(255,0,0,0.8);
+  }
 </style>
 </head>
 
@@ -208,8 +256,23 @@
     </div>
   </div>
 
+  <!-- Player overlay -->
+  <div id="player-overlay">
+    <div id="player-container">
+      <div id="player"></div>
+    </div>
+    <div id="player-controls">
+      <button class="player-btn" data-action="back10">-10s</button>
+      <button class="player-btn" data-action="playpause">Play/Pause</button>
+      <button class="player-btn" data-action="forward10">+10s</button>
+      <button class="player-btn" data-action="hideui">Hide UI</button>
+      <button class="player-btn" data-action="goback">Go Back</button>
+    </div>
+  </div>
+
 </div>
 
+<script src="https://www.youtube.com/iframe_api"></script>
 <script>
 /* API KEYS: original + new */
 const KEYS = [
@@ -243,13 +306,30 @@ const tabs = document.getElementById("tabs");
 const kb = document.getElementById("keyboard");
 const kbInput = document.getElementById("kb-input");
 const kbKeys = document.getElementById("kb-keys");
+const playerOverlay = document.getElementById("player-overlay");
+const playerControls = document.getElementById("player-controls");
 
 /* Paging state */
-let currentQuery = "trending";
+let currentQuery = "movies OR documentaries OR music videos OR trailers";
 let nextPageToken = null;
 
-/* Highlight state */
+/* Highlight state (list) */
 let highlightIndex = 0;
+
+/* Highlight state (player controls) */
+let playerMode = false;
+let controlIndex = 1; // default highlight Play/Pause
+
+/* YouTube player */
+let ytPlayer = null;
+function onYouTubeIframeAPIReady(){
+  ytPlayer = new YT.Player("player", {
+    height: "270",
+    width: "480",
+    videoId: "",
+    playerVars: { controls: 0, rel: 0 },
+  });
+}
 
 /* Render videos */
 function showVideos(items, append=false){
@@ -265,7 +345,7 @@ function showVideos(items, append=false){
     const div = document.createElement("div");
     div.className = "video";
     div.dataset.videoId = id;
-    div.onclick = ()=>window.open("https://youtube.com/watch?v="+id);
+    div.onclick = ()=>openVideo(id);
 
     div.innerHTML = `
       <div class="thumb"><img src="${thumb}"></div>
@@ -293,6 +373,10 @@ function applyHighlight(){
 
 /* Move highlight up/down */
 function moveHighlight(delta){
+  if(playerMode){
+    moveControlHighlight(delta);
+    return;
+  }
   const cards = [...content.querySelectorAll(".video")];
   if(cards.length === 0) return;
   highlightIndex += delta;
@@ -303,19 +387,26 @@ function moveHighlight(delta){
 
 /* Select highlighted video */
 function selectHighlighted(){
+  if(playerMode){
+    activateControl();
+    return;
+  }
   const cards = [...content.querySelectorAll(".video")];
   if(cards.length === 0) return;
   const card = cards[highlightIndex];
   const id = card.dataset.videoId;
-  if(id) window.open("https://youtube.com/watch?v="+id);
+  if(id) openVideo(id);
 }
 
 /* Fetch */
-async function yt(q, pageToken=null){
+async function yt(q, pageToken=null, maxResults=25, extraParams=""){
   const base =
-    "https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=25&regionCode=US&q="
-    + encodeURIComponent(q)
-    + "&key=" + apiKey();
+    "https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&regionCode=US&relevanceLanguage=en&maxResults="
+    + maxResults +
+    "&q=" + encodeURIComponent(q) +
+    "&order=date" +
+    "&key=" + apiKey() +
+    (extraParams ? "&" + extraParams : "");
   const url = pageToken ? base + "&pageToken=" + pageToken : base;
   const r = await fetch(url);
   const j = await r.json();
@@ -324,17 +415,17 @@ async function yt(q, pageToken=null){
 }
 
 /* Load query (fresh) */
-async function loadQuery(q){
+async function loadQuery(q, maxResults=25, extraParams=""){
   currentQuery = q;
   nextPageToken = null;
-  const items = await yt(q);
+  const items = await yt(q, null, maxResults, extraParams);
   showVideos(items, false);
 }
 
 /* Load more when scrolling to bottom */
 async function loadMore(){
   if(!nextPageToken) return;
-  const items = await yt(currentQuery, nextPageToken);
+  const items = await yt(currentQuery, nextPageToken, 25);
   showVideos(items, true);
 }
 
@@ -364,17 +455,31 @@ tabs.addEventListener("click", async e=>{
 
   kb.style.display = "none";
 
-  const queryMap = {
-    all: "trending",
-    shorts: "shorts",
-    news: "US news",
-    anime: "anime english dub",
-    live: "live stream",
-    movies: "full movie",
-    comedy: "stand up comedy"
-  };
+  let q = "";
+  let maxResults = 25;
+  let extra = "";
 
-  await loadQuery(queryMap[tab]);
+  if(tab === "all"){
+    q = "movies OR documentaries OR music videos OR trailers";
+    maxResults = 50;
+  } else if(tab === "shorts"){
+    q = "US shorts";
+    extra = "videoDuration=short";
+  } else if(tab === "news"){
+    q = "US news";
+  } else if(tab === "anime"){
+    q = "anime english dub";
+  } else if(tab === "live"){
+    q = "live stream";
+    extra = "eventType=live";
+  } else if(tab === "movies"){
+    q = "full movie free";
+    extra = "videoDuration=long";
+  } else if(tab === "comedy"){
+    q = "stand up comedy";
+  }
+
+  await loadQuery(q, maxResults, extra);
 });
 
 /* Keyboard */
@@ -393,14 +498,75 @@ document.getElementById("kb-enter").onclick = async ()=>{
   const q = kbInput.value.trim();
   kb.style.display = "none";
   if(q){
-    await loadQuery(q);
+    await loadQuery(q, 25);
   }
 };
+
+/* Player controls highlight */
+function applyControlHighlight(){
+  const btns = [...playerControls.querySelectorAll(".player-btn")];
+  btns.forEach(b=>b.classList.remove("highlight"));
+  if(btns.length === 0) return;
+  if(controlIndex < 0) controlIndex = 0;
+  if(controlIndex >= btns.length) controlIndex = btns.length - 1;
+  btns[controlIndex].classList.add("highlight");
+}
+
+function moveControlHighlight(delta){
+  const btns = [...playerControls.querySelectorAll(".player-btn")];
+  if(btns.length === 0) return;
+  controlIndex += delta;
+  if(controlIndex < 0) controlIndex = 0;
+  if(controlIndex >= btns.length) controlIndex = btns.length - 1;
+  applyControlHighlight();
+}
+
+function activateControl(){
+  const btns = [...playerControls.querySelectorAll(".player-btn")];
+  if(btns.length === 0) return;
+  const btn = btns[controlIndex];
+  const action = btn.dataset.action;
+  if(action === "playpause"){
+    const state = ytPlayer.getPlayerState();
+    if(state === YT.PlayerState.PLAYING){
+      ytPlayer.pauseVideo();
+    } else {
+      ytPlayer.playVideo();
+    }
+  } else if(action === "forward10"){
+    const t = ytPlayer.getCurrentTime();
+    ytPlayer.seekTo(t + 10, true);
+  } else if(action === "back10"){
+    const t = ytPlayer.getCurrentTime();
+    ytPlayer.seekTo(Math.max(0, t - 10), true);
+  } else if(action === "goback"){
+    closePlayer();
+  } else if(action === "hideui"){
+    const visible = playerControls.style.display !== "none";
+    playerControls.style.display = visible ? "none" : "flex";
+  }
+}
+
+/* Open/close player */
+function openVideo(id){
+  if(!ytPlayer) return;
+  playerMode = true;
+  playerOverlay.style.display = "flex";
+  ytPlayer.loadVideoById(id);
+  ytPlayer.playVideo();
+  controlIndex = 1; // highlight Play/Pause by default
+  applyControlHighlight();
+}
+
+function closePlayer(){
+  playerMode = false;
+  playerOverlay.style.display = "none";
+  if(ytPlayer) ytPlayer.stopVideo();
+}
 
 /* EMG / gesture placeholder */
 const MetaWearables = {
   onGesture(cb){
-    // hook your real EMG SDK here
     console.log("EMG gesture system ready (placeholder)");
   }
 };
@@ -433,7 +599,7 @@ MetaWearables.onGesture(g=>{
 
 /* Initial load */
 (async ()=>{
-  await loadQuery("trending");
+  await loadQuery("movies OR documentaries OR music videos OR trailers", 50);
 })();
 </script>
 
