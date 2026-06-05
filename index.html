@@ -2,47 +2,32 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>ViewTube – Floating Player Edition</title>
-
+<title>ViewTube – Fullscreen Player</title>
 <style>
   html, body {
     margin: 0;
     padding: 0;
-    background: transparent;
+    background: #000;
     width: 100%;
     height: 100%;
     font-family: system-ui, sans-serif;
     color: #fff;
   }
-
   #root {
     width: 600px;
     height: 600px;
     position: relative;
-    background: transparent;
     overflow: hidden;
   }
-
-  .glass {
-    background: rgba(0, 0, 0, 0.12);
-    backdrop-filter: blur(8px);
-    border: 1px solid rgba(255,255,255,0.05);
-    border-radius: 14px;
-  }
-
   .banner {
     margin: 10px;
     padding: 10px 14px;
     display: flex;
     align-items: center;
     gap: 10px;
-    background: rgba(0,0,0,0.12);
-    backdrop-filter: blur(6px);
+    background: rgba(0,0,0,0.6);
     border-radius: 12px;
-    z-index: 10;
-    position: relative;
   }
-
   .yt {
     width: 26px;
     height: 26px;
@@ -51,9 +36,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    box-shadow: 0 0 12px rgba(255,0,0,0.7);
   }
-
   .yt::before {
     content: "";
     border-left: 8px solid white;
@@ -61,157 +44,116 @@
     border-bottom: 5px solid transparent;
     margin-left: 2px;
   }
-
   .tabs {
     margin: 0 10px 10px 10px;
     padding: 8px;
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
-    background: rgba(0, 0, 0, 0.08);
-    backdrop-filter: blur(6px);
+    background: rgba(0,0,0,0.5);
     border-radius: 999px;
-    border: 1px solid rgba(255,255,255,0.05);
-    z-index: 10;
-    position: relative;
   }
-
   .tab {
     padding: 6px 12px;
-    border-radius: 999px;
-    background: rgba(0,0,0,0.35);
-    border: 1px solid rgba(255,255,255,0.15);
-    font-size: 12px;
-    cursor: pointer;
-  }
-
-  .tab.active {
-    background: rgba(255,0,0,0.75);
-    border-color: rgba(255,0,0,0.9);
-    box-shadow: 0 0 10px rgba(255,0,0,0.7);
-  }
-
-  .content {
-    margin: 0 10px 10px 10px;
-    padding: 10px;
-    height: 420px;
-    overflow-y: scroll;
-    background: rgba(0, 0, 0, 0.06);
-    backdrop-filter: blur(4px);
-    border: none;
-    position: relative;
-    z-index: 1;
-  }
-
-  .video {
-    display: flex;
-    gap: 10px;
-    padding: 8px;
-    margin-bottom: 10px;
-    border-radius: 12px;
-    background: rgba(0, 0, 0, 0.18);
-    border: 1px solid rgba(255,255,255,0.12);
-    box-shadow: 0 8px 18px rgba(0,0,0,0.55);
-    cursor: pointer;
-  }
-
-  .thumb {
-    width: 100px;
-    height: 56px;
-    border-radius: 8px;
-    overflow: hidden;
-  }
-
-  .thumb img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-
-  .video.highlight {
-    border: 2px solid rgba(255,0,0,0.9);
-    box-shadow: 0 0 14px rgba(255,0,0,0.8);
-  }
-
-  #player-overlay {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    width: 520px;
-    height: 340px;
-    background: rgba(0,0,0,0.45);
-    backdrop-filter: blur(10px);
-    border-radius: 20px;
-    display: none;
-    z-index: 30;
-    box-shadow: 0 12px 24px rgba(0,0,0,0.8);
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    pointer-events: none;
-  }
-
-  #player-container {
-    width: 480px;
-    height: 270px;
-    border-radius: 16px;
-    overflow: hidden;
-    pointer-events: auto;
-  }
-
-  #player-controls {
-    display: flex;
-    gap: 10px;
-    padding: 8px 12px;
-    border-radius: 999px;
-    background: rgba(0,0,0,0.7);
-    border: 1px solid rgba(255,255,255,0.15);
-    position: absolute;
-    bottom: -50px;
-    left: 50%;
-    transform: translateX(-50%);
-    pointer-events: auto;
-  }
-
-  .player-btn {
-    padding: 6px 10px;
     border-radius: 999px;
     background: rgba(255,255,255,0.08);
     border: 1px solid rgba(255,255,255,0.2);
     font-size: 12px;
     cursor: pointer;
   }
+  .tab.active {
+    background: #ff0000;
+    border-color: #ff0000;
+  }
+  .content {
+    margin: 0 10px 10px 10px;
+    padding: 10px;
+    height: 420px;
+    overflow-y: auto;
+    background: rgba(0,0,0,0.4);
+    border-radius: 12px;
+  }
+  .video {
+    display: flex;
+    gap: 10px;
+    padding: 8px;
+    margin-bottom: 10px;
+    border-radius: 10px;
+    background: rgba(0,0,0,0.7);
+    cursor: pointer;
+  }
+  .thumb {
+    width: 100px;
+    height: 56px;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .video.highlight {
+    border: 2px solid #ff0000;
+  }
 
-  .player-btn.highlight {
-    border: 2px solid rgba(255,0,0,0.9);
-    box-shadow: 0 0 10px rgba(255,0,0,0.8);
+  /* FULLSCREEN PLAYER */
+  #player-screen {
+    position: absolute;
+    inset: 0;
+    background: #000;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  #player-container {
+    width: 560px;
+    height: 315px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #000;
+  }
+  #player-controls {
+    margin-top: 12px;
+    display: flex;
+    gap: 10px;
+  }
+  .player-btn {
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.3);
+    font-size: 12px;
+    cursor: pointer;
   }
 </style>
 </head>
-
 <body>
 <div id="root">
 
-  <div class="banner">
-    <div class="yt"></div>
-    <div style="font-size:18px;font-weight:700">ViewTube</div>
+  <!-- MAIN UI -->
+  <div id="main-ui">
+    <div class="banner">
+      <div class="yt"></div>
+      <div style="font-size:18px;font-weight:700">ViewTube</div>
+    </div>
+
+    <div class="tabs" id="tabs">
+      <div class="tab active" data-tab="all">All</div>
+      <div class="tab" data-tab="shorts">Shorts</div>
+      <div class="tab" data-tab="news">News</div>
+      <div class="tab" data-tab="anime">Anime</div>
+      <div class="tab" data-tab="live">Live</div>
+      <div class="tab" data-tab="movies">Movies</div>
+      <div class="tab" data-tab="comedy">Comedy</div>
+    </div>
+
+    <div class="content" id="content"></div>
   </div>
 
-  <div class="tabs" id="tabs">
-    <div class="tab active" data-tab="all">All</div>
-    <div class="tab" data-tab="shorts">Shorts</div>
-    <div class="tab" data-tab="news">News</div>
-    <div class="tab" data-tab="anime">Anime</div>
-    <div class="tab" data-tab="live">Live</div>
-    <div class="tab" data-tab="movies">Movies</div>
-    <div class="tab" data-tab="comedy">Comedy</div>
-    <div class="tab" data-tab="search">Search</div>
-  </div>
-
-  <div class="content" id="content"></div>
-
-  <div id="player-overlay">
+  <!-- FULLSCREEN PLAYER -->
+  <div id="player-screen">
     <div id="player-container">
       <div id="player"></div>
     </div>
@@ -219,7 +161,6 @@
       <button class="player-btn" data-action="back10">-10s</button>
       <button class="player-btn" data-action="playpause">Play/Pause</button>
       <button class="player-btn" data-action="forward10">+10s</button>
-      <button class="player-btn" data-action="hideui">Hide UI</button>
       <button class="player-btn" data-action="goback">Go Back</button>
     </div>
   </div>
@@ -228,62 +169,36 @@
 
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
-/* API KEYS */
+/* Simple key rotation */
 const KEYS = [
   "AIzaSyAiG74ZYcjR4K78NPfUe3sQGeJLnoBIXYU",
-  "AIzaSyDVDUackHINzULJ6qasLLKDZUIBBxTORTI",
-  "AIzaSyD903GIIkzLZyeOvqMrVW3q3wJy4jcHO7E",
-  "AIzaSyCWlw8qpBueGgjvTF4BZ54syzQkTevM_8g",
-  "AIzaSyDIjQgEy4VmFN2OxUkJisqVFw9repJcTF8",
-  "AIzaSyD6aEVz7iaTGJShyDDBZT4C27YG1vEc1_M",
-  "AIzaSyAGKeySf2F3BskBrZNylOSGJuHQRX_Rp5E",
-  "AIzaSyBBgj7-tN6VBAG3ziJQKCQL7EJZR4wUW-k",
-  "AIzaSyCUmBro68VHtC6_OsqlpssTVasHk2NmBLc",
-  "AIzaSyDXugJlNG12ObzxV5WGjgNVob5OhfF6moM",
-  "AIzaSyBsq-CNj2VFfgaQkaGFCQJCzIc28OzuFuw",
-  "AIzaSyBq-q38IF6iVxgo7EeQLtkB7V25n6WcGYo",
-  "AIzaSyA9c7WYaPVU_kvlTfOvLfxcFZY8TIc5nwo",
-  "AIzaSyCqFHwn3azAH2eOSZK8Ch4tZivl3GKb_Zs",
-  "AIzaSyDblb5nF7wjMPJR7DtBTRseyTr64rjXn7E",
-  "AIzaSyA772yWhSkiwVgIFymHk9txl2UotHBksgI",
-  "AIzaSyBYKzKQShGsifFIZZ0yV-9quqM50pmuCQk",
-  "AIzaSyAjREsAJQWVX1Q4optfjBKjQzKQvVGYUIM",
-  "AIzaSyAqKWwYEh1QFxT69Nh4htYAkQXlC6vAjwo",
-  "AIzaSyBsgRu97z8s_477NEKKQop46sndfe8ZdBE"
+  "AIzaSyDVDUackHINzULJ6qasLLKDZUIBBxTORTI"
 ];
 let keyIndex = 0;
 function apiKey(){ return KEYS[keyIndex++ % KEYS.length]; }
 
-/* DOM */
 const content = document.getElementById("content");
 const tabs = document.getElementById("tabs");
-const playerOverlay = document.getElementById("player-overlay");
+const mainUI = document.getElementById("main-ui");
+const playerScreen = document.getElementById("player-screen");
 const playerControls = document.getElementById("player-controls");
 
-/* Paging */
 let currentQuery = "";
 let nextPageToken = null;
-
-/* Highlight */
 let highlightIndex = 0;
-
-/* Player highlight */
-let playerMode = false;
-let controlIndex = 1;
-
-/* YouTube Player */
 let ytPlayer = null;
+let playerMode = false;
+
 function onYouTubeIframeAPIReady(){
   ytPlayer = new YT.Player("player", {
-    height: "270",
-    width: "480",
+    height: "315",
+    width: "560",
     videoId: "",
-    playerVars: { controls: 0, rel: 0 },
+    playerVars: { controls: 1, rel: 0 }
   });
 }
 
-/* Fetch videos */
-async function yt(q, pageToken=null, maxResults=25, extra=""){
+async function ytSearch(q, pageToken=null, maxResults=25, extra=""){
   const base =
     "https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&regionCode=US&relevanceLanguage=en&order=date&maxResults="
     + maxResults +
@@ -297,16 +212,14 @@ async function yt(q, pageToken=null, maxResults=25, extra=""){
   return j.items || [];
 }
 
-/* Load query */
 async function loadQuery(q, maxResults=25, extra=""){
   currentQuery = q;
   nextPageToken = null;
-  const items = await yt(q, null, maxResults, extra);
+  const items = await ytSearch(q, null, maxResults, extra);
   showVideos(items, false);
 }
 
-/* Show videos */
-function showVideos(items, append=false){
+function showVideos(items, append){
   if(!append){
     content.innerHTML = "";
     highlightIndex = 0;
@@ -314,10 +227,9 @@ function showVideos(items, append=false){
   items.forEach(v=>{
     const id = v.id.videoId || v.id;
     const sn = v.snippet;
-    const thumb = (sn.thumbnails && sn.thumbnails.medium && sn.thumbnails.medium.url) 
-  ? sn.thumbnails.medium.url 
-  : "";
-
+    const thumb = (sn.thumbnails && sn.thumbnails.medium && sn.thumbnails.medium.url)
+      ? sn.thumbnails.medium.url
+      : "";
 
     const div = document.createElement("div");
     div.className = "video";
@@ -327,8 +239,8 @@ function showVideos(items, append=false){
     div.innerHTML = `
       <div class="thumb"><img src="${thumb}"></div>
       <div>
-        <div class="video-title">${sn.title}</div>
-        <div class="video-channel">${sn.channelTitle}</div>
+        <div>${sn.title}</div>
+        <div style="font-size:12px;opacity:0.7">${sn.channelTitle}</div>
       </div>
     `;
     content.appendChild(div);
@@ -336,7 +248,6 @@ function showVideos(items, append=false){
   applyHighlight();
 }
 
-/* Highlight list */
 function applyHighlight(){
   const cards = [...content.querySelectorAll(".video")];
   cards.forEach(c=>c.classList.remove("highlight"));
@@ -348,33 +259,6 @@ function applyHighlight(){
   card.scrollIntoView({block:"center", behavior:"smooth"});
 }
 
-/* Move highlight */
-function moveHighlight(delta){
-  if(playerMode){
-    moveControlHighlight(delta);
-    return;
-  }
-  const cards = [...content.querySelectorAll(".video")];
-  if(cards.length === 0) return;
-  highlightIndex += delta;
-  if(highlightIndex < 0) highlightIndex = 0;
-  if(highlightIndex >= cards.length) highlightIndex = cards.length - 1;
-  applyHighlight();
-}
-
-/* Select highlighted */
-function selectHighlighted(){
-  if(playerMode){
-    activateControl();
-    return;
-  }
-  const cards = [...content.querySelectorAll(".video")];
-  if(cards.length === 0) return;
-  const id = cards[highlightIndex].dataset.videoId;
-  openVideo(id);
-}
-
-/* Infinite scroll */
 content.addEventListener("scroll", ()=>{
   if(content.scrollTop + content.clientHeight >= content.scrollHeight - 40){
     loadMore();
@@ -383,7 +267,7 @@ content.addEventListener("scroll", ()=>{
 
 async function loadMore(){
   if(!nextPageToken) return;
-  const items = await yt(currentQuery, nextPageToken, 25);
+  const items = await ytSearch(currentQuery, nextPageToken, 25);
   showVideos(items, true);
 }
 
@@ -396,7 +280,6 @@ tabs.addEventListener("click", async e=>{
   t.classList.add("active");
 
   const tab = t.dataset.tab;
-
   let q = "";
   let max = 25;
   let extra = "";
@@ -430,39 +313,26 @@ tabs.addEventListener("click", async e=>{
   await loadQuery(q, max, extra);
 });
 
-/* Player */
+/* FULLSCREEN PLAYER */
 function openVideo(id){
   playerMode = true;
-  playerOverlay.style.display = "flex";
+  mainUI.style.display = "none";
+  playerScreen.style.display = "flex";
   ytPlayer.loadVideoById(id);
   ytPlayer.playVideo();
-  controlIndex = 1;
-  applyControlHighlight();
 }
 
 function closePlayer(){
   playerMode = false;
-  playerOverlay.style.display = "none";
+  playerScreen.style.display = "none";
+  mainUI.style.display = "block";
   ytPlayer.stopVideo();
 }
 
-/* Player controls highlight */
-function applyControlHighlight(){
-  const btns = [...playerControls.querySelectorAll(".player-btn")];
-  btns.forEach(b=>b.classList.remove("highlight"));
-  btns[controlIndex].classList.add("highlight");
-}
-
-function moveControlHighlight(delta){
-  const btns = [...playerControls.querySelectorAll(".player-btn")];
-  controlIndex += delta;
-  if(controlIndex < 0) controlIndex = 0;
-  if(controlIndex >= btns.length) controlIndex = btns.length - 1;
-  applyControlHighlight();
-}
-
-function activateControl(){
-  const btn = [...playerControls.querySelectorAll(".player-btn")][controlIndex];
+/* Player controls */
+playerControls.addEventListener("click", e=>{
+  const btn = e.target.closest(".player-btn");
+  if(!btn) return;
   const action = btn.dataset.action;
 
   if(action === "playpause"){
@@ -476,81 +346,8 @@ function activateControl(){
   if(action === "back10"){
     ytPlayer.seekTo(Math.max(0, ytPlayer.getCurrentTime() - 10), true);
   }
-  if(action === "hideui"){
-    playerControls.style.display =
-      playerControls.style.display === "none" ? "flex" : "none";
-  }
   if(action === "goback"){
     closePlayer();
-  }
-}
-
-/* EMG gestures */
-const MetaWearables = {
-  onGesture(cb){
-    console.log("EMG gesture system ready (placeholder)");
-  }
-};
-
-MetaWearables.onGesture(g=>{
-  if(g === "swipe_right"){
-    const tabsArr = [...document.querySelectorAll(".tab")];
-    let i = tabsArr.findIndex(t=>t.classList.contains("active"));
-    tabsArr[(i+1) % tabsArr.length].click();
-  }
-  if(g === "swipe_left"){
-    const tabsArr = [...document.querySelectorAll(".tab")];
-    let i = tabsArr.findIndex(t=>t.classList.contains("active"));
-    tabsArr[(i-1+tabsArr.length) % tabsArr.length].click();
-  }
-  if(g === "swipe_up"){
-    moveHighlight(-1);
-  }
-  if(g === "swipe_down"){
-    moveHighlight(1);
-  }
-  if(g === "pinch"){
-    selectHighlighted();
-  }
-  if(g === "fist"){
-    if(playerMode){
-      closePlayer();
-    } else {
-      const active = document.querySelector(".tab.active");
-      if(active) active.click();
-    }
-  }
-});
-
-/* Initial load */
-(async ()=>{
-  await loadQuery("movies OR documentaries OR music videos OR trailers", 50);
-})();
-  if(g === "swipe_left"){
-    const tabsArr = [...document.querySelectorAll(".tab")];
-    let i = tabsArr.findIndex(t=>t.classList.contains("active"));
-    tabsArr[(i-1+tabsArr.length) % tabsArr.length].click();
-  }
-
-  if(g === "swipe_up"){
-    moveHighlight(-1);
-  }
-
-  if(g === "swipe_down"){
-    moveHighlight(1);
-  }
-
-  if(g === "pinch"){
-    selectHighlighted();
-  }
-
-  if(g === "fist"){
-    if(playerMode){
-      closePlayer();
-    } else {
-      const active = document.querySelector(".tab.active");
-      if(active) active.click();
-    }
   }
 });
 
@@ -559,6 +356,5 @@ MetaWearables.onGesture(g=>{
   await loadQuery("movies OR documentaries OR music videos OR trailers", 50);
 })();
 </script>
-
 </body>
 </html>
