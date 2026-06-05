@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>ViewTube – EMG Stealth Float</title>
+<title>ViewTube – Floating Player Edition</title>
 
 <style>
   html, body {
@@ -36,11 +36,11 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    background: transparent;
-    border: none;
-    box-shadow: none;
+    background: rgba(0,0,0,0.12);
+    backdrop-filter: blur(6px);
+    border-radius: 12px;
+    z-index: 10;
     position: relative;
-    z-index: 5;
   }
 
   .yt {
@@ -72,8 +72,8 @@
     backdrop-filter: blur(6px);
     border-radius: 999px;
     border: 1px solid rgba(255,255,255,0.05);
+    z-index: 10;
     position: relative;
-    z-index: 5;
   }
 
   .tab {
@@ -133,63 +133,23 @@
     box-shadow: 0 0 14px rgba(255,0,0,0.8);
   }
 
-  /* Keyboard */
-  #keyboard {
-    position: absolute;
-    left: 10px;
-    right: 10px;
-    bottom: 10px;
-    padding: 10px;
-    display: none;
-    z-index: 20;
-    background: rgba(0,0,0,0.18);
-    backdrop-filter: blur(8px);
-    border-radius: 14px;
-    border: 1px solid rgba(255,255,255,0.08);
-  }
-
-  #kb-input {
-    width: 100%;
-    padding: 8px 12px;
-    border-radius: 999px;
-    border: 1px solid rgba(255,255,255,0.2);
-    background: rgba(0,0,0,0.6);
-    color: white;
-    margin-bottom: 8px;
-  }
-
-  .kb-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-
-  .key {
-    padding: 8px 10px;
-    background: rgba(0,0,0,0.6);
-    border-radius: 6px;
-    border: 1px solid rgba(255,255,255,0.15);
-    font-size: 12px;
-    cursor: pointer;
-  }
-
-  .enter {
-    background: rgba(0,255,0,0.35);
-    border-color: rgba(0,255,0,0.6);
-  }
-
-  /* Player overlay */
   #player-overlay {
     position: absolute;
-    inset: 0;
-    background: rgba(0,0,0,0.6);
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 520px;
+    height: 340px;
+    background: rgba(0,0,0,0.45);
     backdrop-filter: blur(10px);
+    border-radius: 20px;
     display: none;
     z-index: 30;
-    display: flex;
+    box-shadow: 0 12px 24px rgba(0,0,0,0.8);
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    pointer-events: none;
   }
 
   #player-container {
@@ -197,8 +157,7 @@
     height: 270px;
     border-radius: 16px;
     overflow: hidden;
-    box-shadow: 0 12px 24px rgba(0,0,0,0.8);
-    margin-bottom: 16px;
+    pointer-events: auto;
   }
 
   #player-controls {
@@ -208,6 +167,11 @@
     border-radius: 999px;
     background: rgba(0,0,0,0.7);
     border: 1px solid rgba(255,255,255,0.15);
+    position: absolute;
+    bottom: -50px;
+    left: 50%;
+    transform: translateX(-50%);
+    pointer-events: auto;
   }
 
   .player-btn {
@@ -247,16 +211,6 @@
 
   <div class="content" id="content"></div>
 
-  <!-- Keyboard -->
-  <div id="keyboard">
-    <input id="kb-input" placeholder="Search…" />
-    <div class="kb-row" id="kb-keys"></div>
-    <div class="kb-row">
-      <div class="key enter" id="kb-enter">Enter</div>
-    </div>
-  </div>
-
-  <!-- Player overlay -->
   <div id="player-overlay">
     <div id="player-container">
       <div id="player"></div>
@@ -274,7 +228,7 @@
 
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
-/* API KEYS: original + new */
+/* API KEYS */
 const KEYS = [
   "AIzaSyAiG74ZYcjR4K78NPfUe3sQGeJLnoBIXYU",
   "AIzaSyDVDUackHINzULJ6qasLLKDZUIBBxTORTI",
@@ -303,24 +257,21 @@ function apiKey(){ return KEYS[keyIndex++ % KEYS.length]; }
 /* DOM */
 const content = document.getElementById("content");
 const tabs = document.getElementById("tabs");
-const kb = document.getElementById("keyboard");
-const kbInput = document.getElementById("kb-input");
-const kbKeys = document.getElementById("kb-keys");
 const playerOverlay = document.getElementById("player-overlay");
 const playerControls = document.getElementById("player-controls");
 
-/* Paging state */
-let currentQuery = "movies OR documentaries OR music videos OR trailers";
+/* Paging */
+let currentQuery = "";
 let nextPageToken = null;
 
-/* Highlight state (list) */
+/* Highlight */
 let highlightIndex = 0;
 
-/* Highlight state (player controls) */
+/* Player highlight */
 let playerMode = false;
-let controlIndex = 1; // default highlight Play/Pause
+let controlIndex = 1;
 
-/* YouTube player */
+/* YouTube Player */
 let ytPlayer = null;
 function onYouTubeIframeAPIReady(){
   ytPlayer = new YT.Player("player", {
@@ -331,9 +282,32 @@ function onYouTubeIframeAPIReady(){
   });
 }
 
-/* Render videos */
+/* Fetch videos */
+async function yt(q, pageToken=null, maxResults=25, extra=""){
+  const base =
+    "https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&regionCode=US&relevanceLanguage=en&order=date&maxResults="
+    + maxResults +
+    "&q=" + encodeURIComponent(q) +
+    "&key=" + apiKey() +
+    (extra ? "&" + extra : "");
+  const url = pageToken ? base + "&pageToken=" + pageToken : base;
+  const r = await fetch(url);
+  const j = await r.json();
+  nextPageToken = j.nextPageToken || null;
+  return j.items || [];
+}
+
+/* Load query */
+async function loadQuery(q, maxResults=25, extra=""){
+  currentQuery = q;
+  nextPageToken = null;
+  const items = await yt(q, null, maxResults, extra);
+  showVideos(items, false);
+}
+
+/* Show videos */
 function showVideos(items, append=false){
-  if(!append) {
+  if(!append){
     content.innerHTML = "";
     highlightIndex = 0;
   }
@@ -359,7 +333,7 @@ function showVideos(items, append=false){
   applyHighlight();
 }
 
-/* Apply highlight to current index */
+/* Highlight list */
 function applyHighlight(){
   const cards = [...content.querySelectorAll(".video")];
   cards.forEach(c=>c.classList.remove("highlight"));
@@ -371,7 +345,7 @@ function applyHighlight(){
   card.scrollIntoView({block:"center", behavior:"smooth"});
 }
 
-/* Move highlight up/down */
+/* Move highlight */
 function moveHighlight(delta){
   if(playerMode){
     moveControlHighlight(delta);
@@ -385,7 +359,7 @@ function moveHighlight(delta){
   applyHighlight();
 }
 
-/* Select highlighted video */
+/* Select highlighted */
 function selectHighlighted(){
   if(playerMode){
     activateControl();
@@ -393,51 +367,24 @@ function selectHighlighted(){
   }
   const cards = [...content.querySelectorAll(".video")];
   if(cards.length === 0) return;
-  const card = cards[highlightIndex];
-  const id = card.dataset.videoId;
-  if(id) openVideo(id);
+  const id = cards[highlightIndex].dataset.videoId;
+  openVideo(id);
 }
 
-/* Fetch */
-async function yt(q, pageToken=null, maxResults=25, extraParams=""){
-  const base =
-    "https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&regionCode=US&relevanceLanguage=en&maxResults="
-    + maxResults +
-    "&q=" + encodeURIComponent(q) +
-    "&order=date" +
-    "&key=" + apiKey() +
-    (extraParams ? "&" + extraParams : "");
-  const url = pageToken ? base + "&pageToken=" + pageToken : base;
-  const r = await fetch(url);
-  const j = await r.json();
-  nextPageToken = j.nextPageToken || null;
-  return j.items || [];
-}
+/* Infinite scroll */
+content.addEventListener("scroll", ()=>{
+  if(content.scrollTop + content.clientHeight >= content.scrollHeight - 40){
+    loadMore();
+  }
+});
 
-/* Load query (fresh) */
-async function loadQuery(q, maxResults=25, extraParams=""){
-  currentQuery = q;
-  nextPageToken = null;
-  const items = await yt(q, null, maxResults, extraParams);
-  showVideos(items, false);
-}
-
-/* Load more when scrolling to bottom */
 async function loadMore(){
   if(!nextPageToken) return;
   const items = await yt(currentQuery, nextPageToken, 25);
   showVideos(items, true);
 }
 
-/* Scroll listener for infinite load */
-content.addEventListener("scroll", ()=>{
-  const threshold = 40;
-  if(content.scrollTop + content.clientHeight >= content.scrollHeight - threshold){
-    loadMore();
-  }
-});
-
-/* Tab logic */
+/* Tabs */
 tabs.addEventListener("click", async e=>{
   const t = e.target.closest(".tab");
   if(!t) return;
@@ -447,74 +394,64 @@ tabs.addEventListener("click", async e=>{
 
   const tab = t.dataset.tab;
 
-  if(tab==="search"){
-    kb.style.display = "block";
-    kbInput.value = "";
-    return;
-  }
-
-  kb.style.display = "none";
-
   let q = "";
-  let maxResults = 25;
+  let max = 25;
   let extra = "";
 
   if(tab === "all"){
     q = "movies OR documentaries OR music videos OR trailers";
-    maxResults = 50;
-  } else if(tab === "shorts"){
+    max = 50;
+  }
+  if(tab === "shorts"){
     q = "US shorts";
     extra = "videoDuration=short";
-  } else if(tab === "news"){
+  }
+  if(tab === "news"){
     q = "US news";
-  } else if(tab === "anime"){
+  }
+  if(tab === "anime"){
     q = "anime english dub";
-  } else if(tab === "live"){
+  }
+  if(tab === "live"){
     q = "live stream";
     extra = "eventType=live";
-  } else if(tab === "movies"){
+  }
+  if(tab === "movies"){
     q = "full movie free";
     extra = "videoDuration=long";
-  } else if(tab === "comedy"){
+  }
+  if(tab === "comedy"){
     q = "stand up comedy";
   }
 
-  await loadQuery(q, maxResults, extra);
+  await loadQuery(q, max, extra);
 });
 
-/* Keyboard */
-const letters = "QWERTYUIOPASDFGHJKLZXCVBNM ".split("");
-letters.forEach(ch=>{
-  const k = document.createElement("div");
-  k.className = "key";
-  k.textContent = ch===" " ? "Space" : ch;
-  k.onclick = ()=>{
-    kbInput.value += (ch===" " ? " " : ch);
-  };
-  kbKeys.appendChild(k);
-});
+/* Player */
+function openVideo(id){
+  playerMode = true;
+  playerOverlay.style.display = "flex";
+  ytPlayer.loadVideoById(id);
+  ytPlayer.playVideo();
+  controlIndex = 1;
+  applyControlHighlight();
+}
 
-document.getElementById("kb-enter").onclick = async ()=>{
-  const q = kbInput.value.trim();
-  kb.style.display = "none";
-  if(q){
-    await loadQuery(q, 25);
-  }
-};
+function closePlayer(){
+  playerMode = false;
+  playerOverlay.style.display = "none";
+  ytPlayer.stopVideo();
+}
 
 /* Player controls highlight */
 function applyControlHighlight(){
   const btns = [...playerControls.querySelectorAll(".player-btn")];
   btns.forEach(b=>b.classList.remove("highlight"));
-  if(btns.length === 0) return;
-  if(controlIndex < 0) controlIndex = 0;
-  if(controlIndex >= btns.length) controlIndex = btns.length - 1;
   btns[controlIndex].classList.add("highlight");
 }
 
 function moveControlHighlight(delta){
   const btns = [...playerControls.querySelectorAll(".player-btn")];
-  if(btns.length === 0) return;
   controlIndex += delta;
   if(controlIndex < 0) controlIndex = 0;
   if(controlIndex >= btns.length) controlIndex = btns.length - 1;
@@ -522,49 +459,30 @@ function moveControlHighlight(delta){
 }
 
 function activateControl(){
-  const btns = [...playerControls.querySelectorAll(".player-btn")];
-  if(btns.length === 0) return;
-  const btn = btns[controlIndex];
+  const btn = [...playerControls.querySelectorAll(".player-btn")][controlIndex];
   const action = btn.dataset.action;
+
   if(action === "playpause"){
-    const state = ytPlayer.getPlayerState();
-    if(state === YT.PlayerState.PLAYING){
-      ytPlayer.pauseVideo();
-    } else {
-      ytPlayer.playVideo();
-    }
-  } else if(action === "forward10"){
-    const t = ytPlayer.getCurrentTime();
-    ytPlayer.seekTo(t + 10, true);
-  } else if(action === "back10"){
-    const t = ytPlayer.getCurrentTime();
-    ytPlayer.seekTo(Math.max(0, t - 10), true);
-  } else if(action === "goback"){
+    const s = ytPlayer.getPlayerState();
+    if(s === YT.PlayerState.PLAYING) ytPlayer.pauseVideo();
+    else ytPlayer.playVideo();
+  }
+  if(action === "forward10"){
+    ytPlayer.seekTo(ytPlayer.getCurrentTime() + 10, true);
+  }
+  if(action === "back10"){
+    ytPlayer.seekTo(Math.max(0, ytPlayer.getCurrentTime() - 10), true);
+  }
+  if(action === "hideui"){
+    playerControls.style.display =
+      playerControls.style.display === "none" ? "flex" : "none";
+  }
+  if(action === "goback"){
     closePlayer();
-  } else if(action === "hideui"){
-    const visible = playerControls.style.display !== "none";
-    playerControls.style.display = visible ? "none" : "flex";
   }
 }
 
-/* Open/close player */
-function openVideo(id){
-  if(!ytPlayer) return;
-  playerMode = true;
-  playerOverlay.style.display = "flex";
-  ytPlayer.loadVideoById(id);
-  ytPlayer.playVideo();
-  controlIndex = 1; // highlight Play/Pause by default
-  applyControlHighlight();
-}
-
-function closePlayer(){
-  playerMode = false;
-  playerOverlay.style.display = "none";
-  if(ytPlayer) ytPlayer.stopVideo();
-}
-
-/* EMG / gesture placeholder */
+/* EMG gestures */
 const MetaWearables = {
   onGesture(cb){
     console.log("EMG gesture system ready (placeholder)");
@@ -592,8 +510,44 @@ MetaWearables.onGesture(g=>{
     selectHighlighted();
   }
   if(g === "fist"){
-    const active = document.querySelector(".tab.active");
-    if(active) active.click();
+    if(playerMode){
+      closePlayer();
+    } else {
+      const active = document.querySelector(".tab.active");
+      if(active) active.click();
+    }
+  }
+});
+
+/* Initial load */
+(async ()=>{
+  await loadQuery("movies OR documentaries OR music videos OR trailers", 50);
+})();
+  if(g === "swipe_left"){
+    const tabsArr = [...document.querySelectorAll(".tab")];
+    let i = tabsArr.findIndex(t=>t.classList.contains("active"));
+    tabsArr[(i-1+tabsArr.length) % tabsArr.length].click();
+  }
+
+  if(g === "swipe_up"){
+    moveHighlight(-1);
+  }
+
+  if(g === "swipe_down"){
+    moveHighlight(1);
+  }
+
+  if(g === "pinch"){
+    selectHighlighted();
+  }
+
+  if(g === "fist"){
+    if(playerMode){
+      closePlayer();
+    } else {
+      const active = document.querySelector(".tab.active");
+      if(active) active.click();
+    }
   }
 });
 
