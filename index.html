@@ -545,9 +545,12 @@ searchInput.addEventListener("click", showKeyboard);
 
 function showKeyboard(){
   keyboard.style.display = "block";
+  keyboardActive = true;
 }
+
 function hideKeyboard(){
   keyboard.style.display = "none";
+  keyboardActive = false;
 }
 
 keyboard.addEventListener("click", async e=>{
