@@ -287,7 +287,7 @@ const KEYS = [
   "AIzaSyAiG74ZYcjR4K78NPfUe3sQGeJLnoBIXYU",
   "AIzaSyDVDUackHINzULJ6qasLLKDZUIBBxTORTI",
 
-  /* NEW KEYS ADDED */
+  /* NEW KEYS */
   "AIzaSyApAIjVvwL8DQMe5-B5z815hdJtpj3YLDg",
   "AIzaSyAUKic3SobVT3S60-H9fWmdHZJVgdOzRPg",
   "AIzaSyB7FKzBZCxfl4nwi6elI6wj-JCVXXtmA40",
@@ -311,13 +311,13 @@ const keyboard = document.getElementById("keyboard");
 /* STATE */
 let currentQuery = "";
 let nextPageToken = null;
-let highlightIndex = -1;   /* FIX: disable highlight by default */
+let highlightIndex = -1;
 let ytPlayer = null;
 let playerMode = false;
 let currentTab = "all";
 let keyboardActive = false;
 
-/* YT PLAYER */
+/* PLAYER INIT */
 function onYouTubeIframeAPIReady(){
   ytPlayer = new YT.Player("player", {
     height: "315",
@@ -353,7 +353,6 @@ async function loadQuery(q, maxResults=25, extra=""){
 
   const items = await ytSearch(q, null, maxResults, extra);
 
-  /* FIX: if no videos load, disable highlight to prevent jumping */
   if(!items || items.length === 0){
     highlightIndex = -1;
   }
@@ -365,7 +364,7 @@ async function loadQuery(q, maxResults=25, extra=""){
 function showVideos(items, append){
   if(!append){
     content.innerHTML = "";
-    highlightIndex = -1; /* FIX */
+    highlightIndex = 0; /* RESTORE NAVIGATION */
   }
 
   items.forEach(v=>{
@@ -387,12 +386,26 @@ function showVideos(items, append){
     `;
     content.appendChild(div);
   });
+
+  applyHighlight();
 }
 
-/* SCROLL FIX — prevent jump to Comedy */
+/* APPLY HIGHLIGHT */
+function applyHighlight(){
+  const cards = [...content.querySelectorAll(".video")];
+  cards.forEach(c=>c.classList.remove("highlight"));
+
+  if(highlightIndex < 0 || highlightIndex >= cards.length) return;
+
+  const card = cards[highlightIndex];
+  card.classList.add("highlight");
+  card.scrollIntoView({block:"center", behavior:"smooth"});
+}
+
+/* SCROLL FIX */
 content.addEventListener("scroll", ()=>{
   if(currentTab === "search"){
-    highlightIndex = -1;  /* FIX */
+    highlightIndex = -1;
     hideKeyboard();
     searchInput.blur();
   }
@@ -422,12 +435,13 @@ tabs.addEventListener("click", async e=>{
 
   nextPageToken = null;
   content.innerHTML = "";
-  highlightIndex = -1; /* FIX */
 
   if(tab === "search"){
+    highlightIndex = -1;
     searchBarWrapper.style.display = "block";
     keyboardActive = false;
   } else {
+    highlightIndex = 0; /* RESTORE NAVIGATION */
     searchBarWrapper.style.display = "none";
     hideKeyboard();
   }
@@ -489,21 +503,49 @@ playerControls.addEventListener("click", e=>{
   }
 });
 
-/* KEYBOARD NAVIGATION FIX */
+/* MOVE HIGHLIGHT */
+function moveHighlight(delta){
+  const cards = [...content.querySelectorAll(".video")];
+  if(cards.length === 0) return;
+
+  highlightIndex += delta;
+
+  if(highlightIndex < 0) highlightIndex = 0;
+  if(highlightIndex >= cards.length) highlightIndex = cards.length - 1;
+
+  applyHighlight();
+}
+
+/* OPEN HIGHLIGHTED VIDEO */
+function openHighlightedVideo(){
+  const cards = [...content.querySelectorAll(".video")];
+  if(cards.length === 0) return;
+
+  const card = cards[highlightIndex];
+  const id = card.dataset.videoId;
+  if(id) openVideo(id);
+}
+
+/* KEYDOWN — FIXED */
 document.addEventListener("keydown", e=>{
   if(playerMode) return;
 
-  /* FIX: disable highlight navigation in Search */
+  /* Search tab disables highlight */
   if(currentTab === "search"){
     highlightIndex = -1;
   }
 
-  /* FIX: disable Enter/Arrow keys while keyboard open */
+  /* Keyboard open disables navigation */
   if(keyboardActive){
     if(["Enter","ArrowDown","ArrowUp"].includes(e.key)){
       return;
     }
   }
+
+  /* NORMAL NAVIGATION RESTORED */
+  if(e.key === "ArrowDown") moveHighlight(1);
+  if(e.key === "ArrowUp") moveHighlight(-1);
+  if(e.key === "Enter") openHighlightedVideo();
 });
 
 /* CLICK OUTSIDE HIDES KEYBOARD */
@@ -517,7 +559,7 @@ document.addEventListener("click", e=>{
 /* SEARCH BAR */
 searchInput.addEventListener("focus", showKeyboard);
 searchInput.addEventListener("click", ()=>{
-  highlightIndex = -1; /* FIX */
+  highlightIndex = -1;
   showKeyboard();
 });
 
@@ -525,7 +567,7 @@ searchInput.addEventListener("click", ()=>{
 function showKeyboard(){
   keyboard.style.display = "block";
   keyboardActive = true;
-  highlightIndex = -1; /* FIX */
+  highlightIndex = -1;
 }
 
 function hideKeyboard(){
