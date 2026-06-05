@@ -1,284 +1,3 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>ViewTube – Fullscreen Player + Search</title>
-
-<style>
-  html, body {
-    margin: 0;
-    padding: 0;
-    background: #000;
-    width: 100%;
-    height: 100%;
-    font-family: system-ui, sans-serif;
-    color: #fff;
-  }
-
-  #root {
-    width: 600px;
-    height: 600px;
-    position: relative;
-    overflow: hidden;
-  }
-
-  /* HEADER */
-  .banner {
-    margin: 10px;
-    padding: 10px 14px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: rgba(0,0,0,0.6);
-    border-radius: 12px;
-  }
-
-  .yt {
-    width: 26px;
-    height: 26px;
-    background: #ff0000;
-    border-radius: 6px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-
-  .yt::before {
-    content: "";
-    border-left: 8px solid white;
-    border-top: 5px solid transparent;
-    border-bottom: 5px solid transparent;
-    margin-left: 2px;
-  }
-
-  /* TABS */
-  .tabs {
-    margin: 0 10px 10px 10px;
-    padding: 8px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    background: rgba(0,0,0,0.5);
-    border-radius: 999px;
-  }
-
-  .tab {
-    padding: 6px 12px;
-    border-radius: 999px;
-    background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.2);
-    font-size: 12px;
-    cursor: pointer;
-  }
-
-  .tab.active {
-    background: #ff0000;
-    border-color: #ff0000;
-  }
-
-  /* CONTENT LIST */
-  .content {
-    margin: 0 10px 10px 10px;
-    padding: 10px;
-    height: 380px;
-    overflow-y: auto;
-    background: rgba(0,0,0,0.4);
-    border-radius: 12px;
-  }
-
-  .video {
-    display: flex;
-    gap: 10px;
-    padding: 8px;
-    margin-bottom: 10px;
-    border-radius: 10px;
-    background: rgba(0,0,0,0.7);
-    cursor: pointer;
-  }
-
-  .thumb {
-    width: 100px;
-    height: 56px;
-    border-radius: 8px;
-    overflow: hidden;
-  }
-
-  .thumb img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-
-  .video.highlight {
-    border: 2px solid #ff0000;
-  }
-
-  /* SEARCH BAR */
-  #search-bar-wrapper {
-    margin: 0 10px 8px 10px;
-    display: none;
-  }
-
-  #search-input {
-    width: 100%;
-    padding: 8px 10px;
-    border-radius: 999px;
-    border: 1px solid rgba(255,255,255,0.4);
-    background: rgba(0,0,0,0.7);
-    color: #fff;
-    font-size: 14px;
-    outline: none;
-  }
-
-  /* FULLSCREEN PLAYER */
-  #player-screen {
-    position: absolute;
-    inset: 0;
-    background: #000;
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-  }
-
-  #player-container {
-    width: 560px;
-    height: 315px;
-    border-radius: 12px;
-    overflow: hidden;
-    background: #000;
-  }
-
-  #player-controls {
-    margin-top: 12px;
-    display: flex;
-    gap: 10px;
-  }
-
-  /* FIXED BUTTON VISIBILITY — WHITE TEXT + ICONS */
-  .player-btn {
-    padding: 6px 12px;
-    border-radius: 999px;
-    background: rgba(255,255,255,0.15);
-    border: 1px solid rgba(255,255,255,0.4);
-    font-size: 13px;
-    font-weight: 700;
-    color: #ffffff;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  /* FLOATING KEYBOARD */
-  #keyboard {
-    position: absolute;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 420px; /* compact */
-    padding: 8px;
-    background: rgba(0,0,0,0.85);
-    border-radius: 14px;
-    display: none;
-  }
-
-  .kb-row {
-    display: flex;
-    justify-content: center;
-    gap: 4px;
-    margin-bottom: 4px;
-  }
-
-  .kb-key {
-    min-width: 26px;
-    padding: 6px 8px;
-    border-radius: 10px; /* medium rounded */
-    background: rgba(255,255,255,0.12);
-    border: 1px solid rgba(255,255,255,0.35);
-    color: #fff;
-    font-size: 12px;
-    font-weight: 700; /* bold labels */
-    text-align: center;
-    cursor: pointer;
-    user-select: none;
-  }
-
-  .kb-key.wide {
-    min-width: 50px;
-  }
-
-  .kb-key.space {
-    min-width: 120px;
-  }
-</style>
-
-</head>
-<body>
-<div id="root">
-
-  <!-- MAIN UI -->
-  <div id="main-ui">
-    <div class="banner">
-      <div class="yt"></div>
-      <div style="font-size:18px;font-weight:700">ViewTube</div>
-    </div>
-
-    <div class="tabs" id="tabs">
-      <div class="tab active" data-tab="all">All</div>
-      <div class="tab" data-tab="shorts">Shorts</div>
-      <div class="tab" data-tab="news">News</div>
-      <div class="tab" data-tab="anime">Anime</div>
-      <div class="tab" data-tab="live">Live</div>
-      <div class="tab" data-tab="movies">Movies</div>
-      <div class="tab" data-tab="comedy">Comedy</div>
-      <div class="tab" data-tab="search">Search</div>
-    </div>
-
-    <div id="search-bar-wrapper">
-      <input id="search-input" type="text" placeholder="Search YouTube (US)" />
-    </div>
-
-    <div class="content" id="content"></div>
-  </div>
-
-  <!-- FULLSCREEN PLAYER -->
-  <div id="player-screen">
-    <div id="player-container">
-      <div id="player"></div>
-    </div>
-    <div id="player-controls">
-      <button class="player-btn" data-action="back10">⏪ Back 10s</button>
-      <button class="player-btn" data-action="playpause">⏯ Play/Pause</button>
-      <button class="player-btn" data-action="forward10">⏩ Forward 10s</button>
-      <button class="player-btn" data-action="goback">⬅ Go Back</button>
-    </div>
-  </div>
-
-  <!-- FLOATING KEYBOARD -->
-  <div id="keyboard">
-    <div class="kb-row">
-      <div class="kb-key">Q</div><div class="kb-key">W</div><div class="kb-key">E</div><div class="kb-key">R</div><div class="kb-key">T</div>
-      <div class="kb-key">Y</div><div class="kb-key">U</div><div class="kb-key">I</div><div class="kb-key">O</div><div class="kb-key">P</div>
-    </div>
-    <div class="kb-row">
-      <div class="kb-key">A</div><div class="kb-key">S</div><div class="kb-key">D</div><div class="kb-key">F</div><div class="kb-key">G</div>
-      <div class="kb-key">H</div><div class="kb-key">J</div><div class="kb-key">K</div><div class="kb-key">L</div>
-    </div>
-    <div class="kb-row">
-      <div class="kb-key">Z</div><div class="kb-key">X</div><div class="kb-key">C</div><div class="kb-key">V</div><div class="kb-key">B</div>
-      <div class="kb-key">N</div><div class="kb-key">M</div>
-      <div class="kb-key wide" data-special="backspace">⌫</div>
-    </div>
-    <div class="kb-row">
-      <div class="kb-key wide" data-special="clear">CLR</div>
-      <div class="kb-key space" data-special="space">SPACE</div>
-      <div class="kb-key wide" data-special="enter">ENTER</div>
-    </div>
-  </div>
-
-</div>
-
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
 
@@ -326,13 +45,11 @@ const keyboard = document.getElementById("keyboard");
 /* STATE */
 let currentQuery = "";
 let nextPageToken = null;
-let highlightIndex = -1;   /* FIX: nothing selected on startup */
+let highlightIndex = -1;
 let ytPlayer = null;
 let playerMode = false;
 let currentTab = "all";
 let keyboardActive = false;
-
-/* NEW FIX */
 let userHasNavigated = false;
 
 /* PLAYER INIT */
@@ -383,7 +100,6 @@ function showVideos(items, append){
   if(!append){
     content.innerHTML = "";
 
-    /* FIX: Only highlight AFTER user navigates */
     if(currentTab !== "search" && userHasNavigated){
       highlightIndex = 0;
     } else {
@@ -458,8 +174,6 @@ tabs.addEventListener("click", async e=>{
   currentTab = tab;
 
   nextPageToken = null;
-
-  /* FIX: prevent ANY auto‑highlight on tab switch */
   highlightIndex = -1;
   userHasNavigated = false;
   content.innerHTML = "";
@@ -474,14 +188,14 @@ tabs.addEventListener("click", async e=>{
 
   let q="", max=25, extra="";
 
-  /* REAL US TRENDING — NO SHORTS */
+  /* ⭐ FIXED — REAL US LONG VIDEOS */
   if(tab === "all"){
     q = "";
     max = 50;
-    extra = "chart=mostPopular&videoDuration=medium";
+    extra = "videoDuration=medium&order=viewCount";
   }
 
-  /* REAL US SHORTS ONLY */
+  /* ⭐ FIXED — REAL US SHORTS */
   if(tab === "shorts"){
     q = "";
     max = 50;
@@ -568,7 +282,7 @@ function openHighlightedVideo(){
 document.addEventListener("keydown", e=>{
   if(playerMode) return;
 
-  userHasNavigated = true; /* NEW FIX */
+  userHasNavigated = true;
 
   if(currentTab === "search"){
     highlightIndex = -1;
@@ -638,11 +352,11 @@ keyboard.addEventListener("click", async e=>{
   }
 });
 
-/* INITIAL LOAD — FIXED & TESTED */
+/* INITIAL LOAD */
 (async ()=>{
-  highlightIndex = -1;        /* FIX: nothing selected on startup */
-  userHasNavigated = false;   /* FIX: navigation not started yet */
-  await loadQuery("", 50, "chart=mostPopular&videoDuration=medium");
+  highlightIndex = -1;
+  userHasNavigated = false;
+  await loadQuery("", 50, "videoDuration=medium&order=viewCount");
 })();
 </script>
 
