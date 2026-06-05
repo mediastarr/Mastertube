@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>ViewTube – Fullscreen Player + Search</title>
+
 <style>
   html, body {
     margin: 0;
@@ -13,12 +14,15 @@
     font-family: system-ui, sans-serif;
     color: #fff;
   }
+
   #root {
     width: 600px;
     height: 600px;
     position: relative;
     overflow: hidden;
   }
+
+  /* HEADER */
   .banner {
     margin: 10px;
     padding: 10px 14px;
@@ -28,6 +32,7 @@
     background: rgba(0,0,0,0.6);
     border-radius: 12px;
   }
+
   .yt {
     width: 26px;
     height: 26px;
@@ -37,6 +42,7 @@
     justify-content: center;
     align-items: center;
   }
+
   .yt::before {
     content: "";
     border-left: 8px solid white;
@@ -44,6 +50,8 @@
     border-bottom: 5px solid transparent;
     margin-left: 2px;
   }
+
+  /* TABS */
   .tabs {
     margin: 0 10px 10px 10px;
     padding: 8px;
@@ -53,6 +61,7 @@
     background: rgba(0,0,0,0.5);
     border-radius: 999px;
   }
+
   .tab {
     padding: 6px 12px;
     border-radius: 999px;
@@ -61,10 +70,13 @@
     font-size: 12px;
     cursor: pointer;
   }
+
   .tab.active {
     background: #ff0000;
     border-color: #ff0000;
   }
+
+  /* CONTENT LIST */
   .content {
     margin: 0 10px 10px 10px;
     padding: 10px;
@@ -73,6 +85,7 @@
     background: rgba(0,0,0,0.4);
     border-radius: 12px;
   }
+
   .video {
     display: flex;
     gap: 10px;
@@ -82,17 +95,20 @@
     background: rgba(0,0,0,0.7);
     cursor: pointer;
   }
+
   .thumb {
     width: 100px;
     height: 56px;
     border-radius: 8px;
     overflow: hidden;
   }
+
   .thumb img {
     width: 100%;
     height: 100%;
     object-fit: cover;
   }
+
   .video.highlight {
     border: 2px solid #ff0000;
   }
@@ -102,6 +118,7 @@
     margin: 0 10px 8px 10px;
     display: none;
   }
+
   #search-input {
     width: 100%;
     padding: 8px 10px;
@@ -123,6 +140,7 @@
     align-items: center;
     justify-content: center;
   }
+
   #player-container {
     width: 560px;
     height: 315px;
@@ -130,18 +148,26 @@
     overflow: hidden;
     background: #000;
   }
+
   #player-controls {
     margin-top: 12px;
     display: flex;
     gap: 10px;
   }
+
+  /* FIXED BUTTON VISIBILITY — WHITE TEXT + ICONS */
   .player-btn {
     padding: 6px 12px;
     border-radius: 999px;
-    background: rgba(255,255,255,0.1);
-    border: 1px solid rgba(255,255,255,0.3);
-    font-size: 12px;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.4);
+    font-size: 13px;
+    font-weight: 700;
+    color: #ffffff;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
   }
 
   /* FLOATING KEYBOARD */
@@ -156,12 +182,14 @@
     border-radius: 14px;
     display: none;
   }
+
   .kb-row {
     display: flex;
     justify-content: center;
     gap: 4px;
     margin-bottom: 4px;
   }
+
   .kb-key {
     min-width: 26px;
     padding: 6px 8px;
@@ -175,13 +203,16 @@
     cursor: pointer;
     user-select: none;
   }
+
   .kb-key.wide {
     min-width: 50px;
   }
+
   .kb-key.space {
     min-width: 120px;
   }
 </style>
+
 </head>
 <body>
 <div id="root">
@@ -217,10 +248,10 @@
       <div id="player"></div>
     </div>
     <div id="player-controls">
-      <button class="player-btn" data-action="back10">-10s</button>
-      <button class="player-btn" data-action="playpause">Play/Pause</button>
-      <button class="player-btn" data-action="forward10">+10s</button>
-      <button class="player-btn" data-action="goback">Go Back</button>
+      <button class="player-btn" data-action="back10">⏪ Back 10s</button>
+      <button class="player-btn" data-action="playpause">⏯ Play/Pause</button>
+      <button class="player-btn" data-action="forward10">⏩ Forward 10s</button>
+      <button class="player-btn" data-action="goback">⬅ Go Back</button>
     </div>
   </div>
 
@@ -283,17 +314,19 @@ function onYouTubeIframeAPIReady(){
   });
 }
 
+/* ENFORCED US-ONLY SEARCH */
 async function ytSearch(q, pageToken=null, maxResults=25, extra=""){
   let base =
-    "https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&regionCode=US&relevanceLanguage=en&order=date&maxResults="
-    + maxResults +
+    "https://www.googleapis.com/youtube/v3/search?part=snippet&type=video" +
+    "&regionCode=US&relevanceLanguage=en&safeSearch=none" +
+    "&order=date&maxResults=" + maxResults +
     "&q=" + encodeURIComponent(q) +
     "&key=" + apiKey();
-  if(extra){
-    base += "&" + extra;
-  }
-  const url = pageToken ? base + "&pageToken=" + pageToken : base;
-  const r = await fetch(url);
+
+  if(extra) base += "&" + extra;
+  if(pageToken) base += "&pageToken=" + pageToken;
+
+  const r = await fetch(base);
   const j = await r.json();
   nextPageToken = j.nextPageToken || null;
   return j.items || [];
@@ -336,7 +369,7 @@ function showVideos(items, append){
 }
 
 function applyHighlight(){
-  const cards = Array.prototype.slice.call(content.querySelectorAll(".video"));
+  const cards = [...content.querySelectorAll(".video")];
   cards.forEach(c=>c.classList.remove("highlight"));
   if(cards.length === 0) return;
   if(highlightIndex < 0) highlightIndex = 0;
@@ -346,7 +379,12 @@ function applyHighlight(){
   card.scrollIntoView({block:"center", behavior:"smooth"});
 }
 
+/* FIX: Keyboard hides when scrolling search results */
 content.addEventListener("scroll", ()=>{
+  if(currentTab === "search"){
+    hideKeyboard();
+    searchInput.blur();
+  }
   if(content.scrollTop + content.clientHeight >= content.scrollHeight - 40){
     loadMore();
   }
@@ -369,6 +407,10 @@ tabs.addEventListener("click", async e=>{
   const tab = t.dataset.tab;
   currentTab = tab;
 
+  nextPageToken = null;
+  content.innerHTML = "";
+  highlightIndex = 0;
+
   if(tab === "search"){
     searchBarWrapper.style.display = "block";
   } else {
@@ -381,14 +423,14 @@ tabs.addEventListener("click", async e=>{
   let extra = "";
 
   if(tab === "all"){
-    q = "movies OR documentaries OR music videos OR trailers";
+    q = "US trending videos";
     max = 50;
-    extra = "videoDuration=medium"; // avoid shorts
+    extra = "videoDuration=medium"; /* NO SHORTS */
   }
   if(tab === "shorts"){
     q = "US shorts";
-    extra = "videoDuration=short";
     max = 50;
+    extra = "videoDuration=short"; /* ONLY SHORTS */
   }
   if(tab === "news"){
     q = "US news";
@@ -412,16 +454,16 @@ tabs.addEventListener("click", async e=>{
     q = "stand up comedy";
     max = 40;
   }
+
   if(tab !== "search"){
     await loadQuery(q, max, extra);
-  } else {
-    content.innerHTML = "";
-    highlightIndex = 0;
   }
 });
 
 /* FULLSCREEN PLAYER */
 function openVideo(id){
+  hideKeyboard();
+  searchInput.blur();
   playerMode = true;
   mainUI.style.display = "none";
   playerScreen.style.display = "flex";
@@ -458,9 +500,9 @@ playerControls.addEventListener("click", e=>{
   }
 });
 
-/* Keyboard navigation for video list */
+/* Keyboard navigation */
 function moveHighlight(delta){
-  const cards = Array.prototype.slice.call(content.querySelectorAll(".video"));
+  const cards = [...content.querySelectorAll(".video")];
   if(cards.length === 0) return;
   highlightIndex += delta;
   if(highlightIndex < 0) highlightIndex = 0;
@@ -469,7 +511,7 @@ function moveHighlight(delta){
 }
 
 function openHighlightedVideo(){
-  const cards = Array.prototype.slice.call(content.querySelectorAll(".video"));
+  const cards = [...content.querySelectorAll(".video")];
   if(cards.length === 0) return;
   const card = cards[highlightIndex];
   const id = card.dataset.videoId;
@@ -478,28 +520,28 @@ function openHighlightedVideo(){
 
 document.addEventListener("keydown", e=>{
   if(playerMode) return;
-  if(e.key === "ArrowDown"){
-    moveHighlight(1);
+
+  if(currentTab === "search"){
+    hideKeyboard();
+    searchInput.blur();
   }
-  if(e.key === "ArrowUp"){
-    moveHighlight(-1);
-  }
-  if(e.key === "Enter"){
-    if(currentTab === "search" && keyboard.style.display === "block"){
-      // Enter from keyboard handled separately
-      return;
-    }
-    openHighlightedVideo();
+
+  if(e.key === "ArrowDown") moveHighlight(1);
+  if(e.key === "ArrowUp") moveHighlight(-1);
+  if(e.key === "Enter") openHighlightedVideo();
+});
+
+/* Hide keyboard when clicking outside */
+document.addEventListener("click", e=>{
+  if(!keyboard.contains(e.target) && e.target !== searchInput){
+    hideKeyboard();
+    searchInput.blur();
   }
 });
 
 /* SEARCH TAB + FLOATING KEYBOARD */
-searchInput.addEventListener("focus", ()=>{
-  showKeyboard();
-});
-searchInput.addEventListener("click", ()=>{
-  showKeyboard();
-});
+searchInput.addEventListener("focus", showKeyboard);
+searchInput.addEventListener("click", showKeyboard);
 
 function showKeyboard(){
   keyboard.style.display = "block";
@@ -525,6 +567,7 @@ keyboard.addEventListener("click", async e=>{
     }
     if(special === "enter"){
       hideKeyboard();
+      searchInput.blur();
       const q = searchInput.value.trim();
       if(q){
         currentQuery = q;
@@ -541,8 +584,9 @@ keyboard.addEventListener("click", async e=>{
 
 /* Initial load */
 (async ()=>{
-  await loadQuery("movies OR documentaries OR music videos OR trailers", 50, "videoDuration=medium");
+  await loadQuery("US trending videos", 50, "videoDuration=medium");
 })();
 </script>
+
 </body>
 </html>
