@@ -286,13 +286,28 @@
 const KEYS = [
   "AIzaSyAiG74ZYcjR4K78NPfUe3sQGeJLnoBIXYU",
   "AIzaSyDVDUackHINzULJ6qasLLKDZUIBBxTORTI",
-
-  /* NEW KEYS */
   "AIzaSyApAIjVvwL8DQMe5-B5z815hdJtpj3YLDg",
   "AIzaSyAUKic3SobVT3S60-H9fWmdHZJVgdOzRPg",
   "AIzaSyB7FKzBZCxfl4nwi6elI6wj-JCVXXtmA40",
   "AIzaSyBTUdLTpyYG0-fuOUP1OkeX9tf06S-rVkY",
-  "AIzaSyAJbkJYrguKWmBl7Vyd6ObPXZf0zu8-p3E"
+  "AIzaSyAJbkJYrguKWmBl7Vyd6ObPXZf0zu8-p3E",
+
+  /* NEW 16 KEYS */
+  "AIzaSyCz8qs_I_hbgfLZXZj9QMX1sO74hF5k84Q",
+  "AIzaSyCAM-BEIynJUz3dkhRWOCrs3cdh5KJbbro",
+  "AIzaSyCQsQnRJB6KgGKnSpGD66v6HNwikLUdFQ8",
+  "AIzaSyCb6lnHEoOXWd0TWfJK71T_mOiM8O2kfrI",
+  "AIzaSyC6qu4BiEbQJ1uoy49GcvAy9_QxHKUE6Go",
+  "AIzaSyAtk1KIeZ9kFLNfhrqgNhmPzU4VJqTPeR8",
+  "AIzaSyCkq9rnLzqpfnr-LHUg-1AuIDb-GkWukPM",
+  "AIzaSyCzjoJptOBNzhkaxnNrkDZRP4SzsmTgTKQ",
+  "AIzaSyBt2YQ-X408_Ep3EYV4B70SgXeeADe_L08",
+  "AIzaSyCiEMfafGEgqpZ94b9ENjAg0UaIku0NRE8",
+  "AIzaSyA0prh1a0eN4fZ6MA_eB4MPJ0UH4LPsIAc",
+  "AIzaSyDiisGuMjbilWyxKAFpTPu4am8d5yQagJI",
+  "AIzaSyDI3sl7QYBrXOgAwCyjwJ23pV1nbjUMVL0",
+  "AIzaSyD_Jfk_5wuEdVhDEsQX9uy3BW2Fio7xe0s",
+  "AIzaSyCpAzwCaG2I8gEusAsDKnkoxVMdkPg1Vpk"
 ];
 
 let keyIndex = 0;
@@ -364,7 +379,7 @@ async function loadQuery(q, maxResults=25, extra=""){
 function showVideos(items, append){
   if(!append){
     content.innerHTML = "";
-    highlightIndex = 0; /* RESTORE NAVIGATION */
+    highlightIndex = 0;
   }
 
   items.forEach(v=>{
@@ -434,31 +449,35 @@ tabs.addEventListener("click", async e=>{
   currentTab = tab;
 
   nextPageToken = null;
-  content.innerHTML = "";
 
+  /* FIX: prevent Search tab auto‑opening a video */
   if(tab === "search"){
     highlightIndex = -1;
+    content.innerHTML = "";
     searchBarWrapper.style.display = "block";
     keyboardActive = false;
   } else {
-    highlightIndex = 0; /* RESTORE NAVIGATION */
+    highlightIndex = 0;
+    content.innerHTML = "";
     searchBarWrapper.style.display = "none";
     hideKeyboard();
   }
 
   let q="", max=25, extra="";
 
+  /* REAL US TRENDING — NO SHORTS */
   if(tab === "all"){
-    q = ""; // empty query = real trending
+    q = "";
     max = 50;
     extra = "chart=mostPopular&videoDuration=medium";
-}
+  }
 
+  /* REAL US SHORTS ONLY */
   if(tab === "shorts"){
-    q = ""; 
+    q = "";
     max = 50;
     extra = "videoDuration=short&order=date";
-}
+  }
 
   if(tab === "news"){ q="US news"; max=40; }
   if(tab === "anime"){ q="anime english dub"; max=40; }
@@ -540,19 +559,16 @@ function openHighlightedVideo(){
 document.addEventListener("keydown", e=>{
   if(playerMode) return;
 
-  /* Search tab disables highlight */
   if(currentTab === "search"){
     highlightIndex = -1;
   }
 
-  /* Keyboard open disables navigation */
   if(keyboardActive){
     if(["Enter","ArrowDown","ArrowUp"].includes(e.key)){
       return;
     }
   }
 
-  /* NORMAL NAVIGATION RESTORED */
   if(e.key === "ArrowDown") moveHighlight(1);
   if(e.key === "ArrowUp") moveHighlight(-1);
   if(e.key === "Enter") openHighlightedVideo();
@@ -619,3 +635,4 @@ keyboard.addEventListener("click", async e=>{
 
 </body>
 </html>
+
