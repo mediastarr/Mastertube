@@ -184,10 +184,10 @@ html, body {
       <div id="player"></div>
     </div>
     <div id="player-controls">
-      <button class="player-btn" data-action="back10">⏪ Back 10s</button>
-      <button class="player-btn" data-action="playpause">⏯ Play/Pause</button>
-      <button class="player-btn" data-action="forward10">⏩ Forward 10s</button>
-      <button class="player-btn" data-action="goback">⬅ Go Back</button>
+      <button class="player-btn" data-action="back10">⏪ Back 10 s</button>
+      <button class="player-btn" data-action="playpause">⏯ Play/Pause</button>
+      <button class="player-btn" data-action="forward10">⏩ Forward 10 s</button>
+      <button class="player-btn" data-action="goback">⬅ Go Back</button>
     </div>
   </div>
 
@@ -213,8 +213,8 @@ html, body {
     </div>
   </div>
 
-</div>
-  
+</div> <!-- closes keyboard -->
+</div> <!-- closes root -->
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
 
@@ -403,14 +403,12 @@ tabs.addEventListener("click", async e=>{
 
   let q="", max=25, extra="";
 
-  /* ⭐ FIXED — REAL US LONG VIDEOS */
   if(tab === "all"){
     q = "";
     max = 50;
     extra = "videoDuration=medium&order=viewCount";
   }
 
-  /* ⭐ FIXED — REAL US SHORTS */
   if(tab === "shorts"){
     q = "";
     max = 50;
