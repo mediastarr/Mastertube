@@ -324,11 +324,19 @@ async function loadQuery(q, maxResults=25, extra=""){
 function showVideos(items, append){
   if(!append){
     content.innerHTML = "";
-    highlightIndex = -1;  /* ⭐ FIXED: no auto‑highlight on tab switch */
+    highlightIndex = -1;
   }
 
   items.forEach(v=>{
-    const id = v.id.videoId || v.id;
+    // ⭐ SAFE VIDEO ID EXTRACTION
+    let id = null;
+
+    if (v.id?.videoId) id = v.id.videoId;
+    else if (typeof v.id === "string") id = v.id;
+
+    // Skip invalid items
+    if (!id) return;
+
     const sn = v.snippet;
     const thumb = sn.thumbnails?.medium?.url || "";
 
@@ -349,6 +357,7 @@ function showVideos(items, append){
 
   applyHighlight();
 }
+
 
 /* APPLY HIGHLIGHT */
 function applyHighlight(){
