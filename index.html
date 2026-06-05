@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>ViewTube – Meta Ray-Ban Display</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: transparent;
+      width: 100%;
+      height: 100%;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #ffffff;
+    }
+
+    /* 600×600 Ray-Ban display container */
+    #display-root {
+      width: 600px;
+      height: 600px;
+      box-sizing: border-box;
+      background: transparent; /* dark areas fully transparent */
+      position: relative;
+      overflow: hidden;
+    }
+
+    .ui-frame {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      pointer-events: auto;
+    }
+
+    /* Banner: YouTube logo + ViewTube */
+    .banner {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      margin: 8px;
+      border-radius: 12px;
+      background: rgba(0, 0, 0, 0.45);
+      backdrop-filter: blur(10px);
+    }
+
+    .yt-logo {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      background: #ff0000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .yt-logo::before {
+      content: "";
+      width: 10px;
+      height: 10px;
+      border-left: 6px solid #fff;
+      border-top: 3px solid transparent;
+      border-bottom: 3px solid transparent;
+      margin-left: 2px;
+    }
+
+    .banner-title {
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    /* Tabs bar */
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      padding: 6px 8px;
+      background: rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(8px);
+      border-radius: 12px;
+      margin: 0 8px 8px 8px;
+    }
+
+    .tab {
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      cursor: pointer;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      background: rgba(0, 0, 0, 0.4);
+      color: #fff;
+      white-space: nowrap;
+    }
+
+    .tab.active {
+      background: #ff0000;
+      border-color: #ff0000;
+      color: #fff;
+      font-weight: 600;
+    }
+
+    /* Content area */
+    .content {
+      flex: 1;
+      margin: 0 8px 8px 8px;
+      padding: 8px;
+      border-radius: 12px;
+      background: rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(8px);
+      overflow-y: auto;
+    }
+
+    .video-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .video-item {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      padding: 6px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.05);
+      cursor: pointer;
+    }
+
+    .video-thumb {
+      width: 80px;
+      height: 45px;
+      border-radius: 6px;
+      background: #222;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+
+    .video-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .video-meta {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .video-title {
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 1.3;
+      margin-bottom: 2px;
+    }
+
+    .video-channel {
+      font-size: 10px;
+      opacity: 0.8;
+    }
+
+    .status-bar {
+      font-size: 10px;
+      opacity: 0.8;
+      margin-bottom: 4px;
+    }
+
+    .error {
+      color: #ff8080;
+      font-size: 11px;
+      margin-top: 4px;
+    }
+
+    .content::-webkit-scrollbar {
+      width: 4px;
+    }
+    .content::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.3);
+      border-radius: 999px;
+    }
+  </style>
+</head>
+<body>
+  <div id="display-root">
+    <div class="ui-frame">
+      <div class="banner">
+        <div class="yt-logo"></div>
+        <div class="banner-title">ViewTube</div>
+      </div>
+
+      <div class="tabs" id="tabs">
+        <div class="tab active" data-tab="all">All</div>
+        <div class="tab" data-tab="home">Home</div>
+        <div class="tab" data-tab="shorts">Shorts</div>
+        <div class="tab" data-tab="haiti">Haiti</div>
+        <div class="tab" data-tab="news">News</div>
+        <div class="tab" data-tab="anime">Anime</div>
+        <div class="tab" data-tab="live">Live</div>
+        <div class="tab" data-tab="movies">Movies</div>
+        <div class="tab" data-tab="comedy">Comedy</div>
+      </div>
+
+      <div class="content">
+        <div class="status-bar" id="status">Loading All (US trending mix)…</div>
+        <div class="video-list" id="video-list"></div>
+        <div class="error" id="error"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /************************************************************
+     * 1. API KEYS – ROTATE THROUGH THE KEYS YOU PROVIDED
+     ************************************************************/
+    const API_KEYS = [
+      "AIzaSyBuMhjmMoSRNPhqsIY0do0XfSdtvQtbGVU",
+      "AIzaSyDvWdTJh3W7fUMTGiw0Vwk4NX0g9TJ-1dI",
+      "AIzaSyBjGdZA2xSTXze09adu-91Udd7Fry1r_CA",
+      "AIzaSyBC_6U8XDHAnNHnK02kYM6dp7hcpdwhVpY",
+      "AIzaSyB7Da8tJVUJ03m4ooQQiBtZn0rdi-eqfd4",
+      "AIzaSyBH5vi_-v3Yexiqi1L6L1axC231gJVegrSw",
+      "AIzaSyDdiXCYO5Yg1qJA5weiuoDyGgPvcdA-b54",
+      "AIzaSyAhwq3qcm3Wy_npQ2e6IkL3qsv-30eyhWs",
+      "AIzaSyD01LrwaaySxaJuK0duMz4fDKfRsVbx7G4",
+      "AIzaSyC2bXABgSnSCpaUfb-miRbBkx51fssHCuQ",
+      "AIzaSyCxoe0ZerRB60jinGQD_vxDLIEo21p2cIk",
+      "AIzaSyBWMKdH3CrxH2IJUXI07Yqotu0nayaDiUk",
+      "AIzaSyA6V662DW4XObukopNd_BYiP_UvVONF3-A",
+      "AIzaSyCY_w9kwnF8A1r8pdLFTvMEZTkCQjkfdxg",
+      "AIzaSyBuN6I80IhFka20vAoEvV2pQ17_TVMsSPc",
+      "AIzaSyBdHC_1VG3U4p6YEZf1A4gS-9jajNXesyo",
+      "AIzaSyB0EQqEbJ3qA3bI9Ne21Jvz2ou8F_MrHqA",
+      "AIzaSyDPnTd1Xmt1Km1y33UzMPI_6Cq7BZSETIs",
+      "AIzaSyBEV39C0nbK5p6nGCeAV5C4GV-_Yvh-0rk",
+      "AIzaSyCU2soYE7PzkEuZKVhT53D3KoGq3wuXDVA",
+      "AIzaSyDRn50qJu2szNEXK6CY_yLdVB9ZJn7gF88",
+      "AIzaSyAc1TLewGvgtyhbZxR1-5ZZJ4C_9gIRn2Q",
+      "AIzaSyDG7T1K4-kn2OFa_0NqjJ7yhveeXJ2L0W4",
+      "AIzaSyBeTaR7Y9AgmkDAo1zojPAVqTJpeToX7qs",
+      "AIzaSyCVHmrDShpvWCskGAM-j060hCXVrV69ro0"
+    ];
+
+    let keyIndex = 0;
+    function getApiKey() {
+      const key = API_KEYS[keyIndex % API_KEYS.length];
+      keyIndex++;
+      return key;
+    }
+
+    /************************************************************
+     * 2. Meta wearables + EMG wristband – PLACEHOLDER HOOKS
+     ************************************************************/
+    const MetaWearables = {
+      init() {
+        // TODO: Initialize Meta Ray-Ban / Meta wearables web toolkit
+        // Example:
+        // metaWear.initDisplay({ width: 600, height: 600, transparent: true });
+        console.log("MetaWearables.init() – placeholder");
+      },
+      onGesture(callback) {
+        // TODO: Subscribe to EMG wristband gestures
+        // Example:
+        // emgBand.on("gesture", callback);
+        console.log("MetaWearables.onGesture() – placeholder");
+      }
+    };
+
+    MetaWearables.init();
+    MetaWearables.onGesture(gesture => {
+      // Example: switch tabs based on gesture
+      console.log("EMG gesture:", gesture);
+      // You can map gestures to tabs here.
+    });
+
+    /************************************************************
+     * 3. YouTube Data API helpers
+     ************************************************************/
+    const statusEl = document.getElementById("status");
+    const errorEl = document.getElementById("error");
+    const listEl = document.getElementById("video-list");
+
+    const MAX_RESULTS = 50;
+    const REGION_US = "US";
+    const LANGUAGE_EN = "en";
+
+    function setStatus(text) {
+      statusEl.textContent = text;
+    }
+
+    function setError(text) {
+      errorEl.textContent = text || "";
+    }
+
+    function renderVideos(items) {
+      listEl.innerHTML = "";
+      items.forEach(item => {
+        const videoId = item.id.videoId || item.id;
+        const snippet = item.snippet || {};
+        const thumb =
+          (snippet.thumbnails && (snippet.thumbnails.medium || snippet.thumbnails.default)) || null;
+
+        const el = document.createElement("div");
+        el.className = "video-item";
+        el.onclick = () => {
+          // Open in YouTube – you can swap this for an in‑display player
+          window.open(`https://www.youtube.com/watch?v=${videoId}`, "_blank");
+        };
+
+        const thumbEl = document.createElement("div");
+        thumbEl.className = "video-thumb";
+        if (thumb && thumb.url) {
+          const img = document.createElement("img");
+          img.src = thumb.url;
+          thumbEl.appendChild(img);
+        }
+
+        const metaEl = document.createElement("div");
+        metaEl.className = "video-meta";
+
+        const titleEl = document.createElement("div");
+        titleEl.className = "video-title";
+        titleEl.textContent = snippet.title || "Untitled";
+
+        const channelEl = document.createElement("div");
+        channelEl.className = "video-channel";
+        channelEl.textContent = snippet.channelTitle || "";
+
+        metaEl.appendChild(titleEl);
+        metaEl.appendChild(channelEl);
+
+        el.appendChild(thumbEl);
+        el.appendChild(metaEl);
+        listEl.appendChild(el);
+      });
+    }
+
+    async function ytFetch(url) {
+      setError("");
+      try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        const data = await res.json();
+        return data;
+      } catch (e) {
+        setError("YouTube API error: " + e.message);
+        console.error(e);
+        return null;
+      }
+    }
+
+    /************************************************************
+     * 4. Tab-specific loaders
+     ************************************************************/
+    async function loadAll() {
+      setStatus("Loading All – US trending mix (mostPopular)...");
+      const key = getApiKey();
+      const url =
+        "https://www.googleapis.com/youtube/v3/videos" +
+        "?part=snippet" +
+        "&chart=mostPopular" +
+        "&regionCode=" + REGION_US +
+        "&maxResults=" + MAX_RESULTS +
+        "&hl=" + LANGUAGE_EN +
+        "&key=" + key;
+      const data = await ytFetch(url);
+      if (data && data.items) renderVideos(data.items);
+    }
+
+    async function loadHome() {
+      // Same as All for now – US mostPopular mix
+      setStatus("Loading Home – US mix (mostPopular)...");
+      await loadAll();
+    }
+
+    async function loadShorts() {
+      setStatus("Loading Shorts – latest US shorts (English)...");
+      const key = getApiKey();
+      const url =
+        "https://www.googleapis.com/youtube/v3/search" +
+        "?part=snippet" +
+        "&type=video" +
+        "&videoDuration=short" +
+        "&order=date" +
+        "&regionCode=" + REGION_US +
+        "&relevanceLanguage=" + LANGUAGE_EN +
+        "&maxResults=" + MAX_RESULTS +
+        "&key=" + key;
+      const data = await ytFetch(url);
+      if (data && data.items) renderVideos(data.items);
+    }
+
+    async function loadHaiti() {
+      setStatus("Loading Haiti – 'Haiti movie' + Haiti videos...");
+      const key = getApiKey();
+      const url =
+        "https://www.googleapis.com/youtube/v3/search" +
+        "?part=snippet" +
+        "&type=video" +
+        "&q=" + encodeURIComponent("Haiti movie OR Haiti") +
+        "&order=date" +
+        "&regionCode=" + REGION_US +
+        "&relevanceLanguage=" + LANGUAGE_EN +
+        "&maxResults=" + MAX_RESULTS +
+        "&key=" + key;
+      const data = await ytFetch(url);
+      if (data && data.items) renderVideos(data.items);
+    }
+
+    async function loadNews() {
+      setStatus("Loading News – latest US news...");
+      const key = getApiKey();
+      const url =
+        "https://www.googleapis.com/youtube/v3/search" +
+        "?part=snippet" +
+        "&type=video" +
+        "&q=" + encodeURIComponent("US news") +
+        "&order=date" +
+        "&regionCode=" + REGION_US +
+        "&relevanceLanguage=" + LANGUAGE_EN +
+        "&maxResults=" + MAX_RESULTS +
+        "&key=" + key;
+      const data = await ytFetch(url);
+      if (data && data.items) renderVideos(data.items);
+    }
+
+    async function loadAnime() {
+      setStatus("Loading Anime – US anime, English dub...");
+      const key = getApiKey();
+      const url =
+        "https://www.googleapis.com/youtube/v3/search" +
+        "?part=snippet" +
+        "&type=video" +
+        "&q=" + encodeURIComponent("anime English dub") +
+        "&order=date" +
+        "&regionCode=" + REGION_US +
+        "&relevanceLanguage=" + LANGUAGE_EN +
+        "&maxResults=" + MAX_RESULTS +
+        "&key=" + key;
+      const data = await ytFetch(url);
+      if (data && data.items) renderVideos(data.items);
+    }
+
+    async function loadLive() {
+      setStatus("Loading Live – US live streams right now...");
+      const key = getApiKey();
+      const url =
+        "https://www.googleapis.com/youtube/v3/search" +
+        "?part=snippet" +
+        "&type=video" +
+        "&eventType=live" +
+        "&order=date" +
+        "&regionCode=" + REGION_US +
+        "&relevanceLanguage=" + LANGUAGE_EN +
+        "&maxResults=" + MAX_RESULTS +
+        "&key=" + key;
+      const data = await ytFetch(url);
+      if (data && data.items) renderVideos(data.items);
+    }
+
+    async function loadMovies() {
+      setStatus("Loading Movies – US free full movies (long duration)...");
+      const key = getApiKey();
+      const url =
+        "https://www.googleapis.com/youtube/v3/search" +
+        "?part=snippet" +
+        "&type=video" +
+        "&videoDuration=long" +
+        "&q=" + encodeURIComponent("full movie") +
+        "&order=relevance" +
+        "&regionCode=" + REGION_US +
+        "&relevanceLanguage=" + LANGUAGE_EN +
+        "&maxResults=" + MAX_RESULTS +
+        "&key=" + key;
+      const data = await ytFetch(url);
+      if (data && data.items) renderVideos(data.items);
+    }
+
+    async function loadComedy() {
+      setStatus("Loading Comedy – US stand-up comedy...");
+      const key = getApiKey();
+      const url =
+        "https://www.googleapis.com/youtube/v3/search" +
+        "?part=snippet" +
+        "&type=video" +
+        "&q=" + encodeURIComponent("stand up comedy") +
+        "&order=relevance" +
+        "&regionCode=" + REGION_US +
+        "&relevanceLanguage=" + LANGUAGE_EN +
+        "&maxResults=" + MAX_RESULTS +
+        "&key=" + key;
+      const data = await ytFetch(url);
+      if (data && data.items) renderVideos(data.items);
+    }
+
+    const TAB_LOADERS = {
+      all: loadAll,
+      home: loadHome,
+      shorts: loadShorts,
+      haiti: loadHaiti,
+      news: loadNews,
+      anime: loadAnime,
+      live: loadLive,
+      movies: loadMovies,
+      comedy: loadComedy
+    };
+
+    /************************************************************
+     * 5. Tab switching – refresh on every toggle
+     ************************************************************/
+    const tabsEl = document.getElementById("tabs");
+    tabsEl.addEventListener("click", async (e) => {
+      const tabEl = e.target.closest(".tab");
+      if (!tabEl) return;
+      const tab = tabEl.dataset.tab;
+      document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+      tabEl.classList.add("active");
+
+      const loader = TAB_LOADERS[tab];
+      if (loader) {
+        listEl.innerHTML = "";
+        await loader();
+      }
+    });
+
+    // Initial load
+    loadAll();
+  </script>
+</body>
+</html>
