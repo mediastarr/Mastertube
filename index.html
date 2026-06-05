@@ -375,12 +375,30 @@ content.addEventListener("scroll", ()=>{
   }
 });
 
-/* LOAD MORE */
-async function loadMore(){
-  if(!nextPageToken) return;
-  const items = await ytSearch(currentQuery, nextPageToken, 25);
-  showVideos(items, true);
+/* US‑ONLY SEARCH — FIXED */
+async function ytSearch(q, pageToken = null, maxResults = 25, extra = "") {
+
+  // ⭐ FIX: YouTube returns ZERO results when q = ""  
+  // So we give it a safe default query.
+  const query = q && q.trim() ? q : "popular videos";
+
+  let base =
+    "https://www.googleapis.com/youtube/v3/search?part=snippet&type=video" +
+    "&regionCode=US&relevanceLanguage=en&safeSearch=none" +
+    "&maxResults=" + maxResults +
+    "&q=" + encodeURIComponent(query) +
+    "&key=" + apiKey();
+
+  if (extra) base += "&" + extra;
+  if (pageToken) base += "&pageToken=" + pageToken;
+
+  const r = await fetch(base);
+  const j = await r.json();
+
+  nextPageToken = j.nextPageToken || null;
+  return j.items || [];
 }
+
 
 /* TAB SWITCHING — FIXED */
 tabs.addEventListener("click", async e=>{
