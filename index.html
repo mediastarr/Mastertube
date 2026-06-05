@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>ViewTube – Stealth Glass Edition</title>
+<title>ViewTube – Stealth Glass + Keyboard</title>
 
 <style>
   html, body {
@@ -30,7 +30,6 @@
     flex-direction: column;
   }
 
-  /* D3 Stealth Transparent Glass */
   .glass {
     background: rgba(0, 0, 0, 0.28);
     backdrop-filter: blur(14px) saturate(160%);
@@ -41,7 +40,6 @@
     color: #fff;
   }
 
-  /* Banner */
   .banner {
     display: flex;
     align-items: center;
@@ -77,7 +75,6 @@
     letter-spacing: 0.3px;
   }
 
-  /* Tabs */
   .tabs {
     display: flex;
     flex-wrap: wrap;
@@ -108,7 +105,6 @@
     font-weight: 600;
   }
 
-  /* Content */
   .content {
     flex: 1;
     margin: 0 10px 10px 10px;
@@ -128,7 +124,6 @@
     gap: 12px;
   }
 
-  /* Video Card */
   .video-item {
     display: flex;
     gap: 12px;
@@ -177,13 +172,76 @@
     margin-top: 6px;
   }
 
-  /* Scrollbar */
   .content::-webkit-scrollbar {
     width: 6px;
   }
   .content::-webkit-scrollbar-thumb {
     background: rgba(255,255,255,0.25);
     border-radius: 999px;
+  }
+
+  /* On-screen keyboard */
+  .keyboard-overlay {
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    z-index: 10;
+    display: none;
+  }
+
+  .keyboard {
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .keyboard-input-row {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .keyboard-input {
+    flex: 1;
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.2);
+    background: rgba(0,0,0,0.6);
+    color: #fff;
+    font-size: 12px;
+    outline: none;
+  }
+
+  .keyboard-enter {
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(0,255,0,0.6);
+    background: rgba(0,255,0,0.35);
+    color: #fff;
+    font-size: 12px;
+    cursor: pointer;
+  }
+
+  .keyboard-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .key {
+    padding: 6px 8px;
+    border-radius: 6px;
+    background: rgba(0,0,0,0.6);
+    border: 1px solid rgba(255,255,255,0.15);
+    font-size: 11px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .key.special {
+    background: rgba(255,255,255,0.12);
   }
 </style>
 </head>
@@ -192,13 +250,11 @@
 <div id="display-root">
   <div class="ui-frame">
 
-    <!-- Banner -->
     <div class="banner glass">
       <div class="yt-logo"></div>
       <div class="banner-title">ViewTube</div>
     </div>
 
-    <!-- Tabs -->
     <div class="tabs glass" id="tabs">
       <div class="tab active" data-tab="all">All</div>
       <div class="tab" data-tab="home">Home</div>
@@ -212,44 +268,39 @@
       <div class="tab" data-tab="search">Search</div>
     </div>
 
-    <!-- Content -->
     <div class="content glass">
       <div class="status-bar" id="status">Loading All…</div>
       <div class="video-list" id="video-list"></div>
       <div class="error" id="error"></div>
     </div>
 
+    <!-- On-screen keyboard -->
+    <div class="keyboard-overlay glass" id="keyboard-overlay">
+      <div class="keyboard">
+        <div class="keyboard-input-row">
+          <input id="keyboard-input" class="keyboard-input" type="text" placeholder="Search YouTube…" />
+          <button id="keyboard-enter" class="keyboard-enter">Enter</button>
+        </div>
+        <div class="keyboard-row" id="keyboard-keys"></div>
+      </div>
+    </div>
+
   </div>
 </div>
 
 <script>
-/* ---------------- API KEYS ---------------- */
+/* ---------------- NEW API KEYS ---------------- */
 const API_KEYS = [
-"AIzaSyBuMhjmMoSRNPhqsIY0do0XfSdtvQtbGVU",
-"AIzaSyDvWdTJh3W7fUMTGiw0Vwk4NX0g9TJ-1dI",
-"AIzaSyBjGdZA2xSTXze09adu-91Udd7Fry1r_CA",
-"AIzaSyBC_6U8XDHAnNHnK02kYM6dp7hcpdwhVpY",
-"AIzaSyB7Da8tJVUJ03m4ooQQiBtZn0rdi-eqfd4",
-"AIzaSyBH5vi_-v3Yexiqi1L6L1axC231gJVegrSw",
-"AIzaSyDdiXCYO5Yg1qJA5weiuoDyGgPvcdA-b54",
-"AIzaSyAhwq3qcm3Wy_npQ2e6IkL3qsv-30eyhWs",
-"AIzaSyD01LrwaaySxaJuK0duMz4fDKfRsVbx7G4",
-"AIzaSyC2bXABgSnSCpaUfb-miRbBkx51fssHCuQ",
-"AIzaSyCxoe0ZerRB60jinGQD_vxDLIEo21p2cIk",
-"AIzaSyBWMKdH3CrxH2IJUXI07Yqotu0nayaDiUk",
-"AIzaSyA6V662DW4XObukopNd_BYiP_UvVONF3-A",
-"AIzaSyCY_w9kwnF8A1r8pdLFTvMEZTkCQjkfdxg",
-"AIzaSyBuN6I80IhFka20vAoEvV2pQ17_TVMsSPc",
-"AIzaSyBdHC_1VG3U4p6YEZf1A4gS-9jajNXesyo",
-"AIzaSyB0EQqEbJ3qA3bI9Ne21Jvz2ou8F_MrHqA",
-"AIzaSyDPnTd1Xmt1Km1y33UzMPI_6Cq7BZSETIs",
-"AIzaSyBEV39C0nbK5p6nGCeAV5C4GV-_Yvh-0rk",
-"AIzaSyCU2soYE7PzkEuZKVhT53D3KoGq3wuXDVA",
-"AIzaSyDRn50qJu2szNEXK6CY_yLdVB9ZJn7gF88",
-"AIzaSyAc1TLewGvgtyhbZxR1-5ZZJ4C_9gIRn2Q",
-"AIzaSyDG7T1K4-kn2OFa_0NqjJ7yhveeXJ2L0W4",
-"AIzaSyBeTaR7Y9AgmkDAo1zojPAVqTJpeToX7qs",
-"AIzaSyCVHmrDShpvWCskGAM-j060hCXVrV69ro0"
+  "AIzaSyAiG74ZYcjR4K78NPfUe3sQGeJLnoBIXYU",
+  "AIzaSyDVDUackHINzULJ6qasLLKDZUIBBxTORTI",
+  "AIzaSyD903GIIkzLZyeOvqMrVW3q3wJy4jcHO7E",
+  "AIzaSyCWlw8qpBueGgjvTF4BZ54syzQkTevM_8g",
+  "AIzaSyDIjQgEy4VmFN2OxUkJisqVFw9repJcTF8",
+  "AIzaSyD6aEVz7iaTGJShyDDBZT4C27YG1vEc1_M",
+  "AIzaSyAGKeySf2F3BskBrZNylOSGJuHQRX_Rp5E",
+  "AIzaSyBBgj7-tN6VBAG3ziJQKCQL7EJZR4wUW-k",
+  "AIzaSyCUmBro68VHtC6_OsqlpssTVasHk2NmBLc",
+  "AIzaSyDXugJlNG12ObzxV5WGjgNVob5OhfF6moM"
 ];
 
 let keyIndex = 0;
@@ -261,6 +312,12 @@ function getApiKey() {
 const statusEl = document.getElementById("status");
 const errorEl = document.getElementById("error");
 const listEl = document.getElementById("video-list");
+const tabsEl = document.getElementById("tabs");
+
+const keyboardOverlay = document.getElementById("keyboard-overlay");
+const keyboardInput = document.getElementById("keyboard-input");
+const keyboardEnter = document.getElementById("keyboard-enter");
+const keyboardKeys = document.getElementById("keyboard-keys");
 
 function setStatus(t){ statusEl.textContent = t; }
 function setError(t){ errorEl.textContent = t || ""; }
@@ -271,14 +328,14 @@ function renderVideos(items) {
   items.forEach(item => {
     const id = item.id.videoId || item.id;
     const sn = item.snippet;
-    const thumb = sn.thumbnails.medium.url;
+    const thumb = sn.thumbnails && sn.thumbnails.medium ? sn.thumbnails.medium.url : "";
 
     const el = document.createElement("div");
     el.className = "video-item";
     el.onclick = () => window.open("https://www.youtube.com/watch?v=" + id);
 
     el.innerHTML = `
-      <div class="video-thumb"><img src="${thumb}"></div>
+      <div class="video-thumb">${thumb ? `<img src="${thumb}">` : ""}</div>
       <div>
         <div class="video-title">${sn.title}</div>
         <div class="video-channel">${sn.channelTitle}</div>
@@ -377,19 +434,20 @@ async function loadComedy() {
   if (data?.items) renderVideos(data.items);
 }
 
-async function loadSearch() {
-  const q = prompt("Search YouTube:");
-  if (!q) return;
-  setStatus("Searching \"" + q + "\"…");
+/* ---------------- SEARCH WITH KEYBOARD ---------------- */
+async function performSearch(query) {
+  if (!query) return;
+  setStatus('Searching "' + query + '"…');
   const key = getApiKey();
   const url =
     "https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&q=" +
-    encodeURIComponent(q) +
+    encodeURIComponent(query) +
     "&order=relevance&regionCode=US&relevanceLanguage=en&maxResults=50&key=" + key;
   const data = await ytFetch(url);
   if (data?.items) renderVideos(data.items);
 }
 
+/* ---------------- TAB LOADERS MAP ---------------- */
 const TAB_LOADERS = {
   all: loadAll,
   home: loadHome,
@@ -400,12 +458,16 @@ const TAB_LOADERS = {
   live: loadLive,
   movies: loadMovies,
   comedy: loadComedy,
-  search: loadSearch
+  search: () => {
+    // show keyboard, don't auto-search
+    keyboardOverlay.style.display = "block";
+    keyboardInput.value = "";
+    keyboardInput.focus();
+    setStatus("Search – type your query and press Enter.");
+  }
 };
 
 /* ---------------- TAB SWITCHING ---------------- */
-const tabsEl = document.getElementById("tabs");
-
 tabsEl.addEventListener("click", async e => {
   const t = e.target.closest(".tab");
   if (!t) return;
@@ -413,11 +475,42 @@ tabsEl.addEventListener("click", async e => {
   document.querySelectorAll(".tab").forEach(x => x.classList.remove("active"));
   t.classList.add("active");
 
-  const loader = TAB_LOADERS[t.dataset.tab];
+  const tabName = t.dataset.tab;
+  const loader = TAB_LOADERS[tabName];
   if (loader) {
     listEl.innerHTML = "";
     await loader();
   }
+});
+
+/* ---------------- ON-SCREEN KEYBOARD ---------------- */
+const KEY_LAYOUT = [
+  "Q","W","E","R","T","Y","U","I","O","P",
+  "A","S","D","F","G","H","J","K","L",
+  "Z","X","C","V","B","N","M"," ","←"
+];
+
+KEY_LAYOUT.forEach(k => {
+  const btn = document.createElement("div");
+  btn.className = "key" + (k === "←" ? " special" : "");
+  btn.textContent = k === " " ? "Space" : k;
+  btn.addEventListener("click", () => {
+    if (k === "←") {
+      keyboardInput.value = keyboardInput.value.slice(0, -1);
+    } else if (k === " ") {
+      keyboardInput.value += " ";
+    } else {
+      keyboardInput.value += k;
+    }
+    keyboardInput.focus();
+  });
+  keyboardKeys.appendChild(btn);
+});
+
+keyboardEnter.addEventListener("click", async () => {
+  const q = keyboardInput.value.trim();
+  keyboardOverlay.style.display = "none";
+  await performSearch(q);
 });
 
 /* ---------------- EMG GESTURE CONTROLS ---------------- */
@@ -453,7 +546,10 @@ const MetaWearables = {
 MetaWearables.onGesture(g => {
   if (g === "swipe_right") nextTab();
   if (g === "swipe_left") previousTab();
-  if (g === "pinch") loadSearch();
+  if (g === "pinch") {
+    // open search keyboard
+    document.querySelector('[data-tab="search"]').click();
+  }
   if (g === "fist") refreshCurrentTab();
 });
 
