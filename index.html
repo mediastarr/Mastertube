@@ -186,10 +186,10 @@ html, body {
       <div id="player"></div>
     </div>
     <div id="player-controls">
-      <button class="player-btn" data-action="back10">⏪ Back 10s</button>
-      <button class="player-btn" data-action="playpause">⏯ Play/Pause</button>
-      <button class="player-btn" data-action="forward10">⏩ Forward 10s</button>
-      <button class="player-btn" data-action="goback">⬅ Go Back</button>
+      <button class="player-btn" data-action="back10">⏪ Back 10s</button>
+      <button class="player-btn" data-action="playpause">⏯ Play/Pause</button>
+      <button class="player-btn" data-action="forward10">⏩ Forward 10s</button>
+      <button class="player-btn" data-action="goback">⬅ Go Back</button>
     </div>
   </div>
 
@@ -215,13 +215,10 @@ html, body {
     </div>
   </div>
 
-</div> <!-- closes keyboard -->
-</div> <!-- closes main-ui -->
+  </div> <!-- closes player-screen -->
 </div> <!-- closes root -->
-
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
-
 /* ALL API KEYS — INCLUDING YOUR 4 NEW ONES */
 const KEYS = [
   "AIzaSyAiG74ZYcjR4K78NPfUe3sQGeJLnoBIXYU",
@@ -246,8 +243,6 @@ const KEYS = [
   "AIzaSyDI3sl7QYBrXOgAwCyjwJ23pV1nbjUMVL0",
   "AIzaSyD_Jfk_5wuEdVhDEsQX9uy3BW2Fio7xe0s",
   "AIzaSyCpAzwCaG2I8gEusAsDKnkoxVMdkPg1Vpk",
-
-  /* ⭐ YOUR NEW KEYS ADDED SAFELY ⭐ */
   "AIzaSyCJ2cLDhXE-e_KYbnfS7DmrT-gtbL9yxCY",
   "AIzaSyA2DSf373Pmv26YLpcv2gnUMeZd0bGgNug",
   "AIzaSyC-66qDbGqKdEfQyGFeQPgYpRCjg802eLQ",
@@ -287,17 +282,19 @@ function onYouTubeIframeAPIReady(){
   });
 }
 
-/* SEARCH */
-async function ytSearch(q, pageToken=null, maxResults=25, extra=""){
+/* SEARCH — single, fixed version */
+async function ytSearch(q, pageToken = null, maxResults = 25, extra = ""){
+  const query = q && q.trim() ? q : "popular videos";
+
   let base =
     "https://www.googleapis.com/youtube/v3/search?part=snippet&type=video" +
     "&regionCode=US&relevanceLanguage=en&safeSearch=none" +
     "&maxResults=" + maxResults +
-    "&q=" + encodeURIComponent(q) +
+    "&q=" + encodeURIComponent(query) +
     "&key=" + apiKey();
 
-  if(extra) base += "&" + extra;
-  if(pageToken) base += "&pageToken=" + pageToken;
+  if (extra) base += "&" + extra;
+  if (pageToken) base += "&pageToken=" + pageToken;
 
   const r = await fetch(base);
   const j = await r.json();
@@ -328,13 +325,9 @@ function showVideos(items, append){
   }
 
   items.forEach(v=>{
-    // ⭐ SAFE VIDEO ID EXTRACTION
     let id = null;
-
     if (v.id?.videoId) id = v.id.videoId;
     else if (typeof v.id === "string") id = v.id;
-
-    // Skip invalid items
     if (!id) return;
 
     const sn = v.snippet;
@@ -357,7 +350,6 @@ function showVideos(items, append){
 
   applyHighlight();
 }
-
 
 /* APPLY HIGHLIGHT */
 function applyHighlight(){
@@ -384,32 +376,14 @@ content.addEventListener("scroll", ()=>{
   }
 });
 
-/* US‑ONLY SEARCH — FIXED */
-async function ytSearch(q, pageToken = null, maxResults = 25, extra = "") {
-
-  // ⭐ FIX: YouTube returns ZERO results when q = ""  
-  // So we give it a safe default query.
-  const query = q && q.trim() ? q : "popular videos";
-
-  let base =
-    "https://www.googleapis.com/youtube/v3/search?part=snippet&type=video" +
-    "&regionCode=US&relevanceLanguage=en&safeSearch=none" +
-    "&maxResults=" + maxResults +
-    "&q=" + encodeURIComponent(query) +
-    "&key=" + apiKey();
-
-  if (extra) base += "&" + extra;
-  if (pageToken) base += "&pageToken=" + pageToken;
-
-  const r = await fetch(base);
-  const j = await r.json();
-
-  nextPageToken = j.nextPageToken || null;
-  return j.items || [];
+/* LOAD MORE */
+async function loadMore(){
+  if(!nextPageToken) return;
+  const items = await ytSearch(currentQuery, nextPageToken, 25);
+  showVideos(items, true);
 }
 
-
-/* TAB SWITCHING — FIXED */
+/* TAB SWITCHING */
 tabs.addEventListener("click", async e=>{
   const t = e.target.closest(".tab");
   if(!t) return;
