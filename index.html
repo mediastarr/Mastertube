@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>ViewTube Stealth Fixed</title>
+<title>ViewTube – EMG Stealth</title>
 
 <style>
   html, body {
@@ -78,7 +78,7 @@
     border-color: rgba(255,0,0,0.9);
   }
 
-  /* S1: Scroll INSIDE content panel */
+  /* S1: scroll inside content, tuned for ~4 visible cards */
   .content {
     margin: 0 10px 10px 10px;
     padding: 10px;
@@ -90,6 +90,7 @@
     display: flex;
     gap: 10px;
     padding: 8px;
+    margin-bottom: 8px;
     border-radius: 10px;
     background: rgba(0,0,0,0.35);
     border: 1px solid rgba(255,255,255,0.1);
@@ -107,6 +108,12 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
+  }
+
+  /* H1: red glow highlight */
+  .video.highlight {
+    border: 2px solid rgba(255,0,0,0.9);
+    box-shadow: 0 0 12px rgba(255,0,0,0.7);
   }
 
   /* Keyboard */
@@ -185,18 +192,28 @@
 </div>
 
 <script>
-/* NEW API KEYS */
+/* API KEYS: original + new */
 const KEYS = [
-"AIzaSyAiG74ZYcjR4K78NPfUe3sQGeJLnoBIXYU",
-"AIzaSyDVDUackHINzULJ6qasLLKDZUIBBxTORTI",
-"AIzaSyD903GIIkzLZyeOvqMrVW3q3wJy4jcHO7E",
-"AIzaSyCWlw8qpBueGgjvTF4BZ54syzQkTevM_8g",
-"AIzaSyDIjQgEy4VmFN2OxUkJisqVFw9repJcTF8",
-"AIzaSyD6aEVz7iaTGJShyDDBZT4C27YG1vEc1_M",
-"AIzaSyAGKeySf2F3BskBrZNylOSGJuHQRX_Rp5E",
-"AIzaSyBBgj7-tN6VBAG3ziJQKCQL7EJZR4wUW-k",
-"AIzaSyCUmBro68VHtC6_OsqlpssTVasHk2NmBLc",
-"AIzaSyDXugJlNG12ObzxV5WGjgNVob5OhfF6moM"
+  "AIzaSyAiG74ZYcjR4K78NPfUe3sQGeJLnoBIXYU",
+  "AIzaSyDVDUackHINzULJ6qasLLKDZUIBBxTORTI",
+  "AIzaSyD903GIIkzLZyeOvqMrVW3q3wJy4jcHO7E",
+  "AIzaSyCWlw8qpBueGgjvTF4BZ54syzQkTevM_8g",
+  "AIzaSyDIjQgEy4VmFN2OxUkJisqVFw9repJcTF8",
+  "AIzaSyD6aEVz7iaTGJShyDDBZT4C27YG1vEc1_M",
+  "AIzaSyAGKeySf2F3BskBrZNylOSGJuHQRX_Rp5E",
+  "AIzaSyBBgj7-tN6VBAG3ziJQKCQL7EJZR4wUW-k",
+  "AIzaSyCUmBro68VHtC6_OsqlpssTVasHk2NmBLc",
+  "AIzaSyDXugJlNG12ObzxV5WGjgNVob5OhfF6moM",
+  "AIzaSyBsq-CNj2VFfgaQkaGFCQJCzIc28OzuFuw",
+  "AIzaSyBq-q38IF6iVxgo7EeQLtkB7V25n6WcGYo",
+  "AIzaSyA9c7WYaPVU_kvlTfOvLfxcFZY8TIc5nwo",
+  "AIzaSyCqFHwn3azAH2eOSZK8Ch4tZivl3GKb_Zs",
+  "AIzaSyDblb5nF7wjMPJR7DtBTRseyTr64rjXn7E",
+  "AIzaSyA772yWhSkiwVgIFymHk9txl2UotHBksgI",
+  "AIzaSyBYKzKQShGsifFIZZ0yV-9quqM50pmuCQk",
+  "AIzaSyAjREsAJQWVX1Q4optfjBKjQzKQvVGYUIM",
+  "AIzaSyAqKWwYEh1QFxT69Nh4htYAkQXlC6vAjwo",
+  "AIzaSyBsgRu97z8s_477NEKKQop46sndfe8ZdBE"
 ];
 let keyIndex = 0;
 function apiKey(){ return KEYS[keyIndex++ % KEYS.length]; }
@@ -208,9 +225,19 @@ const kb = document.getElementById("keyboard");
 const kbInput = document.getElementById("kb-input");
 const kbKeys = document.getElementById("kb-keys");
 
+/* Paging state */
+let currentQuery = "trending";
+let nextPageToken = null;
+
+/* Highlight state */
+let highlightIndex = 0;
+
 /* Render videos */
-function showVideos(items){
-  content.innerHTML = "";
+function showVideos(items, append=false){
+  if(!append) {
+    content.innerHTML = "";
+    highlightIndex = 0;
+  }
   items.forEach(v=>{
     const id = v.id.videoId || v.id;
     const sn = v.snippet;
@@ -218,6 +245,7 @@ function showVideos(items){
 
     const div = document.createElement("div");
     div.className = "video";
+    div.dataset.videoId = id;
     div.onclick = ()=>window.open("https://youtube.com/watch?v="+id);
 
     div.innerHTML = `
@@ -229,19 +257,75 @@ function showVideos(items){
     `;
     content.appendChild(div);
   });
+  applyHighlight();
+}
+
+/* Apply highlight to current index */
+function applyHighlight(){
+  const cards = [...content.querySelectorAll(".video")];
+  cards.forEach(c=>c.classList.remove("highlight"));
+  if(cards.length === 0) return;
+  if(highlightIndex < 0) highlightIndex = 0;
+  if(highlightIndex >= cards.length) highlightIndex = cards.length - 1;
+  const card = cards[highlightIndex];
+  card.classList.add("highlight");
+  card.scrollIntoView({block:"center", behavior:"smooth"});
+}
+
+/* Move highlight up/down */
+function moveHighlight(delta){
+  const cards = [...content.querySelectorAll(".video")];
+  if(cards.length === 0) return;
+  highlightIndex += delta;
+  if(highlightIndex < 0) highlightIndex = 0;
+  if(highlightIndex >= cards.length) highlightIndex = cards.length - 1;
+  applyHighlight();
+}
+
+/* Select highlighted video */
+function selectHighlighted(){
+  const cards = [...content.querySelectorAll(".video")];
+  if(cards.length === 0) return;
+  const card = cards[highlightIndex];
+  const id = card.dataset.videoId;
+  if(id) window.open("https://youtube.com/watch?v="+id);
 }
 
 /* Fetch */
-async function yt(q){
-  const url =
+async function yt(q, pageToken=null){
+  const base =
     "https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=25&regionCode=US&q="
     + encodeURIComponent(q)
     + "&key=" + apiKey();
-
+  const url = pageToken ? base + "&pageToken=" + pageToken : base;
   const r = await fetch(url);
   const j = await r.json();
+  nextPageToken = j.nextPageToken || null;
   return j.items || [];
 }
+
+/* Load query (fresh) */
+async function loadQuery(q){
+  currentQuery = q;
+  nextPageToken = null;
+  const items = await yt(q);
+  showVideos(items, false);
+}
+
+/* Load more when scrolling to bottom */
+async function loadMore(){
+  if(!nextPageToken) return;
+  const items = await yt(currentQuery, nextPageToken);
+  showVideos(items, true);
+}
+
+/* Scroll listener for infinite load */
+content.addEventListener("scroll", ()=>{
+  const threshold = 40;
+  if(content.scrollTop + content.clientHeight >= content.scrollHeight - threshold){
+    loadMore();
+  }
+});
 
 /* Tab logic */
 tabs.addEventListener("click", async e=>{
@@ -271,8 +355,7 @@ tabs.addEventListener("click", async e=>{
     comedy: "stand up comedy"
   };
 
-  const items = await yt(queryMap[tab]);
-  showVideos(items);
+  await loadQuery(queryMap[tab]);
 });
 
 /* Keyboard */
@@ -291,15 +374,50 @@ document.getElementById("kb-enter").onclick = async ()=>{
   const q = kbInput.value.trim();
   kb.style.display = "none";
   if(q){
-    const items = await yt(q);
-    showVideos(items);
+    await loadQuery(q);
   }
 };
 
+/* EMG / gesture placeholder */
+const MetaWearables = {
+  onGesture(cb){
+    // hook your real EMG SDK here
+    console.log("EMG gesture system ready (placeholder)");
+  }
+};
+
+MetaWearables.onGesture(g=>{
+  if(g === "swipe_right"){
+    // next tab
+    const tabsArr = [...document.querySelectorAll(".tab")];
+    let i = tabsArr.findIndex(t=>t.classList.contains("active"));
+    tabsArr[(i+1) % tabsArr.length].click();
+  }
+  if(g === "swipe_left"){
+    // previous tab
+    const tabsArr = [...document.querySelectorAll(".tab")];
+    let i = tabsArr.findIndex(t=>t.classList.contains("active"));
+    tabsArr[(i-1+tabsArr.length) % tabsArr.length].click();
+  }
+  if(g === "swipe_up"){
+    moveHighlight(-1);
+  }
+  if(g === "swipe_down"){
+    moveHighlight(1);
+  }
+  if(g === "pinch"){
+    selectHighlighted();
+  }
+  if(g === "fist"){
+    // refresh current tab
+    const active = document.querySelector(".tab.active");
+    if(active) active.click();
+  }
+});
+
 /* Initial load */
 (async ()=>{
-  const items = await yt("trending");
-  showVideos(items);
+  await loadQuery("trending");
 })();
 </script>
 
