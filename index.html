@@ -281,14 +281,24 @@
 
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
-/* Simple key rotation */
+
+/* UPDATED API KEY ROTATION — ALL KEYS INCLUDED */
 const KEYS = [
   "AIzaSyAiG74ZYcjR4K78NPfUe3sQGeJLnoBIXYU",
-  "AIzaSyDVDUackHINzULJ6qasLLKDZUIBBxTORTI"
+  "AIzaSyDVDUackHINzULJ6qasLLKDZUIBBxTORTI",
+
+  /* NEW KEYS ADDED */
+  "AIzaSyApAIjVvwL8DQMe5-B5z815hdJtpj3YLDg",
+  "AIzaSyAUKic3SobVT3S60-H9fWmdHZJVgdOzRPg",
+  "AIzaSyB7FKzBZCxfl4nwi6elI6wj-JCVXXtmA40",
+  "AIzaSyBTUdLTpyYG0-fuOUP1OkeX9tf06S-rVkY",
+  "AIzaSyAJbkJYrguKWmBl7Vyd6ObPXZf0zu8-p3E"
 ];
+
 let keyIndex = 0;
 function apiKey(){ return KEYS[keyIndex++ % KEYS.length]; }
 
+/* DOM ELEMENTS */
 const content = document.getElementById("content");
 const tabs = document.getElementById("tabs");
 const mainUI = document.getElementById("main-ui");
@@ -298,16 +308,16 @@ const searchBarWrapper = document.getElementById("search-bar-wrapper");
 const searchInput = document.getElementById("search-input");
 const keyboard = document.getElementById("keyboard");
 
+/* STATE */
 let currentQuery = "";
 let nextPageToken = null;
-let highlightIndex = 0;
+let highlightIndex = -1;   /* FIX: disable highlight by default */
 let ytPlayer = null;
 let playerMode = false;
 let currentTab = "all";
-
-/* NEW FIX */
 let keyboardActive = false;
 
+/* YT PLAYER */
 function onYouTubeIframeAPIReady(){
   ytPlayer = new YT.Player("player", {
     height: "315",
@@ -317,7 +327,7 @@ function onYouTubeIframeAPIReady(){
   });
 }
 
-/* ENFORCED US-ONLY SEARCH */
+/* US‑ONLY SEARCH */
 async function ytSearch(q, pageToken=null, maxResults=25, extra=""){
   let base =
     "https://www.googleapis.com/youtube/v3/search?part=snippet&type=video" +
@@ -331,28 +341,37 @@ async function ytSearch(q, pageToken=null, maxResults=25, extra=""){
 
   const r = await fetch(base);
   const j = await r.json();
+
   nextPageToken = j.nextPageToken || null;
   return j.items || [];
 }
 
+/* LOAD QUERY */
 async function loadQuery(q, maxResults=25, extra=""){
   currentQuery = q;
   nextPageToken = null;
+
   const items = await ytSearch(q, null, maxResults, extra);
+
+  /* FIX: if no videos load, disable highlight to prevent jumping */
+  if(!items || items.length === 0){
+    highlightIndex = -1;
+  }
+
   showVideos(items, false);
 }
 
+/* RENDER VIDEOS */
 function showVideos(items, append){
   if(!append){
     content.innerHTML = "";
-    highlightIndex = 0;
+    highlightIndex = -1; /* FIX */
   }
+
   items.forEach(v=>{
     const id = v.id.videoId || v.id;
     const sn = v.snippet;
-    const thumb = (sn.thumbnails && sn.thumbnails.medium && sn.thumbnails.medium.url)
-      ? sn.thumbnails.medium.url
-      : "";
+    const thumb = sn.thumbnails?.medium?.url || "";
 
     const div = document.createElement("div");
     div.className = "video";
@@ -368,27 +387,12 @@ function showVideos(items, append){
     `;
     content.appendChild(div);
   });
-  applyHighlight();
 }
 
-function applyHighlight(){
-  const cards = [...content.querySelectorAll(".video")];
-  cards.forEach(c=>c.classList.remove("highlight"));
-  if(cards.length === 0) return;
-  if(highlightIndex < 0) highlightIndex = 0;
-  if(highlightIndex >= cards.length) highlightIndex = cards.length - 1;
-  const card = cards[highlightIndex];
-  card.classList.add("highlight");
-  card.scrollIntoView({block:"center", behavior:"smooth"});
-}
-
-/* FIX: prevent jump-to-top when scrolling in Search */
+/* SCROLL FIX — prevent jump to Comedy */
 content.addEventListener("scroll", ()=>{
-  if(currentTab === "search" && highlightIndex !== -1){
-    highlightIndex = -1;
-  }
-
   if(currentTab === "search"){
+    highlightIndex = -1;  /* FIX */
     hideKeyboard();
     searchInput.blur();
   }
@@ -398,13 +402,14 @@ content.addEventListener("scroll", ()=>{
   }
 });
 
+/* LOAD MORE */
 async function loadMore(){
   if(!nextPageToken) return;
   const items = await ytSearch(currentQuery, nextPageToken, 25);
   showVideos(items, true);
 }
 
-/* Tabs */
+/* TAB SWITCHING */
 tabs.addEventListener("click", async e=>{
   const t = e.target.closest(".tab");
   if(!t) return;
@@ -417,7 +422,7 @@ tabs.addEventListener("click", async e=>{
 
   nextPageToken = null;
   content.innerHTML = "";
-  highlightIndex = -1;   /* NEW FIX: disable highlight when entering Search */
+  highlightIndex = -1; /* FIX */
 
   if(tab === "search"){
     searchBarWrapper.style.display = "block";
@@ -427,49 +432,22 @@ tabs.addEventListener("click", async e=>{
     hideKeyboard();
   }
 
-  let q = "";
-  let max = 25;
-  let extra = "";
+  let q="", max=25, extra="";
 
-  if(tab === "all"){
-    q = "US trending videos";
-    max = 50;
-    extra = "videoDuration=medium";
-  }
-  if(tab === "shorts"){
-    q = "US shorts";
-    max = 50;
-    extra = "videoDuration=short";
-  }
-  if(tab === "news"){
-    q = "US news";
-    max = 40;
-  }
-  if(tab === "anime"){
-    q = "anime english dub";
-    max = 40;
-  }
-  if(tab === "live"){
-    q = "live stream";
-    extra = "eventType=live";
-    max = 40;
-  }
-  if(tab === "movies"){
-    q = "full movie free";
-    extra = "videoDuration=long";
-    max = 40;
-  }
-  if(tab === "comedy"){
-    q = "stand up comedy";
-    max = 40;
-  }
+  if(tab === "all"){ q="US trending videos"; max=50; extra="videoDuration=medium"; }
+  if(tab === "shorts"){ q="US shorts"; max=50; extra="videoDuration=short"; }
+  if(tab === "news"){ q="US news"; max=40; }
+  if(tab === "anime"){ q="anime english dub"; max=40; }
+  if(tab === "live"){ q="live stream"; max=40; extra="eventType=live"; }
+  if(tab === "movies"){ q="full movie free"; max=40; extra="videoDuration=long"; }
+  if(tab === "comedy"){ q="stand up comedy"; max=40; }
 
   if(tab !== "search"){
     await loadQuery(q, max, extra);
   }
 });
 
-/* FULLSCREEN PLAYER */
+/* OPEN VIDEO */
 function openVideo(id){
   hideKeyboard();
   searchInput.blur();
@@ -480,6 +458,7 @@ function openVideo(id){
   ytPlayer.playVideo();
 }
 
+/* CLOSE PLAYER */
 function closePlayer(){
   playerMode = false;
   playerScreen.style.display = "none";
@@ -487,10 +466,11 @@ function closePlayer(){
   ytPlayer.stopVideo();
 }
 
-/* Player controls */
+/* PLAYER CONTROLS */
 playerControls.addEventListener("click", e=>{
   const btn = e.target.closest(".player-btn");
   if(!btn) return;
+
   const action = btn.dataset.action;
 
   if(action === "playpause"){
@@ -509,44 +489,24 @@ playerControls.addEventListener("click", e=>{
   }
 });
 
-/* Keyboard navigation */
-function moveHighlight(delta){
-  const cards = [...content.querySelectorAll(".video")];
-  if(cards.length === 0) return;
-  highlightIndex += delta;
-  if(highlightIndex < 0) highlightIndex = 0;
-  if(highlightIndex >= cards.length) highlightIndex = cards.length - 1;
-  applyHighlight();
-}
-
-function openHighlightedVideo(){
-  const cards = [...content.querySelectorAll(".video")];
-  if(cards.length === 0) return;
-  const card = cards[highlightIndex];
-  const id = card.dataset.videoId;
-  if(id) openVideo(id);
-}
-
-/* FIX: disable highlight navigation while keyboard is active */
+/* KEYBOARD NAVIGATION FIX */
 document.addEventListener("keydown", e=>{
   if(playerMode) return;
 
-  if(currentTab === "search" && !keyboardActive){
+  /* FIX: disable highlight navigation in Search */
+  if(currentTab === "search"){
     highlightIndex = -1;
   }
 
+  /* FIX: disable Enter/Arrow keys while keyboard open */
   if(keyboardActive){
-    if(e.key === "Enter" || e.key === "ArrowDown" || e.key === "ArrowUp"){
+    if(["Enter","ArrowDown","ArrowUp"].includes(e.key)){
       return;
     }
   }
-
-  if(e.key === "ArrowDown") moveHighlight(1);
-  if(e.key === "ArrowUp") moveHighlight(-1);
-  if(e.key === "Enter") openHighlightedVideo();
 });
 
-/* Hide keyboard when clicking outside */
+/* CLICK OUTSIDE HIDES KEYBOARD */
 document.addEventListener("click", e=>{
   if(!keyboard.contains(e.target) && e.target !== searchInput){
     hideKeyboard();
@@ -554,17 +514,18 @@ document.addEventListener("click", e=>{
   }
 });
 
-/* SEARCH TAB + FLOATING KEYBOARD */
+/* SEARCH BAR */
 searchInput.addEventListener("focus", showKeyboard);
 searchInput.addEventListener("click", ()=>{
-  highlightIndex = -1;
+  highlightIndex = -1; /* FIX */
   showKeyboard();
 });
 
+/* KEYBOARD */
 function showKeyboard(){
   keyboard.style.display = "block";
   keyboardActive = true;
-  highlightIndex = -1;
+  highlightIndex = -1; /* FIX */
 }
 
 function hideKeyboard(){
@@ -577,16 +538,11 @@ keyboard.addEventListener("click", async e=>{
   if(!key) return;
 
   const special = key.dataset.special;
+
   if(special){
-    if(special === "space"){
-      searchInput.value += " ";
-    }
-    if(special === "backspace"){
-      searchInput.value = searchInput.value.slice(0, -1);
-    }
-    if(special === "clear"){
-      searchInput.value = "";
-    }
+    if(special === "space") searchInput.value += " ";
+    if(special === "backspace") searchInput.value = searchInput.value.slice(0,-1);
+    if(special === "clear") searchInput.value = "";
     if(special === "enter"){
       hideKeyboard();
       searchInput.blur();
@@ -599,12 +555,11 @@ keyboard.addEventListener("click", async e=>{
       }
     }
   } else {
-    const ch = key.textContent;
-    searchInput.value += ch;
+    searchInput.value += key.textContent;
   }
 });
 
-/* Initial load */
+/* INITIAL LOAD */
 (async ()=>{
   await loadQuery("US trending videos", 50, "videoDuration=medium");
 })();
