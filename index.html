@@ -448,8 +448,18 @@ tabs.addEventListener("click", async e=>{
 
   let q="", max=25, extra="";
 
-  if(tab === "all"){ q="US trending videos"; max=50; extra="videoDuration=medium"; }
-  if(tab === "shorts"){ q="US shorts"; max=50; extra="videoDuration=short"; }
+  if(tab === "all"){
+    q = ""; // empty query = real trending
+    max = 50;
+    extra = "chart=mostPopular&videoDuration=medium";
+}
+
+  if(tab === "shorts"){
+    q = ""; 
+    max = 50;
+    extra = "videoDuration=short&order=date";
+}
+
   if(tab === "news"){ q="US news"; max=40; }
   if(tab === "anime"){ q="anime english dub"; max=40; }
   if(tab === "live"){ q="live stream"; max=40; extra="eventType=live"; }
