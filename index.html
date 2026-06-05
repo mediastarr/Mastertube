@@ -383,7 +383,7 @@ function showVideos(items, append){
   if(!append){
     content.innerHTML = "";
 
-    /* FIX: do NOT auto‑highlight on startup */
+    /* FIX: Only highlight AFTER user navigates */
     if(currentTab !== "search" && userHasNavigated){
       highlightIndex = 0;
     } else {
@@ -459,17 +459,15 @@ tabs.addEventListener("click", async e=>{
 
   nextPageToken = null;
 
-  /* FIX: prevent Search tab auto‑opening a video */
+  /* FIX: prevent ANY auto‑highlight on tab switch */
+  highlightIndex = -1;
+  userHasNavigated = false;
+  content.innerHTML = "";
+
   if(tab === "search"){
-    highlightIndex = -1;
-    userHasNavigated = false;
-    content.innerHTML = "";
     searchBarWrapper.style.display = "block";
     keyboardActive = false;
   } else {
-    highlightIndex = -1; /* FIX: do NOT auto‑highlight on tab switch */
-    userHasNavigated = false;
-    content.innerHTML = "";
     searchBarWrapper.style.display = "none";
     hideKeyboard();
   }
@@ -650,6 +648,3 @@ keyboard.addEventListener("click", async e=>{
 
 </body>
 </html>
-
-
-
