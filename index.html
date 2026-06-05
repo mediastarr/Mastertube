@@ -1,529 +1,463 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>ViewTube – Meta Ray-Ban Display</title>
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      background: transparent;
-      width: 100%;
-      height: 100%;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      color: #ffffff;
-    }
+<meta charset="UTF-8" />
+<title>ViewTube – GlassOS Edition</title>
 
-    /* 600×600 Ray-Ban display container */
-    #display-root {
-      width: 600px;
-      height: 600px;
-      box-sizing: border-box;
-      background: transparent; /* dark areas fully transparent */
-      position: relative;
-      overflow: hidden;
-    }
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    width: 100%;
+    height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro", system-ui, sans-serif;
+    color: #fff;
+  }
 
-    .ui-frame {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      flex-direction: column;
-      pointer-events: auto;
-    }
+  #display-root {
+    width: 600px;
+    height: 600px;
+    background: transparent;
+    position: relative;
+    overflow: hidden;
+  }
 
-    /* Banner: YouTube logo + ViewTube */
-    .banner {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 10px;
-      margin: 8px;
-      border-radius: 12px;
-      background: rgba(0, 0, 0, 0.45);
-      backdrop-filter: blur(10px);
-    }
+  .ui-frame {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+  }
 
-    .yt-logo {
-      width: 24px;
-      height: 24px;
-      border-radius: 6px;
-      background: #ff0000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
+  /* GlassOS Frosted Panel */
+  .glass {
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(18px) saturate(180%);
+    -webkit-backdrop-filter: blur(18px) saturate(180%);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 16px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.35);
+  }
 
-    .yt-logo::before {
-      content: "";
-      width: 10px;
-      height: 10px;
-      border-left: 6px solid #fff;
-      border-top: 3px solid transparent;
-      border-bottom: 3px solid transparent;
-      margin-left: 2px;
-    }
+  /* Banner */
+  .banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    margin: 10px;
+  }
 
-    .banner-title {
-      font-size: 14px;
-      font-weight: 700;
-    }
+  .yt-logo {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: #ff0000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 12px rgba(255,0,0,0.6);
+  }
 
-    /* Tabs bar */
-    .tabs {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 4px;
-      padding: 6px 8px;
-      background: rgba(0, 0, 0, 0.35);
-      backdrop-filter: blur(8px);
-      border-radius: 12px;
-      margin: 0 8px 8px 8px;
-    }
+  .yt-logo::before {
+    content: "";
+    width: 12px;
+    height: 12px;
+    border-left: 7px solid #fff;
+    border-top: 4px solid transparent;
+    border-bottom: 4px solid transparent;
+    margin-left: 3px;
+  }
 
-    .tab {
-      padding: 4px 10px;
-      border-radius: 999px;
-      font-size: 11px;
-      cursor: pointer;
-      border: 1px solid rgba(255, 255, 255, 0.25);
-      background: rgba(0, 0, 0, 0.4);
-      color: #fff;
-      white-space: nowrap;
-    }
+  .banner-title {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+  }
 
-    .tab.active {
-      background: #ff0000;
-      border-color: #ff0000;
-      color: #fff;
-      font-weight: 600;
-    }
+  /* Tabs */
+  .tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 10px;
+    margin: 0 10px 10px 10px;
+  }
 
-    /* Content area */
-    .content {
-      flex: 1;
-      margin: 0 8px 8px 8px;
-      padding: 8px;
-      border-radius: 12px;
-      background: rgba(0, 0, 0, 0.35);
-      backdrop-filter: blur(8px);
-      overflow-y: auto;
-    }
+  .tab {
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    border: 1px solid rgba(255,255,255,0.25);
+    background: rgba(255,255,255,0.05);
+  }
 
-    .video-list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
+  .tab:hover {
+    background: rgba(255,255,255,0.12);
+  }
 
-    .video-item {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-      padding: 6px;
-      border-radius: 10px;
-      background: rgba(255, 255, 255, 0.05);
-      cursor: pointer;
-    }
+  .tab.active {
+    background: rgba(255,0,0,0.75);
+    border-color: rgba(255,0,0,0.9);
+    box-shadow: 0 0 12px rgba(255,0,0,0.6);
+    font-weight: 600;
+  }
 
-    .video-thumb {
-      width: 80px;
-      height: 45px;
-      border-radius: 6px;
-      background: #222;
-      flex-shrink: 0;
-      overflow: hidden;
-    }
+  /* Content */
+  .content {
+    flex: 1;
+    margin: 0 10px 10px 10px;
+    padding: 12px;
+    overflow-y: auto;
+  }
 
-    .video-thumb img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
+  .status-bar {
+    font-size: 12px;
+    opacity: 0.85;
+    margin-bottom: 6px;
+  }
 
-    .video-meta {
-      flex: 1;
-      min-width: 0;
-    }
+  .video-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
 
-    .video-title {
-      font-size: 12px;
-      font-weight: 600;
-      line-height: 1.3;
-      margin-bottom: 2px;
-    }
+  /* Video Card (GlassOS style) */
+  .video-item {
+    display: flex;
+    gap: 12px;
+    padding: 10px;
+    border-radius: 14px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    background: rgba(255,255,255,0.06);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.12);
+  }
 
-    .video-channel {
-      font-size: 10px;
-      opacity: 0.8;
-    }
+  .video-item:hover {
+    background: rgba(255,255,255,0.12);
+    transform: translateY(-2px);
+  }
 
-    .status-bar {
-      font-size: 10px;
-      opacity: 0.8;
-      margin-bottom: 4px;
-    }
+  .video-thumb {
+    width: 100px;
+    height: 56px;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+  }
 
-    .error {
-      color: #ff8080;
-      font-size: 11px;
-      margin-top: 4px;
-    }
+  .video-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
 
-    .content::-webkit-scrollbar {
-      width: 4px;
-    }
-    .content::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.3);
-      border-radius: 999px;
-    }
-  </style>
+  .video-title {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+
+  .video-channel {
+    font-size: 11px;
+    opacity: 0.75;
+  }
+
+  .error {
+    color: #ff8080;
+    font-size: 12px;
+    margin-top: 6px;
+  }
+
+  /* Scrollbar */
+  .content::-webkit-scrollbar {
+    width: 6px;
+  }
+  .content::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.25);
+    border-radius: 999px;
+  }
+</style>
 </head>
+
 <body>
-  <div id="display-root">
-    <div class="ui-frame">
-      <div class="banner">
-        <div class="yt-logo"></div>
-        <div class="banner-title">ViewTube</div>
-      </div>
+<div id="display-root">
+  <div class="ui-frame">
 
-      <div class="tabs" id="tabs">
-        <div class="tab active" data-tab="all">All</div>
-        <div class="tab" data-tab="home">Home</div>
-        <div class="tab" data-tab="shorts">Shorts</div>
-        <div class="tab" data-tab="haiti">Haiti</div>
-        <div class="tab" data-tab="news">News</div>
-        <div class="tab" data-tab="anime">Anime</div>
-        <div class="tab" data-tab="live">Live</div>
-        <div class="tab" data-tab="movies">Movies</div>
-        <div class="tab" data-tab="comedy">Comedy</div>
-      </div>
-
-      <div class="content">
-        <div class="status-bar" id="status">Loading All (US trending mix)…</div>
-        <div class="video-list" id="video-list"></div>
-        <div class="error" id="error"></div>
-      </div>
+    <!-- Banner -->
+    <div class="banner glass">
+      <div class="yt-logo"></div>
+      <div class="banner-title">ViewTube</div>
     </div>
+
+    <!-- Tabs -->
+    <div class="tabs glass" id="tabs">
+      <div class="tab active" data-tab="all">All</div>
+      <div class="tab" data-tab="home">Home</div>
+      <div class="tab" data-tab="shorts">Shorts</div>
+      <div class="tab" data-tab="haiti">Haiti</div>
+      <div class="tab" data-tab="news">News</div>
+      <div class="tab" data-tab="anime">Anime</div>
+      <div class="tab" data-tab="live">Live</div>
+      <div class="tab" data-tab="movies">Movies</div>
+      <div class="tab" data-tab="comedy">Comedy</div>
+      <div class="tab" data-tab="search">Search</div>
+    </div>
+
+    <!-- Content -->
+    <div class="content glass">
+      <div class="status-bar" id="status">Loading All…</div>
+      <div class="video-list" id="video-list"></div>
+      <div class="error" id="error"></div>
+    </div>
+
   </div>
+</div>
 
-  <script>
-    /************************************************************
-     * 1. API KEYS – ROTATE THROUGH THE KEYS YOU PROVIDED
-     ************************************************************/
-    const API_KEYS = [
-      "AIzaSyBuMhjmMoSRNPhqsIY0do0XfSdtvQtbGVU",
-      "AIzaSyDvWdTJh3W7fUMTGiw0Vwk4NX0g9TJ-1dI",
-      "AIzaSyBjGdZA2xSTXze09adu-91Udd7Fry1r_CA",
-      "AIzaSyBC_6U8XDHAnNHnK02kYM6dp7hcpdwhVpY",
-      "AIzaSyB7Da8tJVUJ03m4ooQQiBtZn0rdi-eqfd4",
-      "AIzaSyBH5vi_-v3Yexiqi1L6L1axC231gJVegrSw",
-      "AIzaSyDdiXCYO5Yg1qJA5weiuoDyGgPvcdA-b54",
-      "AIzaSyAhwq3qcm3Wy_npQ2e6IkL3qsv-30eyhWs",
-      "AIzaSyD01LrwaaySxaJuK0duMz4fDKfRsVbx7G4",
-      "AIzaSyC2bXABgSnSCpaUfb-miRbBkx51fssHCuQ",
-      "AIzaSyCxoe0ZerRB60jinGQD_vxDLIEo21p2cIk",
-      "AIzaSyBWMKdH3CrxH2IJUXI07Yqotu0nayaDiUk",
-      "AIzaSyA6V662DW4XObukopNd_BYiP_UvVONF3-A",
-      "AIzaSyCY_w9kwnF8A1r8pdLFTvMEZTkCQjkfdxg",
-      "AIzaSyBuN6I80IhFka20vAoEvV2pQ17_TVMsSPc",
-      "AIzaSyBdHC_1VG3U4p6YEZf1A4gS-9jajNXesyo",
-      "AIzaSyB0EQqEbJ3qA3bI9Ne21Jvz2ou8F_MrHqA",
-      "AIzaSyDPnTd1Xmt1Km1y33UzMPI_6Cq7BZSETIs",
-      "AIzaSyBEV39C0nbK5p6nGCeAV5C4GV-_Yvh-0rk",
-      "AIzaSyCU2soYE7PzkEuZKVhT53D3KoGq3wuXDVA",
-      "AIzaSyDRn50qJu2szNEXK6CY_yLdVB9ZJn7gF88",
-      "AIzaSyAc1TLewGvgtyhbZxR1-5ZZJ4C_9gIRn2Q",
-      "AIzaSyDG7T1K4-kn2OFa_0NqjJ7yhveeXJ2L0W4",
-      "AIzaSyBeTaR7Y9AgmkDAo1zojPAVqTJpeToX7qs",
-      "AIzaSyCVHmrDShpvWCskGAM-j060hCXVrV69ro0"
-    ];
+<script>
+/* ---------------- API KEYS ---------------- */
+const API_KEYS = [
+"AIzaSyBuMhjmMoSRNPhqsIY0do0XfSdtvQtbGVU",
+"AIzaSyDvWdTJh3W7fUMTGiw0Vwk4NX0g9TJ-1dI",
+"AIzaSyBjGdZA2xSTXze09adu-91Udd7Fry1r_CA",
+"AIzaSyBC_6U8XDHAnNHnK02kYM6dp7hcpdwhVpY",
+"AIzaSyB7Da8tJVUJ03m4ooQQiBtZn0rdi-eqfd4",
+"AIzaSyBH5vi_-v3Yexiqi1L6L1axC231gJVegrSw",
+"AIzaSyDdiXCYO5Yg1qJA5weiuoDyGgPvcdA-b54",
+"AIzaSyAhwq3qcm3Wy_npQ2e6IkL3qsv-30eyhWs",
+"AIzaSyD01LrwaaySxaJuK0duMz4fDKfRsVbx7G4",
+"AIzaSyC2bXABgSnSCpaUfb-miRbBkx51fssHCuQ",
+"AIzaSyCxoe0ZerRB60jinGQD_vxDLIEo21p2cIk",
+"AIzaSyBWMKdH3CrxH2IJUXI07Yqotu0nayaDiUk",
+"AIzaSyA6V662DW4XObukopNd_BYiP_UvVONF3-A",
+"AIzaSyCY_w9kwnF8A1r8pdLFTvMEZTkCQjkfdxg",
+"AIzaSyBuN6I80IhFka20vAoEvV2pQ17_TVMsSPc",
+"AIzaSyBdHC_1VG3U4p6YEZf1A4gS-9jajNXesyo",
+"AIzaSyB0EQqEbJ3qA3bI9Ne21Jvz2ou8F_MrHqA",
+"AIzaSyDPnTd1Xmt1Km1y33UzMPI_6Cq7BZSETIs",
+"AIzaSyBEV39C0nbK5p6nGCeAV5C4GV-_Yvh-0rk",
+"AIzaSyCU2soYE7PzkEuZKVhT53D3KoGq3wuXDVA",
+"AIzaSyDRn50qJu2szNEXK6CY_yLdVB9ZJn7gF88",
+"AIzaSyAc1TLewGvgtyhbZxR1-5ZZJ4C_9gIRn2Q",
+"AIzaSyDG7T1K4-kn2OFa_0NqjJ7yhveeXJ2L0W4",
+"AIzaSyBeTaR7Y9AgmkDAo1zojPAVqTJpeToX7qs",
+"AIzaSyCVHmrDShpvWCskGAM-j060hCXVrV69ro0"
+];
 
-    let keyIndex = 0;
-    function getApiKey() {
-      const key = API_KEYS[keyIndex % API_KEYS.length];
-      keyIndex++;
-      return key;
-    }
+let keyIndex = 0;
+function getApiKey() {
+  return API_KEYS[keyIndex++ % API_KEYS.length];
+}
 
-    /************************************************************
-     * 2. Meta wearables + EMG wristband – PLACEHOLDER HOOKS
-     ************************************************************/
-    const MetaWearables = {
-      init() {
-        // TODO: Initialize Meta Ray-Ban / Meta wearables web toolkit
-        // Example:
-        // metaWear.initDisplay({ width: 600, height: 600, transparent: true });
-        console.log("MetaWearables.init() – placeholder");
-      },
-      onGesture(callback) {
-        // TODO: Subscribe to EMG wristband gestures
-        // Example:
-        // emgBand.on("gesture", callback);
-        console.log("MetaWearables.onGesture() – placeholder");
-      }
-    };
+/* ---------------- UI ELEMENTS ---------------- */
+const statusEl = document.getElementById("status");
+const errorEl = document.getElementById("error");
+const listEl = document.getElementById("video-list");
 
-    MetaWearables.init();
-    MetaWearables.onGesture(gesture => {
-      // Example: switch tabs based on gesture
-      console.log("EMG gesture:", gesture);
-      // You can map gestures to tabs here.
-    });
+function setStatus(t){ statusEl.textContent = t; }
+function setError(t){ errorEl.textContent = t || ""; }
 
-    /************************************************************
-     * 3. YouTube Data API helpers
-     ************************************************************/
-    const statusEl = document.getElementById("status");
-    const errorEl = document.getElementById("error");
-    const listEl = document.getElementById("video-list");
+/* ---------------- RENDER ---------------- */
+function renderVideos(items) {
+  listEl.innerHTML = "";
+  items.forEach(item => {
+    const id = item.id.videoId || item.id;
+    const sn = item.snippet;
+    const thumb = sn.thumbnails.medium.url;
 
-    const MAX_RESULTS = 50;
-    const REGION_US = "US";
-    const LANGUAGE_EN = "en";
+    const el = document.createElement("div");
+    el.className = "video-item";
+    el.onclick = () => window.open("https://www.youtube.com/watch?v=" + id);
 
-    function setStatus(text) {
-      statusEl.textContent = text;
-    }
+    el.innerHTML = `
+      <div class="video-thumb"><img src="${thumb}"></div>
+      <div>
+        <div class="video-title">${sn.title}</div>
+        <div class="video-channel">${sn.channelTitle}</div>
+      </div>
+    `;
+    listEl.appendChild(el);
+  });
+}
 
-    function setError(text) {
-      errorEl.textContent = text || "";
-    }
+/* ---------------- FETCH ---------------- */
+async function ytFetch(url) {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    return await res.json();
+  } catch (e) {
+    setError("YouTube API error: " + e.message);
+    return null;
+  }
+}
 
-    function renderVideos(items) {
-      listEl.innerHTML = "";
-      items.forEach(item => {
-        const videoId = item.id.videoId || item.id;
-        const snippet = item.snippet || {};
-        const thumb =
-          (snippet.thumbnails && (snippet.thumbnails.medium || snippet.thumbnails.default)) || null;
+/* ---------------- TAB LOADERS ---------------- */
+async function loadAll() {
+  setStatus("Loading All…");
+  const key = getApiKey();
+  const url =
+    "https://www.googleapis.com/youtube/v3/videos?part=snippet&chart=mostPopular&regionCode=US&maxResults=50&key=" + key;
+  const data = await ytFetch(url);
+  if (data?.items) renderVideos(data.items);
+}
 
-        const el = document.createElement("div");
-        el.className = "video-item";
-        el.onclick = () => {
-          // Open in YouTube – you can swap this for an in‑display player
-          window.open(`https://www.youtube.com/watch?v=${videoId}`, "_blank");
-        };
+async function loadHome(){ return loadAll(); }
 
-        const thumbEl = document.createElement("div");
-        thumbEl.className = "video-thumb";
-        if (thumb && thumb.url) {
-          const img = document.createElement("img");
-          img.src = thumb.url;
-          thumbEl.appendChild(img);
-        }
+async function loadShorts() {
+  setStatus("Loading Shorts…");
+  const key = getApiKey();
+  const url =
+    "https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoDuration=short&order=date&regionCode=US&relevanceLanguage=en&maxResults=50&key=" + key;
+  const data = await ytFetch(url);
+  if (data?.items) renderVideos(data.items);
+}
 
-        const metaEl = document.createElement("div");
-        metaEl.className = "video-meta";
+async function loadHaiti() {
+  setStatus("Loading Haiti…");
+  const key = getApiKey();
+  const url =
+    "https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&q=" +
+    encodeURIComponent("Haiti movie OR Haiti") +
+    "&order=date&regionCode=US&relevanceLanguage=en&maxResults=50&key=" + key;
+  const data = await ytFetch(url);
+  if (data?.items) renderVideos(data.items);
+}
 
-        const titleEl = document.createElement("div");
-        titleEl.className = "video-title";
-        titleEl.textContent = snippet.title || "Untitled";
+async function loadNews() {
+  setStatus("Loading News…");
+  const key = getApiKey();
+  const url =
+    "https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&q=US%20news&order=date&regionCode=US&relevanceLanguage=en&maxResults=50&key=" + key;
+  const data = await ytFetch(url);
+  if (data?.items) renderVideos(data.items);
+}
 
-        const channelEl = document.createElement("div");
-        channelEl.className = "video-channel";
-        channelEl.textContent = snippet.channelTitle || "";
+async function loadAnime() {
+  setStatus("Loading Anime…");
+  const key = getApiKey();
+  const url =
+    "https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&q=anime%20English%20dub&order=date&regionCode=US&relevanceLanguage=en&maxResults=50&key=" + key;
+  const data = await ytFetch(url);
+  if (data?.items) renderVideos(data.items);
+}
 
-        metaEl.appendChild(titleEl);
-        metaEl.appendChild(channelEl);
+async function loadLive() {
+  setStatus("Loading Live…");
+  const key = getApiKey();
+  const url =
+    "https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&eventType=live&order=date&regionCode=US&relevanceLanguage=en&maxResults=50&key=" + key;
+  const data = await ytFetch(url);
+  if (data?.items) renderVideos(data.items);
+}
 
-        el.appendChild(thumbEl);
-        el.appendChild(metaEl);
-        listEl.appendChild(el);
-      });
-    }
+async function loadMovies() {
+  setStatus("Loading Movies…");
+  const key = getApiKey();
+  const url =
+    "https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoDuration=long&q=full%20movie&order=relevance&regionCode=US&relevanceLanguage=en&maxResults=50&key=" + key;
+  const data = await ytFetch(url);
+  if (data?.items) renderVideos(data.items);
+}
 
-    async function ytFetch(url) {
-      setError("");
-      try {
-        const res = await fetch(url);
-        if (!res.ok) throw new Error("HTTP " + res.status);
-        const data = await res.json();
-        return data;
-      } catch (e) {
-        setError("YouTube API error: " + e.message);
-        console.error(e);
-        return null;
-      }
-    }
+async function loadComedy() {
+  setStatus("Loading Comedy…");
+  const key = getApiKey();
+  const url =
+    "https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&q=stand%20up%20comedy&order=relevance&regionCode=US&relevanceLanguage=en&maxResults=50&key=" + key;
+  const data = await ytFetch(url);
+  if (data?.items) renderVideos(data.items);
+}
 
-    /************************************************************
-     * 4. Tab-specific loaders
-     ************************************************************/
-    async function loadAll() {
-      setStatus("Loading All – US trending mix (mostPopular)...");
-      const key = getApiKey();
-      const url =
-        "https://www.googleapis.com/youtube/v3/videos" +
-        "?part=snippet" +
-        "&chart=mostPopular" +
-        "&regionCode=" + REGION_US +
-        "&maxResults=" + MAX_RESULTS +
-        "&hl=" + LANGUAGE_EN +
-        "&key=" + key;
-      const data = await ytFetch(url);
-      if (data && data.items) renderVideos(data.items);
-    }
+async function loadSearch() {
+  const q = prompt("Search YouTube:");
+  if (!q) return;
+  setStatus("Searching \"" + q + "\"…");
+  const key = getApiKey();
+  const url =
+    "https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&q=" +
+    encodeURIComponent(q) +
+    "&order=relevance&regionCode=US&relevanceLanguage=en&maxResults=50&key=" + key;
+  const data = await ytFetch(url);
+  if (data?.items) renderVideos(data.items);
+}
 
-    async function loadHome() {
-      // Same as All for now – US mostPopular mix
-      setStatus("Loading Home – US mix (mostPopular)...");
-      await loadAll();
-    }
+const TAB_LOADERS = {
+  all: loadAll,
+  home: loadHome,
+  shorts: loadShorts,
+  haiti: loadHaiti,
+  news: loadNews,
+  anime: loadAnime,
+  live: loadLive,
+  movies: loadMovies,
+  comedy: loadComedy,
+  search: loadSearch
+};
 
-    async function loadShorts() {
-      setStatus("Loading Shorts – latest US shorts (English)...");
-      const key = getApiKey();
-      const url =
-        "https://www.googleapis.com/youtube/v3/search" +
-        "?part=snippet" +
-        "&type=video" +
-        "&videoDuration=short" +
-        "&order=date" +
-        "&regionCode=" + REGION_US +
-        "&relevanceLanguage=" + LANGUAGE_EN +
-        "&maxResults=" + MAX_RESULTS +
-        "&key=" + key;
-      const data = await ytFetch(url);
-      if (data && data.items) renderVideos(data.items);
-    }
+/* ---------------- TAB SWITCHING ---------------- */
+const tabsEl = document.getElementById("tabs");
 
-    async function loadHaiti() {
-      setStatus("Loading Haiti – 'Haiti movie' + Haiti videos...");
-      const key = getApiKey();
-      const url =
-        "https://www.googleapis.com/youtube/v3/search" +
-        "?part=snippet" +
-        "&type=video" +
-        "&q=" + encodeURIComponent("Haiti movie OR Haiti") +
-        "&order=date" +
-        "&regionCode=" + REGION_US +
-        "&relevanceLanguage=" + LANGUAGE_EN +
-        "&maxResults=" + MAX_RESULTS +
-        "&key=" + key;
-      const data = await ytFetch(url);
-      if (data && data.items) renderVideos(data.items);
-    }
+tabsEl.addEventListener("click", async e => {
+  const t = e.target.closest(".tab");
+  if (!t) return;
 
-    async function loadNews() {
-      setStatus("Loading News – latest US news...");
-      const key = getApiKey();
-      const url =
-        "https://www.googleapis.com/youtube/v3/search" +
-        "?part=snippet" +
-        "&type=video" +
-        "&q=" + encodeURIComponent("US news") +
-        "&order=date" +
-        "&regionCode=" + REGION_US +
-        "&relevanceLanguage=" + LANGUAGE_EN +
-        "&maxResults=" + MAX_RESULTS +
-        "&key=" + key;
-      const data = await ytFetch(url);
-      if (data && data.items) renderVideos(data.items);
-    }
+  document.querySelectorAll(".tab").forEach(x => x.classList.remove("active"));
+  t.classList.add("active");
 
-    async function loadAnime() {
-      setStatus("Loading Anime – US anime, English dub...");
-      const key = getApiKey();
-      const url =
-        "https://www.googleapis.com/youtube/v3/search" +
-        "?part=snippet" +
-        "&type=video" +
-        "&q=" + encodeURIComponent("anime English dub") +
-        "&order=date" +
-        "&regionCode=" + REGION_US +
-        "&relevanceLanguage=" + LANGUAGE_EN +
-        "&maxResults=" + MAX_RESULTS +
-        "&key=" + key;
-      const data = await ytFetch(url);
-      if (data && data.items) renderVideos(data.items);
-    }
+  const loader = TAB_LOADERS[t.dataset.tab];
+  if (loader) {
+    listEl.innerHTML = "";
+    await loader();
+  }
+});
 
-    async function loadLive() {
-      setStatus("Loading Live – US live streams right now...");
-      const key = getApiKey();
-      const url =
-        "https://www.googleapis.com/youtube/v3/search" +
-        "?part=snippet" +
-        "&type=video" +
-        "&eventType=live" +
-        "&order=date" +
-        "&regionCode=" + REGION_US +
-        "&relevanceLanguage=" + LANGUAGE_EN +
-        "&maxResults=" + MAX_RESULTS +
-        "&key=" + key;
-      const data = await ytFetch(url);
-      if (data && data.items) renderVideos(data.items);
-    }
+/* ---------------- EMG GESTURE CONTROLS ---------------- */
+function getActiveTabIndex() {
+  const tabs = [...document.querySelectorAll(".tab")];
+  return tabs.findIndex(t => t.classList.contains("active"));
+}
 
-    async function loadMovies() {
-      setStatus("Loading Movies – US free full movies (long duration)...");
-      const key = getApiKey();
-      const url =
-        "https://www.googleapis.com/youtube/v3/search" +
-        "?part=snippet" +
-        "&type=video" +
-        "&videoDuration=long" +
-        "&q=" + encodeURIComponent("full movie") +
-        "&order=relevance" +
-        "&regionCode=" + REGION_US +
-        "&relevanceLanguage=" + LANGUAGE_EN +
-        "&maxResults=" + MAX_RESULTS +
-        "&key=" + key;
-      const data = await ytFetch(url);
-      if (data && data.items) renderVideos(data.items);
-    }
+function nextTab() {
+  const tabs = [...document.querySelectorAll(".tab")];
+  let i = getActiveTabIndex();
+  tabs[(i + 1) % tabs.length].click();
+}
 
-    async function loadComedy() {
-      setStatus("Loading Comedy – US stand-up comedy...");
-      const key = getApiKey();
-      const url =
-        "https://www.googleapis.com/youtube/v3/search" +
-        "?part=snippet" +
-        "&type=video" +
-        "&q=" + encodeURIComponent("stand up comedy") +
-        "&order=relevance" +
-        "&regionCode=" + REGION_US +
-        "&relevanceLanguage=" + LANGUAGE_EN +
-        "&maxResults=" + MAX_RESULTS +
-        "&key=" + key;
-      const data = await ytFetch(url);
-      if (data && data.items) renderVideos(data.items);
-    }
+function previousTab() {
+  const tabs = [...document.querySelectorAll(".tab")];
+  let i = getActiveTabIndex();
+  tabs[(i - 1 + tabs.length) % tabs.length].click();
+}
 
-    const TAB_LOADERS = {
-      all: loadAll,
-      home: loadHome,
-      shorts: loadShorts,
-      haiti: loadHaiti,
-      news: loadNews,
-      anime: loadAnime,
-      live: loadLive,
-      movies: loadMovies,
-      comedy: loadComedy
-    };
+function refreshCurrentTab() {
+  const active = document.querySelector(".tab.active");
+  if (active) active.click();
+}
 
-    /************************************************************
-     * 5. Tab switching – refresh on every toggle
-     ************************************************************/
-    const tabsEl = document.getElementById("tabs");
-    tabsEl.addEventListener("click", async (e) => {
-      const tabEl = e.target.closest(".tab");
-      if (!tabEl) return;
-      const tab = tabEl.dataset.tab;
-      document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
-      tabEl.classList.add("active");
+/* Placeholder for Meta Wearables SDK */
+const MetaWearables = {
+  onGesture(cb){
+    console.log("Gesture system ready (placeholder)");
+  }
+};
 
-      const loader = TAB_LOADERS[tab];
-      if (loader) {
-        listEl.innerHTML = "";
-        await loader();
-      }
-    });
+MetaWearables.onGesture(g => {
+  if (g === "swipe_right") nextTab();
+  if (g === "swipe_left") previousTab();
+  if (g === "pinch") loadSearch();
+  if (g === "fist") refreshCurrentTab();
+});
 
-    // Initial load
-    loadAll();
-  </script>
+/* ---------------- INITIAL LOAD ---------------- */
+loadAll();
+</script>
+
 </body>
 </html>
