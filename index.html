@@ -98,13 +98,15 @@ html, body {
 
 #player-container {
   flex: 1;
+  background: #000;
 }
 
 #player-controls {
   display: flex;
   justify-content: space-around;
-  padding: 10px;
+  padding: 12px;
   background: #111;
+  border-top: 1px solid #222;
 }
 
 .player-btn {
@@ -184,10 +186,10 @@ html, body {
       <div id="player"></div>
     </div>
     <div id="player-controls">
-      <button class="player-btn" data-action="back10">⏪ Back 10 s</button>
-      <button class="player-btn" data-action="playpause">⏯ Play/Pause</button>
-      <button class="player-btn" data-action="forward10">⏩ Forward 10 s</button>
-      <button class="player-btn" data-action="goback">⬅ Go Back</button>
+      <button class="player-btn" data-action="back10">⏪ Back 10s</button>
+      <button class="player-btn" data-action="playpause">⏯ Play/Pause</button>
+      <button class="player-btn" data-action="forward10">⏩ Forward 10s</button>
+      <button class="player-btn" data-action="goback">⬅ Go Back</button>
     </div>
   </div>
 
@@ -218,7 +220,7 @@ html, body {
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
 
-/* ALL API KEYS */
+/* ALL API KEYS — INCLUDING YOUR 4 NEW ONES */
 const KEYS = [
   "AIzaSyAiG74ZYcjR4K78NPfUe3sQGeJLnoBIXYU",
   "AIzaSyDVDUackHINzULJ6qasLLKDZUIBBxTORTI",
@@ -241,7 +243,13 @@ const KEYS = [
   "AIzaSyDiisGuMjbilWyxKAFpTPu4am8d5yQagJI",
   "AIzaSyDI3sl7QYBrXOgAwCyjwJ23pV1nbjUMVL0",
   "AIzaSyD_Jfk_5wuEdVhDEsQX9uy3BW2Fio7xe0s",
-  "AIzaSyCpAzwCaG2I8gEusAsDKnkoxVMdkPg1Vpk"
+  "AIzaSyCpAzwCaG2I8gEusAsDKnkoxVMdkPg1Vpk",
+
+  /* ⭐ YOUR NEW KEYS ADDED SAFELY ⭐ */
+  "AIzaSyCJ2cLDhXE-e_KYbnfS7DmrT-gtbL9yxCY",
+  "AIzaSyA2DSf373Pmv26YLpcv2gnUMeZd0bGgNug",
+  "AIzaSyC-66qDbGqKdEfQyGFeQPgYpRCjg802eLQ",
+  "AIzaSyBE_TgXpbeBMrkZhEGeEI3nZ5xC_BbbSd0"
 ];
 
 let keyIndex = 0;
@@ -270,14 +278,14 @@ let userHasNavigated = false;
 /* PLAYER INIT */
 function onYouTubeIframeAPIReady(){
   ytPlayer = new YT.Player("player", {
-    height: "315",
-    width: "560",
+    height: "100%",
+    width: "100%",
     videoId: "",
     playerVars: { controls: 1, rel: 0 }
   });
 }
 
-/* US‑ONLY SEARCH — FIXED */
+/* SEARCH */
 async function ytSearch(q, pageToken=null, maxResults=25, extra=""){
   let base =
     "https://www.googleapis.com/youtube/v3/search?part=snippet&type=video" +
@@ -314,12 +322,7 @@ async function loadQuery(q, maxResults=25, extra=""){
 function showVideos(items, append){
   if(!append){
     content.innerHTML = "";
-
-    if(currentTab !== "search" && userHasNavigated){
-      highlightIndex = 0;
-    } else {
-      highlightIndex = -1;
-    }
+    highlightIndex = -1;  /* ⭐ FIXED: no auto‑highlight on tab switch */
   }
 
   items.forEach(v=>{
@@ -377,7 +380,7 @@ async function loadMore(){
   showVideos(items, true);
 }
 
-/* TAB SWITCHING */
+/* TAB SWITCHING — FIXED */
 tabs.addEventListener("click", async e=>{
   const t = e.target.closest(".tab");
   if(!t) return;
@@ -385,17 +388,14 @@ tabs.addEventListener("click", async e=>{
   document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
   t.classList.add("active");
 
-  const tab = t.dataset.tab;
-  currentTab = tab;
-
+  currentTab = t.dataset.tab;
   nextPageToken = null;
   highlightIndex = -1;
   userHasNavigated = false;
   content.innerHTML = "";
 
-  if(tab === "search"){
+  if(currentTab === "search"){
     searchBarWrapper.style.display = "block";
-    keyboardActive = false;
   } else {
     searchBarWrapper.style.display = "none";
     hideKeyboard();
@@ -403,25 +403,25 @@ tabs.addEventListener("click", async e=>{
 
   let q="", max=25, extra="";
 
-  if(tab === "all"){
+  if(currentTab === "all"){
     q = "";
     max = 50;
     extra = "videoDuration=medium&order=viewCount";
   }
 
-  if(tab === "shorts"){
+  if(currentTab === "shorts"){
     q = "";
     max = 50;
     extra = "videoDuration=short&order=date";
   }
 
-  if(tab === "news"){ q="US news"; max=40; }
-  if(tab === "anime"){ q="anime english dub"; max=40; }
-  if(tab === "live"){ q="live stream"; max=40; extra="eventType=live"; }
-  if(tab === "movies"){ q="full movie free"; max=40; extra="videoDuration=long"; }
-  if(tab === "comedy"){ q="stand up comedy"; max=40; }
+  if(currentTab === "news"){ q="US news"; max=40; }
+  if(currentTab === "anime"){ q="anime english dub"; max=40; }
+  if(currentTab === "live"){ q="live stream"; max=40; extra="eventType=live"; }
+  if(currentTab === "movies"){ q="full movie free"; max=40; extra="videoDuration=long"; }
+  if(currentTab === "comedy"){ q="stand up comedy"; max=40; }
 
-  if(tab !== "search"){
+  if(currentTab !== "search"){
     await loadQuery(q, max, extra);
   }
 });
@@ -565,7 +565,7 @@ keyboard.addEventListener("click", async e=>{
   }
 });
 
-/* INITIAL LOAD — FIXED & TESTED */
+/* INITIAL LOAD */
 (async ()=>{
   highlightIndex = -1;
   userHasNavigated = false;
