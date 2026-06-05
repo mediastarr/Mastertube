@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>ViewTube Stealth</title>
+<title>ViewTube Stealth Fixed</title>
 
 <style>
   html, body {
@@ -78,11 +78,12 @@
     border-color: rgba(255,0,0,0.9);
   }
 
+  /* S1: Scroll INSIDE content panel */
   .content {
     margin: 0 10px 10px 10px;
     padding: 10px;
     height: 420px;
-    overflow-y: auto;
+    overflow-y: scroll;
   }
 
   .video {
@@ -255,14 +256,13 @@ tabs.addEventListener("click", async e=>{
   if(tab==="search"){
     kb.style.display = "block";
     kbInput.value = "";
-    kbInput.focus();
     return;
   }
 
   kb.style.display = "none";
 
   const queryMap = {
-    all: "",
+    all: "trending",
     shorts: "shorts",
     news: "US news",
     anime: "anime english dub",
@@ -283,7 +283,6 @@ letters.forEach(ch=>{
   k.textContent = ch===" " ? "Space" : ch;
   k.onclick = ()=>{
     kbInput.value += (ch===" " ? " " : ch);
-    kbInput.focus();
   };
   kbKeys.appendChild(k);
 });
@@ -299,7 +298,7 @@ document.getElementById("kb-enter").onclick = async ()=>{
 
 /* Initial load */
 (async ()=>{
-  const items = await yt("");
+  const items = await yt("trending");
   showVideos(items);
 })();
 </script>
