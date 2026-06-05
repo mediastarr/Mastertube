@@ -314,7 +314,10 @@ function showVideos(items, append=false){
   items.forEach(v=>{
     const id = v.id.videoId || v.id;
     const sn = v.snippet;
-    const thumb = sn.thumbnails?.medium?.url || "";
+    const thumb = (sn.thumbnails && sn.thumbnails.medium && sn.thumbnails.medium.url) 
+  ? sn.thumbnails.medium.url 
+  : "";
+
 
     const div = document.createElement("div");
     div.className = "video";
