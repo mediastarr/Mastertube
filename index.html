@@ -305,6 +305,9 @@ let ytPlayer = null;
 let playerMode = false;
 let currentTab = "all";
 
+/* NEW FIX */
+let keyboardActive = false;
+
 function onYouTubeIframeAPIReady(){
   ytPlayer = new YT.Player("player", {
     height: "315",
@@ -518,8 +521,15 @@ function openHighlightedVideo(){
   if(id) openVideo(id);
 }
 
+/* FIX: Disable highlight navigation while keyboard is open */
 document.addEventListener("keydown", e=>{
   if(playerMode) return;
+
+  if(keyboardActive){
+    if(e.key === "Enter" || e.key === "ArrowDown" || e.key === "ArrowUp"){
+      return;
+    }
+  }
 
   if(currentTab === "search"){
     hideKeyboard();
@@ -541,11 +551,15 @@ document.addEventListener("click", e=>{
 
 /* SEARCH TAB + FLOATING KEYBOARD */
 searchInput.addEventListener("focus", showKeyboard);
-searchInput.addEventListener("click", showKeyboard);
+searchInput.addEventListener("click", ()=>{
+  highlightIndex = -1; // NEW FIX: prevent video auto-opening
+  showKeyboard();
+});
 
 function showKeyboard(){
   keyboard.style.display = "block";
   keyboardActive = true;
+  highlightIndex = -1; // NEW FIX
 }
 
 function hideKeyboard(){
