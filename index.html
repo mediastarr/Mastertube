@@ -75,20 +75,20 @@
       height: calc(600px - 40px);
     }
 
+    /* Floating AR player */
     .player {
-      position: relative;
-      border-radius: 16px;
+      position: fixed;
+      top: 40px;
+      right: 40px;
+      width: 480px;
+      height: 270px;
+      z-index: 9999;
+      border-radius: 18px;
       overflow: hidden;
-      background: #000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .player video {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
+      background: rgba(0,0,0,0.85);
+      backdrop-filter: blur(16px);
+      box-shadow: 0 18px 40px rgba(0,0,0,0.7);
+      transform: translateZ(50px);
     }
 
     .player-overlay {
@@ -97,7 +97,7 @@
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      padding: 8px 10px;
+      padding: 10px 12px;
       pointer-events: none;
     }
 
@@ -123,7 +123,7 @@
     .player-controls {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
       font-size: 11px;
     }
 
@@ -142,10 +142,12 @@
     }
 
     .control-pill {
-      padding: 2px 6px;
+      padding: 4px 10px;
       border-radius: 999px;
       background: rgba(0, 0, 0, 0.7);
       border: 1px solid rgba(255, 255, 255, 0.3);
+      pointer-events: auto;
+      cursor: pointer;
     }
 
     .list {
@@ -156,10 +158,9 @@
     .video-item {
       display: flex;
       gap: 8px;
-      margin-bottom: 6px;
+      margin-bottom: 10px;
       padding: 4px 4px;
       border-radius: 10px;
-      background: rgba(0, 0, 0, 0.35);
       cursor: pointer;
     }
 
@@ -199,6 +200,32 @@
     .meta-extra {
       font-size: 10px;
       opacity: 0.6;
+    }
+
+    .floating-card {
+      transform-style: preserve-3d;
+      animation: float 3.5s ease-in-out infinite;
+      box-shadow: 0 12px 24px rgba(0,0,0,0.45);
+      background: rgba(0,0,0,0.55);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(255,255,255,0.25);
+      opacity: 0;
+      transition: opacity 0.4s ease-out, transform 0.3s ease-out, box-shadow 0.3s;
+    }
+
+    .floating-card.ready {
+      opacity: 1;
+      transform: translateZ(30px);
+    }
+
+    @keyframes float {
+      0%   { transform: translateY(0px); }
+      50%  { transform: translateY(-6px); }
+      100% { transform: translateY(0px); }
+    }
+
+    .floating-card.rotating {
+      box-shadow: 0 0 20px rgba(255,255,255,0.6);
     }
 
     .search-bar {
@@ -317,32 +344,6 @@
         rotate(calc(var(--angle) * -1))
         scale(1.15);
     }
-
-    /* Floating cards */
-    .floating-card {
-      transform-style: preserve-3d;
-      animation: float 3.5s ease-in-out infinite;
-      box-shadow: 0 12px 24px rgba(0,0,0,0.45);
-      background: rgba(0,0,0,0.55);
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(255,255,255,0.25);
-      opacity: 0;
-      transition: opacity 0.4s ease-out, transform 0.3s ease-out, box-shadow 0.3s;
-    }
-
-    .floating-card.ready {
-      opacity: 1;
-    }
-
-    @keyframes float {
-      0%   { transform: translateY(0px); }
-      50%  { transform: translateY(-6px); }
-      100% { transform: translateY(0px); }
-    }
-
-    .floating-card.rotating {
-      box-shadow: 0 0 20px rgba(255,255,255,0.6);
-    }
   </style>
 </head>
 <body>
@@ -351,8 +352,7 @@
       <div class="top-bar">
         <div class="logo">YouTube • Meta Ray‑Ban</div>
         <div class="tabs" id="tabs">
-          <div class="tab active" data-tab="all">All</div>
-          <div class="tab" data-tab="home">Home</div>
+          <div class="tab active" data-tab="home">Home</div>
           <div class="tab" data-tab="shorts">Shorts</div>
           <div class="tab" data-tab="haiti">Haiti</div>
           <div class="tab" data-tab="news">News</div>
@@ -365,26 +365,6 @@
       </div>
 
       <div class="content">
-        <div class="player" id="player">
-          <video id="playerVideo" controls></video>
-          <div class="player-overlay">
-            <div class="player-top">
-              <div id="playerChannel">Channel</div>
-              <div id="playerStats">0 views • 0:00</div>
-            </div>
-            <div class="player-bottom">
-              <div class="player-title" id="playerTitle">Select a video…</div>
-              <div class="player-controls">
-                <div class="control-pill">▶ Play</div>
-                <div class="progress-bar">
-                  <div class="progress-fill"></div>
-                </div>
-                <div class="control-pill">•••</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
         <div class="list" id="list"></div>
       </div>
 
@@ -438,6 +418,31 @@
     </div>
   </div>
 
+  <!-- Floating AR player -->
+  <div class="player" id="player">
+    <div id="playerFrame"></div>
+    <div class="player-overlay">
+      <div class="player-top">
+        <div id="playerChannel">Channel</div>
+        <div id="playerStats">0 views</div>
+      </div>
+      <div class="player-bottom">
+        <div class="player-title" id="playerTitle">Select a video…</div>
+        <div class="player-controls">
+          <div class="control-pill" id="btnBack">⟲ -10s</div>
+          <div class="control-pill" id="btnPlayPause">▶ Play</div>
+          <div class="control-pill" id="btnForward">⟳ +10s</div>
+          <div class="control-pill" id="btnClose">⟵ Back</div>
+          <div class="progress-bar">
+            <div class="progress-fill"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- YouTube IFrame API -->
+  <script src="https://www.youtube.com/iframe_api"></script>
   <script>
     const API_KEYS = [
       "AIzaSyAiG74ZYcjR4K78NPfUe3sQGeJLnoBIXYU",
@@ -481,7 +486,7 @@
 
     function initEmgWristband() {
       console.log("Init EMG wristband (stub)");
-      // hook real EMG SDK here
+      // hook real EMG SDK here and call handleGesture(gestureName)
     }
 
     const MAX_RESULTS = 50;
@@ -507,32 +512,113 @@
     };
 
     const loaders = {
-      all: () => fetchYouTube("videos", { ...baseParams, chart: "mostPopular" }),
-      home: () => fetchYouTube("videos", { ...baseParams, chart: "mostPopular" }),
-      shorts: () => fetchYouTube("search", { ...baseParams, order: "date", videoDuration: "short" }),
-      haiti: () => fetchYouTube("search", { ...baseParams, order: "relevance", q: "Haiti movie OR Haiti" }),
-      news: () => fetchYouTube("search", { ...baseParams, order: "date", q: "US news" }),
-      anime: () => fetchYouTube("search", { ...baseParams, order: "relevance", q: "anime English dub US" }),
-      live: () => fetchYouTube("search", { ...baseParams, eventType: "live", order: "date" }),
-      movies: () => fetchYouTube("search", { ...baseParams, videoDuration: "long", q: "full movie free US" }),
-      comedy: () => fetchYouTube("search", { ...baseParams, order: "relevance", q: "stand up comedy US" }),
-      search: (query) => fetchYouTube("search", { ...baseParams, order: "relevance", q: query })
+      home: () =>
+        fetchYouTube("videos", {
+          ...baseParams,
+          chart: "mostPopular"
+        }),
+      shorts: () =>
+        fetchYouTube("search", {
+          ...baseParams,
+          order: "date",
+          videoDuration: "short"
+        }),
+      haiti: () =>
+        fetchYouTube("search", {
+          ...baseParams,
+          order: "relevance",
+          q: "Haiti movie OR Haiti"
+        }),
+      news: () =>
+        fetchYouTube("search", {
+          ...baseParams,
+          order: "date",
+          q: "US news"
+        }),
+      anime: () =>
+        fetchYouTube("search", {
+          ...baseParams,
+          order: "relevance",
+          q: "anime English dub US"
+        }),
+      live: () =>
+        fetchYouTube("search", {
+          ...baseParams,
+          eventType: "live",
+          order: "date"
+        }),
+      movies: () =>
+        fetchYouTube("search", {
+          ...baseParams,
+          videoDuration: "long",
+          q: "full movie free US"
+        }),
+      comedy: () =>
+        fetchYouTube("search", {
+          ...baseParams,
+          order: "relevance",
+          q: "stand up comedy US"
+        }),
+      search: (query) =>
+        fetchYouTube("search", {
+          ...baseParams,
+          order: "relevance",
+          q: query
+        })
     };
 
     const tabsEl = document.getElementById("tabs");
     const listEl = document.getElementById("list");
-    const playerVideo = document.getElementById("playerVideo");
-    const playerTitle = document.getElementById("playerTitle");
-    const playerChannel = document.getElementById("playerChannel");
-    const playerStats = document.getElementById("playerStats");
     const keyboardEl = document.getElementById("keyboard");
     const radialMenu = document.getElementById("radialMenu");
     const hud = document.getElementById("hud");
 
-    let currentTab = "all";
+    const btnPlayPause = document.getElementById("btnPlayPause");
+    const btnForward = document.getElementById("btnForward");
+    const btnBack = document.getElementById("btnBack");
+    const btnClose = document.getElementById("btnClose");
+
+    const playerTitle = document.getElementById("playerTitle");
+    const playerChannel = document.getElementById("playerChannel");
+    const playerStats = document.getElementById("playerStats");
+
+    let currentTab = "home";
     let searchInputEl = null;
     let radialOpen = false;
     let currentBrightness = 1.0;
+    let selectedIndex = 0;
+
+    let ytPlayer = null;
+    let currentVideoId = null;
+    let isPlaying = false;
+
+    function onYouTubeIframeAPIReady() {
+      ytPlayer = new YT.Player("playerFrame", {
+        height: "100%",
+        width: "100%",
+        playerVars: {
+          controls: 0,
+          rel: 0,
+          modestbranding: 1
+        },
+        events: {
+          onReady: () => {
+            console.log("YT Player ready");
+          },
+          onStateChange: (e) => {
+            if (e.data === YT.PlayerState.PLAYING) isPlaying = true;
+            if (e.data === YT.PlayerState.PAUSED || e.data === YT.PlayerState.ENDED)
+              isPlaying = false;
+            updatePlayPauseLabel();
+          }
+        }
+      });
+    }
+
+    function updatePlayPauseLabel() {
+      if (!btnPlayPause) return;
+      btnPlayPause.textContent = isPlaying ? "⏸ Pause" : "▶ Play";
+    }
 
     function showHUD(text) {
       hud.textContent = text;
@@ -561,7 +647,7 @@
       if (!loader) return;
       const data = await loader();
       const items = data.items || [];
-      items.forEach((item, index) => {
+      items.forEach((item) => {
         const videoId = item.id.videoId || item.id;
         const snippet = item.snippet || {};
         const stats = item.statistics || {};
@@ -607,15 +693,25 @@
 
         setTimeout(() => el.classList.add("ready"), 50);
       });
+
+      selectedIndex = 0;
+      highlightSelected();
     }
 
     function playVideo(videoId, snippet, stats) {
-      const url = "https://www.youtube.com/embed/" + videoId + "?autoplay=1";
-      playerVideo.src = url;
+      currentVideoId = videoId;
+
+      if (ytPlayer && ytPlayer.loadVideoById) {
+        ytPlayer.loadVideoById(videoId);
+      }
+
       playerTitle.textContent = snippet.title || "Untitled";
       playerChannel.textContent = snippet.channelTitle || "Channel";
       const views = stats.viewCount ? Number(stats.viewCount).toLocaleString() : "0";
       playerStats.textContent = `${views} views`;
+
+      isPlaying = true;
+      updatePlayPauseLabel();
     }
 
     function renderSearchUI() {
@@ -660,7 +756,7 @@
       listEl.innerHTML = "";
       children.slice(0, 1).forEach((c) => listEl.appendChild(c));
 
-      items.forEach((item, index) => {
+      items.forEach((item) => {
         const videoId = item.id.videoId || item.id;
         const snippet = item.snippet || {};
         const stats = item.statistics || {};
@@ -706,6 +802,32 @@
 
         setTimeout(() => el.classList.add("ready"), 50);
       });
+
+      selectedIndex = 0;
+      highlightSelected();
+    }
+
+    function highlightSelected() {
+      const items = document.querySelectorAll(".video-item");
+      items.forEach((el, i) => {
+        el.style.outline = i === selectedIndex ? "2px solid #ff0000" : "none";
+        el.style.boxShadow =
+          i === selectedIndex
+            ? "0 0 18px rgba(255,0,0,0.7)"
+            : "0 12px 24px rgba(0,0,0,0.45)";
+      });
+    }
+
+    function moveSelection(delta) {
+      const items = document.querySelectorAll(".video-item");
+      if (!items.length) return;
+      selectedIndex = (selectedIndex + delta + items.length) % items.length;
+      highlightSelected();
+    }
+
+    function openSelectedVideo() {
+      const items = document.querySelectorAll(".video-item");
+      if (items[selectedIndex]) items[selectedIndex].click();
     }
 
     keyboardEl.addEventListener("click", (e) => {
@@ -777,7 +899,6 @@
           break;
         case "volume":
           adjustVolume(0.1);
-          showHUD("Volume +");
           break;
         case "settings":
           showHUD("Settings");
@@ -787,21 +908,17 @@
     });
 
     function adjustVolume(delta) {
-      let newVol = playerVideo.volume + delta;
-      newVol = Math.max(0, Math.min(1, newVol));
-      playerVideo.volume = newVol;
-      showHUD(`Volume: ${(newVol * 100).toFixed(0)}%`);
+      if (!ytPlayer || !ytPlayer.getVolume) return;
+      let vol = ytPlayer.getVolume();
+      vol = Math.max(0, Math.min(100, vol + delta * 100));
+      ytPlayer.setVolume(vol);
+      showHUD(`Volume: ${vol.toFixed(0)}%`);
     }
 
     function adjustBrightness(delta) {
       currentBrightness = Math.max(0.1, Math.min(1.0, currentBrightness + delta));
       // hook metaWearables.setBrightness(currentBrightness) here
       showHUD(`Brightness: ${(currentBrightness * 100).toFixed(0)}%`);
-    }
-
-    function togglePlayPause() {
-      if (playerVideo.paused) playerVideo.play();
-      else playerVideo.pause();
     }
 
     function cycleTab(direction) {
@@ -811,49 +928,96 @@
       setActiveTab(tabs[index].dataset.tab);
     }
 
-    function refreshCurrentTab() {
-      loadTab(currentTab);
-    }
-
     function handleGesture(gesture) {
       switch (gesture) {
+        // navigation
+        case "swipeUp":
+          moveSelection(-1);
+          showHUD("Select ↑");
+          break;
+        case "swipeDown":
+          moveSelection(1);
+          showHUD("Select ↓");
+          break;
         case "swipeLeft":
           cycleTab(-1);
+          showHUD("Tab ◀");
           break;
         case "swipeRight":
           cycleTab(1);
+          showHUD("Tab ▶");
           break;
-        case "fist":
-          togglePlayPause();
+
+        // playback
+        case "fist": // play/pause
+          if (btnPlayPause) btnPlayPause.click();
           break;
-        case "pinch":
-          refreshCurrentTab();
+        case "rotateIn": // back 10s
+          if (btnBack) btnBack.click();
           break;
-        case "rotateIn":
-          if (!radialOpen) adjustVolume(-0.1);
+        case "rotateOut": // forward 10s
+          if (btnForward) btnForward.click();
           break;
-        case "rotateOut":
-          if (!radialOpen) adjustVolume(0.1);
-          break;
+
+        // brightness / volume
         case "handOpen":
-          if (radialOpen) closeRadialMenu();
-          else adjustBrightness(0.1);
+          adjustBrightness(0.1);
+          showHUD("Brightness +");
           break;
         case "handClose":
-          if (radialOpen) closeRadialMenu();
-          else adjustBrightness(-0.1);
+          adjustBrightness(-0.1);
+          showHUD("Brightness -");
           break;
-        case "pinchHold":
-          toggleRadialMenu();
+        case "pinch": // volume up
+          adjustVolume(0.1);
           break;
+        case "pinchHold": // volume down
+          adjustVolume(-0.1);
+          break;
+
+        // back / close player
+        case "doubleTap":
+          if (btnClose) btnClose.click();
+          showHUD("Back");
+          break;
+
         default:
           console.log("Gesture:", gesture);
       }
     }
 
+    btnPlayPause.addEventListener("click", () => {
+      if (!ytPlayer) return;
+      if (isPlaying) ytPlayer.pauseVideo();
+      else ytPlayer.playVideo();
+    });
+
+    btnForward.addEventListener("click", () => {
+      if (!ytPlayer) return;
+      const t = ytPlayer.getCurrentTime();
+      ytPlayer.seekTo(t + 10, true);
+      showHUD("+10s");
+    });
+
+    btnBack.addEventListener("click", () => {
+      if (!ytPlayer) return;
+      const t = ytPlayer.getCurrentTime();
+      ytPlayer.seekTo(Math.max(0, t - 10), true);
+      showHUD("-10s");
+    });
+
+    btnClose.addEventListener("click", () => {
+      if (!ytPlayer) return;
+      ytPlayer.stopVideo();
+      currentVideoId = null;
+      isPlaying = false;
+      updatePlayPauseLabel();
+      playerTitle.textContent = "Select a video…";
+    });
+
     initMetaWearables();
     initEmgWristband();
-    setActiveTab("all");
+    setActiveTab("home");
   </script>
 </body>
 </html>
