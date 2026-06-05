@@ -326,7 +326,7 @@ const keyboard = document.getElementById("keyboard");
 /* STATE */
 let currentQuery = "";
 let nextPageToken = null;
-let highlightIndex = -1;
+let highlightIndex = -1;   /* FIX: nothing selected on startup */
 let ytPlayer = null;
 let playerMode = false;
 let currentTab = "all";
@@ -379,7 +379,11 @@ async function loadQuery(q, maxResults=25, extra=""){
 function showVideos(items, append){
   if(!append){
     content.innerHTML = "";
-    highlightIndex = 0;
+
+    /* FIX: do NOT auto‑highlight on startup */
+    if(currentTab !== "search"){
+      highlightIndex = 0;
+    }
   }
 
   items.forEach(v=>{
@@ -627,12 +631,14 @@ keyboard.addEventListener("click", async e=>{
   }
 });
 
-/* INITIAL LOAD */
+/* INITIAL LOAD — FIXED */
 (async ()=>{
+  highlightIndex = -1;   /* FIX: nothing selected on startup */
   await loadQuery("US trending videos", 50, "videoDuration=medium");
 })();
 </script>
 
 </body>
 </html>
+
 
