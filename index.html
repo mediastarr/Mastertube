@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>ViewTube – Fullscreen Player</title>
+<title>ViewTube – Fullscreen Player + Search</title>
 <style>
   html, body {
     margin: 0;
@@ -68,7 +68,7 @@
   .content {
     margin: 0 10px 10px 10px;
     padding: 10px;
-    height: 420px;
+    height: 380px;
     overflow-y: auto;
     background: rgba(0,0,0,0.4);
     border-radius: 12px;
@@ -95,6 +95,22 @@
   }
   .video.highlight {
     border: 2px solid #ff0000;
+  }
+
+  /* SEARCH BAR */
+  #search-bar-wrapper {
+    margin: 0 10px 8px 10px;
+    display: none;
+  }
+  #search-input {
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.4);
+    background: rgba(0,0,0,0.7);
+    color: #fff;
+    font-size: 14px;
+    outline: none;
   }
 
   /* FULLSCREEN PLAYER */
@@ -127,6 +143,44 @@
     font-size: 12px;
     cursor: pointer;
   }
+
+  /* FLOATING KEYBOARD */
+  #keyboard {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 420px; /* compact */
+    padding: 8px;
+    background: rgba(0,0,0,0.85);
+    border-radius: 14px;
+    display: none;
+  }
+  .kb-row {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    margin-bottom: 4px;
+  }
+  .kb-key {
+    min-width: 26px;
+    padding: 6px 8px;
+    border-radius: 10px; /* medium rounded */
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.35);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700; /* bold labels */
+    text-align: center;
+    cursor: pointer;
+    user-select: none;
+  }
+  .kb-key.wide {
+    min-width: 50px;
+  }
+  .kb-key.space {
+    min-width: 120px;
+  }
 </style>
 </head>
 <body>
@@ -147,6 +201,11 @@
       <div class="tab" data-tab="live">Live</div>
       <div class="tab" data-tab="movies">Movies</div>
       <div class="tab" data-tab="comedy">Comedy</div>
+      <div class="tab" data-tab="search">Search</div>
+    </div>
+
+    <div id="search-bar-wrapper">
+      <input id="search-input" type="text" placeholder="Search YouTube (US)" />
     </div>
 
     <div class="content" id="content"></div>
@@ -162,6 +221,28 @@
       <button class="player-btn" data-action="playpause">Play/Pause</button>
       <button class="player-btn" data-action="forward10">+10s</button>
       <button class="player-btn" data-action="goback">Go Back</button>
+    </div>
+  </div>
+
+  <!-- FLOATING KEYBOARD -->
+  <div id="keyboard">
+    <div class="kb-row">
+      <div class="kb-key">Q</div><div class="kb-key">W</div><div class="kb-key">E</div><div class="kb-key">R</div><div class="kb-key">T</div>
+      <div class="kb-key">Y</div><div class="kb-key">U</div><div class="kb-key">I</div><div class="kb-key">O</div><div class="kb-key">P</div>
+    </div>
+    <div class="kb-row">
+      <div class="kb-key">A</div><div class="kb-key">S</div><div class="kb-key">D</div><div class="kb-key">F</div><div class="kb-key">G</div>
+      <div class="kb-key">H</div><div class="kb-key">J</div><div class="kb-key">K</div><div class="kb-key">L</div>
+    </div>
+    <div class="kb-row">
+      <div class="kb-key">Z</div><div class="kb-key">X</div><div class="kb-key">C</div><div class="kb-key">V</div><div class="kb-key">B</div>
+      <div class="kb-key">N</div><div class="kb-key">M</div>
+      <div class="kb-key wide" data-special="backspace">⌫</div>
+    </div>
+    <div class="kb-row">
+      <div class="kb-key wide" data-special="clear">CLR</div>
+      <div class="kb-key space" data-special="space">SPACE</div>
+      <div class="kb-key wide" data-special="enter">ENTER</div>
     </div>
   </div>
 
@@ -182,12 +263,16 @@ const tabs = document.getElementById("tabs");
 const mainUI = document.getElementById("main-ui");
 const playerScreen = document.getElementById("player-screen");
 const playerControls = document.getElementById("player-controls");
+const searchBarWrapper = document.getElementById("search-bar-wrapper");
+const searchInput = document.getElementById("search-input");
+const keyboard = document.getElementById("keyboard");
 
 let currentQuery = "";
 let nextPageToken = null;
 let highlightIndex = 0;
 let ytPlayer = null;
 let playerMode = false;
+let currentTab = "all";
 
 function onYouTubeIframeAPIReady(){
   ytPlayer = new YT.Player("player", {
@@ -199,12 +284,14 @@ function onYouTubeIframeAPIReady(){
 }
 
 async function ytSearch(q, pageToken=null, maxResults=25, extra=""){
-  const base =
+  let base =
     "https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&regionCode=US&relevanceLanguage=en&order=date&maxResults="
     + maxResults +
     "&q=" + encodeURIComponent(q) +
-    "&key=" + apiKey() +
-    (extra ? "&" + extra : "");
+    "&key=" + apiKey();
+  if(extra){
+    base += "&" + extra;
+  }
   const url = pageToken ? base + "&pageToken=" + pageToken : base;
   const r = await fetch(url);
   const j = await r.json();
@@ -249,7 +336,7 @@ function showVideos(items, append){
 }
 
 function applyHighlight(){
-  const cards = [...content.querySelectorAll(".video")];
+  const cards = Array.prototype.slice.call(content.querySelectorAll(".video"));
   cards.forEach(c=>c.classList.remove("highlight"));
   if(cards.length === 0) return;
   if(highlightIndex < 0) highlightIndex = 0;
@@ -280,6 +367,15 @@ tabs.addEventListener("click", async e=>{
   t.classList.add("active");
 
   const tab = t.dataset.tab;
+  currentTab = tab;
+
+  if(tab === "search"){
+    searchBarWrapper.style.display = "block";
+  } else {
+    searchBarWrapper.style.display = "none";
+    hideKeyboard();
+  }
+
   let q = "";
   let max = 25;
   let extra = "";
@@ -287,30 +383,41 @@ tabs.addEventListener("click", async e=>{
   if(tab === "all"){
     q = "movies OR documentaries OR music videos OR trailers";
     max = 50;
+    extra = "videoDuration=medium"; // avoid shorts
   }
   if(tab === "shorts"){
     q = "US shorts";
     extra = "videoDuration=short";
+    max = 50;
   }
   if(tab === "news"){
     q = "US news";
+    max = 40;
   }
   if(tab === "anime"){
     q = "anime english dub";
+    max = 40;
   }
   if(tab === "live"){
     q = "live stream";
     extra = "eventType=live";
+    max = 40;
   }
   if(tab === "movies"){
     q = "full movie free";
     extra = "videoDuration=long";
+    max = 40;
   }
   if(tab === "comedy"){
     q = "stand up comedy";
+    max = 40;
   }
-
-  await loadQuery(q, max, extra);
+  if(tab !== "search"){
+    await loadQuery(q, max, extra);
+  } else {
+    content.innerHTML = "";
+    highlightIndex = 0;
+  }
 });
 
 /* FULLSCREEN PLAYER */
@@ -351,9 +458,90 @@ playerControls.addEventListener("click", e=>{
   }
 });
 
+/* Keyboard navigation for video list */
+function moveHighlight(delta){
+  const cards = Array.prototype.slice.call(content.querySelectorAll(".video"));
+  if(cards.length === 0) return;
+  highlightIndex += delta;
+  if(highlightIndex < 0) highlightIndex = 0;
+  if(highlightIndex >= cards.length) highlightIndex = cards.length - 1;
+  applyHighlight();
+}
+
+function openHighlightedVideo(){
+  const cards = Array.prototype.slice.call(content.querySelectorAll(".video"));
+  if(cards.length === 0) return;
+  const card = cards[highlightIndex];
+  const id = card.dataset.videoId;
+  if(id) openVideo(id);
+}
+
+document.addEventListener("keydown", e=>{
+  if(playerMode) return;
+  if(e.key === "ArrowDown"){
+    moveHighlight(1);
+  }
+  if(e.key === "ArrowUp"){
+    moveHighlight(-1);
+  }
+  if(e.key === "Enter"){
+    if(currentTab === "search" && keyboard.style.display === "block"){
+      // Enter from keyboard handled separately
+      return;
+    }
+    openHighlightedVideo();
+  }
+});
+
+/* SEARCH TAB + FLOATING KEYBOARD */
+searchInput.addEventListener("focus", ()=>{
+  showKeyboard();
+});
+searchInput.addEventListener("click", ()=>{
+  showKeyboard();
+});
+
+function showKeyboard(){
+  keyboard.style.display = "block";
+}
+function hideKeyboard(){
+  keyboard.style.display = "none";
+}
+
+keyboard.addEventListener("click", async e=>{
+  const key = e.target.closest(".kb-key");
+  if(!key) return;
+
+  const special = key.dataset.special;
+  if(special){
+    if(special === "space"){
+      searchInput.value += " ";
+    }
+    if(special === "backspace"){
+      searchInput.value = searchInput.value.slice(0, -1);
+    }
+    if(special === "clear"){
+      searchInput.value = "";
+    }
+    if(special === "enter"){
+      hideKeyboard();
+      const q = searchInput.value.trim();
+      if(q){
+        currentQuery = q;
+        nextPageToken = null;
+        const items = await ytSearch(q, null, 40, "");
+        showVideos(items, false);
+      }
+    }
+  } else {
+    const ch = key.textContent;
+    searchInput.value += ch;
+  }
+});
+
 /* Initial load */
 (async ()=>{
-  await loadQuery("movies OR documentaries OR music videos OR trailers", 50);
+  await loadQuery("movies OR documentaries OR music videos OR trailers", 50, "videoDuration=medium");
 })();
 </script>
 </body>
