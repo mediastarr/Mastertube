@@ -382,12 +382,17 @@ function applyHighlight(){
   card.scrollIntoView({block:"center", behavior:"smooth"});
 }
 
-/* FIX: Keyboard hides when scrolling search results */
+/* FIX: prevent jump-to-top when scrolling in Search */
 content.addEventListener("scroll", ()=>{
+  if(currentTab === "search" && highlightIndex !== -1){
+    highlightIndex = -1;
+  }
+
   if(currentTab === "search"){
     hideKeyboard();
     searchInput.blur();
   }
+
   if(content.scrollTop + content.clientHeight >= content.scrollHeight - 40){
     loadMore();
   }
@@ -412,10 +417,11 @@ tabs.addEventListener("click", async e=>{
 
   nextPageToken = null;
   content.innerHTML = "";
-  highlightIndex = 0;
+  highlightIndex = -1;   /* NEW FIX: disable highlight when entering Search */
 
   if(tab === "search"){
     searchBarWrapper.style.display = "block";
+    keyboardActive = false;
   } else {
     searchBarWrapper.style.display = "none";
     hideKeyboard();
@@ -428,12 +434,12 @@ tabs.addEventListener("click", async e=>{
   if(tab === "all"){
     q = "US trending videos";
     max = 50;
-    extra = "videoDuration=medium"; /* NO SHORTS */
+    extra = "videoDuration=medium";
   }
   if(tab === "shorts"){
     q = "US shorts";
     max = 50;
-    extra = "videoDuration=short"; /* ONLY SHORTS */
+    extra = "videoDuration=short";
   }
   if(tab === "news"){
     q = "US news";
@@ -521,19 +527,18 @@ function openHighlightedVideo(){
   if(id) openVideo(id);
 }
 
-/* FIX: Disable highlight navigation while keyboard is open */
+/* FIX: disable highlight navigation while keyboard is active */
 document.addEventListener("keydown", e=>{
   if(playerMode) return;
+
+  if(currentTab === "search" && !keyboardActive){
+    highlightIndex = -1;
+  }
 
   if(keyboardActive){
     if(e.key === "Enter" || e.key === "ArrowDown" || e.key === "ArrowUp"){
       return;
     }
-  }
-
-  if(currentTab === "search"){
-    hideKeyboard();
-    searchInput.blur();
   }
 
   if(e.key === "ArrowDown") moveHighlight(1);
@@ -552,14 +557,14 @@ document.addEventListener("click", e=>{
 /* SEARCH TAB + FLOATING KEYBOARD */
 searchInput.addEventListener("focus", showKeyboard);
 searchInput.addEventListener("click", ()=>{
-  highlightIndex = -1; // NEW FIX: prevent video auto-opening
+  highlightIndex = -1;
   showKeyboard();
 });
 
 function showKeyboard(){
   keyboard.style.display = "block";
   keyboardActive = true;
-  highlightIndex = -1; // NEW FIX
+  highlightIndex = -1;
 }
 
 function hideKeyboard(){
