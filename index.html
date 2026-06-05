@@ -1,878 +1,594 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>ViewTube AR</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <title>MyTube Minimal</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
-  <div id="rayban-display">
-    <div class="ui-shell">
+  <!-- Top Bar -->
+  <header class="topbar">
+    <div class="logo">MyTube</div>
+    <input id="searchInput" type="text" class="search" placeholder="Search">
+    <button id="searchBtn" class="btn">Search</button>
+    <button id="shortsBtn" class="btn btn-accent">Shorts</button>
+  </header>
 
-      <!-- TOP BAR -->
-      <div class="top-bar">
-        <div class="logo">
-          <div class="logo-icon">
-            <div class="triangle"></div>
-          </div>
-          <span class="logo-text">ViewTube</span>
-        </div>
+  <!-- Main Feed -->
+  <main id="feed" class="feed"></main>
 
-        <!-- TABS -->
-        <div class="tabs" id="tabs">
-          <div class="tab active" data-tab="home">Home</div>
-          <div class="tab" data-tab="shorts">Shorts</div>
-          <div class="tab" data-tab="haiti">Haiti</div>
-          <div class="tab" data-tab="news">News</div>
-          <div class="tab" data-tab="anime">Anime</div>
-          <div class="tab" data-tab="live">Live</div>
-          <div class="tab" data-tab="movies">Movies</div>
-          <div class="tab" data-tab="comedy">Comedy</div>
-          <div class="tab" data-tab="search">Search</div>
-        </div>
-      </div>
-
-      <!-- MAIN CONTENT AREA -->
-      <div class="content">
-        <div class="list" id="list"></div>
-      </div>
-
-    </div>
-
-    <!-- HUD -->
-    <div id="hud"></div>
-  </div>
-  <!-- FLOATING PLAYER -->
-  <div id="player">
-    <div id="playerFrame"></div>
-
-    <div class="player-overlay">
-      <div class="player-top">
-        <div id="playerChannel">Channel</div>
-        <div id="playerStats">0 views</div>
-      </div>
-
-      <div class="player-bottom">
-        <div class="player-title" id="playerTitle">Select a video…</div>
-
-        <div class="player-controls">
-          <div class="control-pill" id="btnBack">⟲ -10s</div>
-          <div class="control-pill" id="btnPlayPause">▶ Play</div>
-          <div class="control-pill" id="btnForward">⟳ +10s</div>
-          <div class="control-pill" id="btnClose">⟵ Back</div>
-        </div>
-      </div>
-    </div>
+  <!-- Shorts Overlay -->
+  <div id="shortsFeed" class="shorts hidden">
+    <div id="shortsContainer"></div>
+    <button id="closeShortsBtn" class="shorts-close">×</button>
   </div>
 
-  <!-- YouTube IFrame API -->
-  <script src="https://www.youtube.com/iframe_api"></script>
+  <!-- HUD -->
+  <div class="hud" id="hud"></div>
+
   <script src="app.js"></script>
 </body>
 </html>
-/* ————————————————————————————————
-   GLOBAL + ROOT DISPLAY
-——————————————————————————————— */
-html, body {
+* {
+  box-sizing: border-box;
   margin: 0;
   padding: 0;
-  background: transparent;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  color: #ffffff;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
-#rayban-display {
-  position: relative;
-  width: 600px;
-  height: 600px;
-  overflow: hidden;
-  border-radius: 24px;
+body {
+  background: #050505;
+  color: #fff;
 }
 
-/* ————————————————————————————————
-   TRANSPARENT UI SHELL
-——————————————————————————————— */
-.ui-shell {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  background: transparent !important;
-  backdrop-filter: none !important;
-  box-shadow: none !important;
-}
-
-/* ————————————————————————————————
-   TOP BAR + LOGO
-——————————————————————————————— */
-.top-bar {
+/* Top Bar */
+.topbar {
   display: flex;
   align-items: center;
+  gap: 8px;
   padding: 8px 12px;
-  background: transparent !important;
-  border-bottom: none !important;
+  background: #111;
+  border-bottom: 1px solid #222;
 }
 
 .logo {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.logo-icon {
-  width: 22px;
-  height: 22px;
-  background: #FF0000;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.logo-icon .triangle {
-  width: 0;
-  height: 0;
-  border-top: 6px solid transparent;
-  border-bottom: 6px solid transparent;
-  border-left: 10px solid white;
-  margin-left: 2px;
-}
-
-.logo-text {
   font-weight: 700;
-  font-size: 16px;
+  font-size: 18px;
 }
 
-/* ————————————————————————————————
-   TABS
-——————————————————————————————— */
-.tabs {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-  margin-left: 12px;
-}
-
-.tab {
-  padding: 4px 10px;
+.search {
+  flex: 1;
+  padding: 6px 10px;
   border-radius: 999px;
-  font-size: 12px;
-  border: 1px solid rgba(255,255,255,0.25);
-  background: rgba(0,0,0,0.18);
+  border: 1px solid #333;
+  background: #000;
+  color: #fff;
+}
+
+.btn {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: none;
+  background: #333;
+  color: #fff;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.btn-accent {
+  background: #ff4b4b;
+}
+
+/* Feed */
+.feed {
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Video Card */
+.video-card {
+  display: flex;
+  gap: 10px;
+  background: #111;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #222;
   cursor: pointer;
 }
 
-.tab.active {
-  background: #ff0000;
-  border-color: #ff0000;
+.video-thumb {
+  width: 40%;
+  min-width: 40%;
+  background: #000;
 }
 
-/* ————————————————————————————————
-   CONTENT AREA
-——————————————————————————————— */
-.content {
-  display: grid;
-  grid-template-rows: 1fr;
-  padding: 8px 12px;
-  gap: 8px;
-  background: transparent !important;
-}
-
-.list {
-  overflow-y: auto;
-  padding-right: 4px;
-  background: transparent !important;
-}
-/* ————————————————————————————————
-   FLOATING CARDS (continued)
-——————————————————————————————— */
-.video-item img {
-  width: 120px;
-  height: 70px;
+.video-thumb img {
+  width: 100%;
+  height: 100%;
   object-fit: cover;
-  border-radius: 8px;
+  display: block;
 }
 
-.meta {
+.video-info {
+  padding: 8px;
   display: flex;
   flex-direction: column;
   justify-content: center;
 }
 
-.meta-title {
+.video-title {
   font-size: 14px;
   font-weight: 600;
-  margin-bottom: 2px;
-  color: #fff;
-  text-shadow: 0 0 4px rgba(0,0,0,0.9);
+  margin-bottom: 4px;
 }
 
-.meta-channel {
+.video-channel {
   font-size: 12px;
-  opacity: 0.85;
-  color: #fff;
-  text-shadow: 0 0 4px rgba(0,0,0,0.9);
+  color: #aaa;
+  margin-bottom: 2px;
 }
 
-.meta-extra {
+.video-meta {
   font-size: 11px;
-  opacity: 0.75;
-  color: #fff;
-  text-shadow: 0 0 4px rgba(0,0,0,0.9);
+  color: #777;
 }
 
-/* ————————————————————————————————
-   FLOATING PLAYER
-——————————————————————————————— */
-#player {
-  display: none;
+/* Shorts Overlay */
+.shorts {
   position: fixed;
-  top: 40px;
-  right: 40px;
-  width: 480px;
-  height: 270px;
+  inset: 0;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   z-index: 9999;
-  border-radius: 18px;
-  overflow: hidden;
-  background: rgba(0,0,0,0.75);
-  backdrop-filter: blur(16px);
-  box-shadow: 0 18px 40px rgba(0,0,0,0.7);
 }
 
-.player-overlay {
+.shorts.hidden {
+  display: none;
+}
+
+#shortsContainer {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.shortsVideo {
   position: absolute;
   inset: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 10px 12px;
-  pointer-events: none;
-}
-
-.player-top {
-  display: flex;
-  justify-content: space-between;
-  font-size: 13px;
-  opacity: 0.9;
-}
-
-.player-title {
-  font-size: 15px;
-  font-weight: 600;
-  margin-bottom: 6px;
-}
-
-.player-controls {
-  display: flex;
-  gap: 8px;
-}
-
-.control-pill {
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: rgba(0,0,0,0.7);
-  border: 1px solid rgba(255,255,255,0.3);
-  cursor: pointer;
-  pointer-events: auto;
-  font-size: 13px;
-}
-
-/* ————————————————————————————————
-   HUD
-——————————————————————————————— */
-#hud {
-  position:absolute;
-  top:50%;
-  left:50%;
-  transform:translate(-50%, -50%);
-  padding:10px 16px;
-  background:rgba(0,0,0,0.6);
-  border-radius:12px;
-  font-size:14px;
-  color:white;
-  opacity:0;
-  transition:opacity 0.25s;
-  pointer-events:none;
-}
-
-/* ————————————————————————————————
-   SEARCH BAR
-——————————————————————————————— */
-#searchBar {
   width: 100%;
-  padding: 12px;
-  border-radius: 12px;
-  background: rgba(0,0,0,0.4);
-  border: 1px solid rgba(255,255,255,0.3);
-  color: white;
-  font-size: 16px;
-  margin-bottom: 12px;
+  height: 100%;
+  border: none;
+  object-fit: cover;
 }
 
-/* ————————————————————————————————
-   ON-SCREEN KEYBOARD
-——————————————————————————————— */
-#keyboard {
-  display: grid;
-  grid-template-columns: repeat(10, 1fr);
-  gap: 6px;
-}
-
-.key {
-  padding: 10px;
-  text-align: center;
-  background: rgba(0,0,0,0.45);
-  border-radius: 8px;
-  border: 1px solid rgba(255,255,255,0.25);
+.shorts-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: none;
+  background: #222;
+  color: #fff;
   cursor: pointer;
-  font-size: 14px;
-  user-select: none;
 }
 
-.key:active {
-  background: rgba(255,255,255,0.2);
+/* HUD */
+.hud {
+  position: fixed;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #222;
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  opacity: 0;
+  transition: opacity 0.2s;
 }
-/* ————————————————————————————————
-   API KEYS (ROTATING)
-——————————————————————————————— */
+
+.hud.show {
+  opacity: 1;
+}
+// ---------- API ENGINE ----------
 const API_KEYS = [
   "AIzaSyAiG74ZYcjR4K78NPfUe3sQGeJLnoBIXYU",
-  "AIzaSyDVDUackHINzULJ6qasLLKDZUIBBxTORTI"
+  "AIzaSyDVDUackHINzULJ6qasLLKDZUIBBxTORTI",
+  "AIzaSyApAIjVvwL8DQMe5-B5z815hdJtpj3YLDg",
+  "AIzaSyAUKic3SobVT3S60-H9fWmdHZJVgdOzRPg",
+  "AIzaSyB7FKzBZCxfl4nwi6elI6wj-JCVXXtmA40",
+  "AIzaSyBTUdLTpyYG0-fuOUP1OkeX9tf06S-rVkY",
+  "AIzaSyAJbkJYrguKWmBl7Vyd6ObPXZf0zu8-p3E",
+  "AIzaSyCz8qs_I_hbgfLZXZj9QMX1sO74hF5k84Q",
+  "AIzaSyCAM-BEIynJUz3dkhRWOCrs3cdh5KJbbro",
+  "AIzaSyCQsQnRJB6KgGKnSpGD66v6HNwikLUdFQ8",
+  "AIzaSyCb6lnHEoOXWd0TWfJK71T_mOiM8O2kfrI",
+  "AIzaSyC6qu4BiEbQJ1uoy49GcvAy9_QxHKUE6Go",
+  "AIzaSyAtk1KIeZ9kFLNfhrqgNhmPzU4VJqTPeR8",
+  "AIzaSyCkq9rnLzqpfnr-LHUg-1AuIDb-GkWukPM",
+  "AIzaSyCzjoJptOBNzhkaxnNrkDZRP4SzsmTgTKQ",
+  "AIzaSyBt2YQ-X408_Ep3EYV4B70SgXeeADe_L08",
+  "AIzaSyCiEMfafGEgqpZ94b9ENjAg0UaIku0NRE8",
+  "AIzaSyA0prh1a0eN4fZ6MA_eB4MPJ0UH4LPsIAc",
+  "AIzaSyDiisGuMjbilWyxKAFpTPu4am8d5yQagJI",
+  "AIzaSyDI3sl7QYBrXOgAwCyjwJ23pV1nbjUMVL0",
+  "AIzaSyD_Jfk_5wuEdVhDEsQX9uy3BW2Fio7xe0s",
+  "AIzaSyCpAzwCaG2I8gEusAsDKnkoxVMdkPg1Vpk",
+  "AIzaSyCJ2cLDhXE-e_KYbnfS7DmrT-gtbL9yxCY",
+  "AIzaSyA2DSf373Pmv26YLpcv2gnUMeZd0bGgNug",
+  "AIzaSyC-66qDbGqKdEfQyGFeQPgYpRCjg802eLQ",
+  "AIzaSyBE_TgXpbeBMrkZhEGeEI3nZ5xC_BbbSd0"
 ];
-let apiKeyIndex = 0;
 
-function getApiKey() {
-  const key = API_KEYS[apiKeyIndex % API_KEYS.length];
-  apiKeyIndex++;
-  return key;
+function getRandomKey() {
+  return API_KEYS[Math.floor(Math.random() * API_KEYS.length)];
 }
 
-/* ————————————————————————————————
-   META WEARABLES (STUBS)
-——————————————————————————————— */
-function initMetaWearables() {}
-function initEmgWristband() {}
-
-/* ————————————————————————————————
-   YOUTUBE API FETCH
-——————————————————————————————— */
-const MAX_RESULTS = 50;
-
-async function fetchYouTube(endpoint, params) {
-  const key = getApiKey();
+async function fetchYouTube(endpoint, params, retries = 4) {
   const url = new URL("https://www.googleapis.com/youtube/v3/" + endpoint);
-
-  params.key = key;
-  Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
-
-  const res = await fetch(url.toString());
-  if (!res.ok) return { items: [] };
-  return res.json();
-}
-
-/* ————————————————————————————————
-   BASE SEARCH PARAMETERS
-——————————————————————————————— */
-const baseParams = {
-  regionCode: "US",
-  relevanceLanguage: "en",
-  maxResults: MAX_RESULTS,
-  type: "video",
-  part: "snippet,contentDetails,statistics"
-};
-
-/* ————————————————————————————————
-   TAB LOADERS
-——————————————————————————————— */
-const loaders = {
-  home: () => fetchYouTube("videos", { ...baseParams, chart: "mostPopular" }),
-  shorts: () => fetchYouTube("search", { ...baseParams, videoDuration: "short", order: "date" }),
-  haiti: () => fetchYouTube("search", { ...baseParams, q: "Haiti movie OR Haiti" }),
-  news: () => fetchYouTube("search", { ...baseParams, q: "US news", order: "date" }),
-  anime: () => fetchYouTube("search", { ...baseParams, q: "anime English dub US" }),
-  live: () => fetchYouTube("search", { ...baseParams, eventType: "live", order: "date" }),
-  movies: () => fetchYouTube("search", { ...baseParams, videoDuration: "long", q: "full movie free US" }),
-  comedy: () => fetchYouTube("search", { ...baseParams, q: "stand up comedy US" }),
-  search: (query) => fetchYouTube("search", { ...baseParams, q: query })
-};
-
-/* ————————————————————————————————
-   DOM ELEMENTS
-——————————————————————————————— */
-const listEl = document.getElementById("list");
-const tabsEl = document.getElementById("tabs");
-const hud = document.getElementById("hud");
-
-/* Player elements */
-const playerEl = document.getElementById("player");
-const playerTitle = document.getElementById("playerTitle");
-const playerChannel = document.getElementById("playerChannel");
-const playerStats = document.getElementById("playerStats");
-
-const btnPlayPause = document.getElementById("btnPlayPause");
-const btnForward = document.getElementById("btnForward");
-const btnBack = document.getElementById("btnBack");
-const btnClose = document.getElementById("btnClose");
-
-/* ————————————————————————————————
-   YOUTUBE IFRAME PLAYER SETUP
-——————————————————————————————— */
-let ytPlayer = null;
-let currentVideoId = null;
-let isPlaying = false;
-
-function onYouTubeIframeAPIReady() {
-  ytPlayer = new YT.Player("playerFrame", {
-    height: "100%",
-    width: "100%",
-    playerVars: {
-      controls: 0,
-      rel: 0,
-      modestbranding: 1
-    },
-    events: {
-      onReady: () => {},
-      onStateChange: (e) => {
-        isPlaying = e.data === YT.PlayerState.PLAYING;
-        updatePlayPauseLabel();
-      }
-    }
+  Object.entries(params).forEach(([k, v]) => {
+    if (v !== undefined && v !== null) url.searchParams.set(k, v);
   });
+
+  for (let i = 0; i < retries; i++) {
+    url.searchParams.set("key", getRandomKey());
+    try {
+      const res = await fetch(url.toString());
+      if (!res.ok) continue;
+      return res.json();
+    } catch {
+      continue;
+    }
+  }
+  return { items: [] };
 }
 
-/* Update play/pause button label */
-function updatePlayPauseLabel() {
-  btnPlayPause.textContent = isPlaying ? "⏸ Pause" : "▶ Play";
+// ---------- HISTORY + PERSONALIZATION ----------
+const userHistory = {
+  channels: {},
+  videos: {},
+  categories: {},
+  watchTime: {},
+  lastWatched: [],
+  timeOfDay: { morning: 0, afternoon: 0, evening: 0, night: 0 }
+};
+
+const trendingHistory = {
+  global: 0,
+  categories: {},
+  channels: {}
+};
+
+function getTimeBucket() {
+  const h = new Date().getHours();
+  if (h < 12) return "morning";
+  if (h < 17) return "afternoon";
+  if (h < 21) return "evening";
+  return "night";
 }
 
-/* HUD popup */
-function showHUD(text) {
-  hud.textContent = text;
-  hud.style.opacity = 1;
+function updateHistory(snippet, videoId, watchSeconds = 0) {
+  const ch = snippet.channelId;
+  const cat = snippet.categoryId;
 
-  clearTimeout(hud._timer);
-  hud._timer = setTimeout(() => {
-    hud.style.opacity = 0;
-  }, 900);
-}
-/* ————————————————————————————————
-   TAB SWITCHING + LOADING
-——————————————————————————————— */
-let currentTab = "home";
-let selectedIndex = -1; // nothing selected initially
+  if (ch) userHistory.channels[ch] = (userHistory.channels[ch] || 0) + 1;
+  if (videoId) userHistory.videos[videoId] = (userHistory.videos[videoId] || 0) + 1;
+  if (cat) userHistory.categories[cat] = (userHistory.categories[cat] || 0) + 1;
+  if (videoId) userHistory.watchTime[videoId] = (userHistory.watchTime[videoId] || 0) + watchSeconds;
 
-function setActiveTab(tab) {
-  currentTab = tab;
-
-  // highlight active tab
-  document.querySelectorAll(".tab").forEach(t =>
-    t.classList.toggle("active", t.dataset.tab === tab)
-  );
-
-  // load tab content
-  loadTab(tab);
-}
-
-async function loadTab(tab) {
-  listEl.innerHTML = "";
-
-  // SEARCH TAB uses custom UI
-  if (tab === "search") {
-    renderSearchUI();
-    return;
+  if (videoId) {
+    userHistory.lastWatched.unshift(videoId);
+    if (userHistory.lastWatched.length > 50) userHistory.lastWatched.pop();
   }
 
-  // fetch data for tab
-  const data = await loaders[tab]();
-  const items = data.items || [];
+  const bucket = getTimeBucket();
+  userHistory.timeOfDay[bucket]++;
 
-  // render each video item
+  if (snippet.isTrending) {
+    trendingHistory.global++;
+    if (cat) trendingHistory.categories[cat] = (trendingHistory.categories[cat] || 0) + 1;
+    if (ch) trendingHistory.channels[ch] = (trendingHistory.channels[ch] || 0) + 1;
+  }
+}
+
+// ---------- RANKING + RANDOMIZATION ----------
+function scoreVideo(item) {
+  const stats = item.statistics || {};
+  const snippet = item.snippet || {};
+
+  const views = Number(stats.viewCount || 0);
+  const likes = Number(stats.likeCount || 0);
+  const published = snippet.publishedAt ? new Date(snippet.publishedAt) : new Date();
+  const ageHours = (Date.now() - published.getTime()) / 3600000;
+
+  const freshnessBoost = 1 / Math.max(1, ageHours / 12);
+  const engagement = (likes + 1) / (views + 50);
+
+  const id = item.id?.videoId || item.id;
+  const channelBoost = userHistory.channels[snippet.channelId] || 1;
+  const videoBoost = userHistory.videos[id] || 1;
+  const categoryBoost = userHistory.categories[snippet.categoryId] || 1;
+
+  const bucket = getTimeBucket();
+  const timeBoost = userHistory.timeOfDay[bucket] || 1;
+  const watchBoost = userHistory.watchTime[id] || 0;
+
+  const trendingBoost =
+    (snippet.isTrending ? 1.5 : 1) *
+    (trendingHistory.global * 0.02 +
+     (trendingHistory.categories[snippet.categoryId] || 0) * 0.03 +
+     (trendingHistory.channels[snippet.channelId] || 0) * 0.04);
+
+  return (
+    freshnessBoost * 0.20 +
+    engagement * 0.20 +
+    channelBoost * 0.15 +
+    categoryBoost * 0.10 +
+    videoBoost * 0.10 +
+    timeBoost * 0.05 +
+    watchBoost * 0.05 +
+    trendingBoost * 0.15
+  );
+}
+
+function weightedShuffle(videos) {
+  const maxScore = Math.max(...videos.map(v => v._score || 0)) || 1;
+  return videos
+    .map(v => {
+      const normalized = (v._score || 0) / maxScore;
+      const weight = Math.pow(normalized, 0.7);
+      return { item: v, weight: weight + Math.random() * 0.3 };
+    })
+    .sort((a, b) => b.weight - a.weight)
+    .map(v => v.item);
+}
+
+// ---------- FEED ENGINE ----------
+let currentTab = "home";
+let nextPageToken = null;
+
+async function loadHomeFeed(pageToken = null) {
+  const [personal, trending] = await Promise.all([
+    fetchYouTube("videos", {
+      part: "snippet,statistics",
+      chart: "mostPopular",
+      maxResults: 20,
+      regionCode: "US",
+      pageToken: pageToken || undefined
+    }),
+    fetchYouTube("videos", {
+      part: "snippet,statistics",
+      chart: "mostPopular",
+      maxResults: 20,
+      regionCode: "US"
+    })
+  ]);
+
+  (trending.items || []).forEach(v => v.snippet.isTrending = true);
+
+  let combined = (personal.items || []).concat(trending.items || []);
+  combined = combined.map(v => {
+    v._score = scoreVideo(v);
+    return v;
+  });
+  combined = weightedShuffle(combined);
+
+  return { items: combined, nextPageToken: personal.nextPageToken || null };
+}
+
+async function loadSearch(query, pageToken = null) {
+  const data = await fetchYouTube("search", {
+    part: "snippet",
+    q: query,
+    type: "video",
+    maxResults: 20,
+    pageToken: pageToken || undefined
+  });
+
+  let items = data.items || [];
+  items = items.map(v => {
+    v._score = scoreVideo(v);
+    return v;
+  });
+  items = weightedShuffle(items);
+
+  return { items, nextPageToken: data.nextPageToken || null };
+}
+
+// ---------- SHORTS ENGINE ----------
+let shortsList = [];
+let shortsIndex = 0;
+let shortsActive = false;
+let shortsNextPageToken = null;
+
+async function loadShorts(pageToken = null) {
+  const data = await fetchYouTube("videos", {
+    part: "snippet,statistics",
+    chart: "mostPopular",
+    maxResults: 20,
+    regionCode: "US",
+    videoCategoryId: "24",
+    pageToken: pageToken || undefined
+  });
+  (data.items || []).forEach(v => v.snippet.isTrending = true);
+  let items = data.items || [];
+  items = items.map(v => {
+    v._score = scoreVideo(v);
+    return v;
+  });
+  items = weightedShuffle(items);
+  return { items, nextPageToken: data.nextPageToken || null };
+}
+
+async function openShortsFeed() {
+  const data = await loadShorts();
+  shortsList = data.items;
+  shortsNextPageToken = data.nextPageToken || null;
+  shortsIndex = 0;
+  shortsActive = true;
+  document.getElementById("shortsFeed").classList.remove("hidden");
+  renderShortsVideo();
+}
+
+function closeShortsFeed() {
+  shortsActive = false;
+  document.getElementById("shortsFeed").classList.add("hidden");
+  document.getElementById("shortsContainer").innerHTML = "";
+}
+
+function renderShortsVideo() {
+  const container = document.getElementById("shortsContainer");
+  container.innerHTML = "";
+  const item = shortsList[shortsIndex];
+  if (!item) return;
+  const videoId = item.id?.videoId || item.id;
+  const iframe = document.createElement("iframe");
+  iframe.className = "shortsVideo";
+  iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=0&controls=0&loop=1&playlist=${videoId}`;
+  iframe.allow = "autoplay; encrypted-media";
+  container.appendChild(iframe);
+}
+
+async function loadMoreShorts() {
+  if (!shortsNextPageToken) return;
+  const data = await loadShorts(shortsNextPageToken);
+  shortsNextPageToken = data.nextPageToken || null;
+  shortsList = shortsList.concat(data.items);
+}
+
+// ---------- AUTO REFRESH ----------
+async function refreshFeed() {
+  if (currentTab !== "home") return;
+  const data = await loadHomeFeed();
+  nextPageToken = data.nextPageToken || null;
+  renderMainFeed(data.items);
+}
+
+async function refreshShortsFeed() {
+  if (!shortsActive) return;
+  const data = await loadShorts();
+  shortsList = data.items;
+  shortsNextPageToken = data.nextPageToken || null;
+  shortsIndex = 0;
+  renderShortsVideo();
+}
+
+setInterval(refreshFeed, 1000 * 60 * 5);
+setInterval(refreshShortsFeed, 1000 * 60 * 3);
+
+// ---------- UI RENDER + EVENTS ----------
+const feedEl = document.getElementById("feed");
+const searchInput = document.getElementById("searchInput");
+const searchBtn = document.getElementById("searchBtn");
+const shortsBtn = document.getElementById("shortsBtn");
+const closeShortsBtn = document.getElementById("closeShortsBtn");
+const hudEl = document.getElementById("hud");
+
+function renderMainFeed(items) {
+  feedEl.innerHTML = "";
   items.forEach(item => {
-    const videoId = item.id.videoId || item.id;
     const snippet = item.snippet || {};
     const stats = item.statistics || {};
+    const videoId = item.id?.videoId || item.id;
 
-    const el = document.createElement("div");
-    el.className = "video-item floating-card";
-    el.onclick = () => playVideo(videoId, snippet, stats);
+    const card = document.createElement("div");
+    card.className = "video-card";
 
-    // thumbnail
     const thumb = document.createElement("div");
-    thumb.className = "thumb";
+    thumb.className = "video-thumb";
     const img = document.createElement("img");
     img.src = snippet.thumbnails?.medium?.url || "";
     thumb.appendChild(img);
 
-    // metadata
-    const meta = document.createElement("div");
-    meta.className = "meta";
+    const info = document.createElement("div");
+    info.className = "video-info";
 
     const title = document.createElement("div");
-    title.className = "meta-title";
+    title.className = "video-title";
     title.textContent = snippet.title || "Untitled";
 
     const channel = document.createElement("div");
-    channel.className = "meta-channel";
+    channel.className = "video-channel";
     channel.textContent = snippet.channelTitle || "Unknown channel";
 
-    const extra = document.createElement("div");
-    extra.className = "meta-extra";
-    extra.textContent = (stats.viewCount || "0") + " views";
+    const meta = document.createElement("div");
+    meta.className = "video-meta";
+    meta.textContent = `${stats.viewCount || 0} views`;
 
-    meta.appendChild(title);
-    meta.appendChild(channel);
-    meta.appendChild(extra);
+    info.appendChild(title);
+    info.appendChild(channel);
+    info.appendChild(meta);
 
-    el.appendChild(thumb);
-    el.appendChild(meta);
-    listEl.appendChild(el);
+    card.appendChild(thumb);
+    card.appendChild(info);
 
-    // floating animation fade-in
-    setTimeout(() => el.classList.add("ready"), 50);
-  });
-
-  // reset selection
-  selectedIndex = -1;
-  highlightSelected();
-}
-/* ————————————————————————————————
-   SEARCH UI (BAR + KEYBOARD)
-——————————————————————————————— */
-function renderSearchUI() {
-  listEl.innerHTML = "";
-
-  // Search bar
-  const bar = document.createElement("input");
-  bar.id = "searchBar";
-  bar.placeholder = "Search…";
-  bar.autocomplete = "off";
-
-  // Keyboard container
-  const keyboard = document.createElement("div");
-  keyboard.id = "keyboard";
-
-  // Keyboard layout
-  const keys = "1234567890QWERTYUIOPASDFGHJKLZXCVBNM←⏎".split("");
-
-  keys.forEach(k => {
-    const key = document.createElement("div");
-    key.className = "key";
-    key.textContent = k;
-
-    key.onclick = () => {
-      if (k === "←") {
-        bar.value = bar.value.slice(0, -1);
-      } else if (k === "⏎") {
-        performSearch(bar.value);
-      } else {
-        bar.value += k;
-      }
+    card.onclick = () => {
+      updateHistory(snippet, videoId, 0);
+      showHUD("Video clicked");
     };
 
-    keyboard.appendChild(key);
-  });
-
-  listEl.appendChild(bar);
-  listEl.appendChild(keyboard);
-}
-
-/* ————————————————————————————————
-   EXECUTE SEARCH
-——————————————————————————————— */
-async function performSearch(query) {
-  if (!query.trim()) return;
-
-  const data = await loaders.search(query);
-  const items = data.items || [];
-
-  listEl.innerHTML = "";
-
-  items.forEach(item => {
-    const videoId = item.id.videoId;
-    const snippet = item.snippet;
-    const stats = item.statistics || {};
-
-    const el = document.createElement("div");
-    el.className = "video-item floating-card";
-    el.onclick = () => playVideo(videoId, snippet, stats);
-
-    // Thumbnail
-    const img = document.createElement("img");
-    img.src = snippet.thumbnails?.medium?.url || "";
-
-    // Metadata
-    const meta = document.createElement("div");
-    meta.className = "meta";
-
-    const title = document.createElement("div");
-    title.className = "meta-title";
-    title.textContent = snippet.title;
-
-    const channel = document.createElement("div");
-    channel.className = "meta-channel";
-    channel.textContent = snippet.channelTitle;
-
-    const extra = document.createElement("div");
-    extra.className = "meta-extra";
-    extra.textContent = (stats.viewCount || "0") + " views";
-
-    meta.appendChild(title);
-    meta.appendChild(channel);
-    meta.appendChild(extra);
-
-    el.appendChild(img);
-    el.appendChild(meta);
-    listEl.appendChild(el);
-
-    // Floating animation fade-in
-    setTimeout(() => el.classList.add("ready"), 50);
-  });
-
-  selectedIndex = -1;
-  highlightSelected();
-}
-/* ————————————————————————————————
-   VIDEO PLAYER — OPEN + LOAD VIDEO
-——————————————————————————————— */
-function playVideo(videoId, snippet, stats) {
-  currentVideoId = videoId;
-
-  // show floating player
-  playerEl.style.display = "block";
-
-  // load video
-  ytPlayer.loadVideoById(videoId);
-
-  // update metadata
-  playerTitle.textContent = snippet.title || "Untitled";
-  playerChannel.textContent = snippet.channelTitle || "Channel";
-  playerStats.textContent =
-    Number(stats.viewCount || 0).toLocaleString() + " views";
-
-  isPlaying = true;
-  updatePlayPauseLabel();
-}
-
-/* ————————————————————————————————
-   CLOSE PLAYER
-——————————————————————————————— */
-btnClose.onclick = () => {
-  ytPlayer.stopVideo();
-  playerEl.style.display = "none";
-  isPlaying = false;
-  updatePlayPauseLabel();
-};
-
-/* ————————————————————————————————
-   PLAY / PAUSE
-——————————————————————————————— */
-btnPlayPause.onclick = () => {
-  if (isPlaying) {
-    ytPlayer.pauseVideo();
-  } else {
-    ytPlayer.playVideo();
-  }
-};
-
-/* ————————————————————————————————
-   SEEK FORWARD / BACKWARD
-——————————————————————————————— */
-btnForward.onclick = () => {
-  const t = ytPlayer.getCurrentTime();
-  ytPlayer.seekTo(t + 10, true);
-  showHUD("+10s");
-};
-
-btnBack.onclick = () => {
-  const t = ytPlayer.getCurrentTime();
-  ytPlayer.seekTo(Math.max(0, t - 10), true);
-  showHUD("-10s");
-};
-/* ————————————————————————————————
-   SELECTION HIGHLIGHTING
-——————————————————————————————— */
-function highlightSelected() {
-  const items = document.querySelectorAll(".video-item");
-
-  items.forEach((el, i) => {
-    el.style.outline = i === selectedIndex ? "2px solid red" : "none";
+    feedEl.appendChild(card);
   });
 }
 
-/* ————————————————————————————————
-   MOVE SELECTION UP/DOWN
-——————————————————————————————— */
-function moveSelection(delta) {
-  const items = document.querySelectorAll(".video-item");
-  if (!items.length) return;
-
-  if (selectedIndex === -1) {
-    selectedIndex = 0;
-  } else {
-    selectedIndex = (selectedIndex + delta + items.length) % items.length;
-  }
-
-  highlightSelected();
+function showHUD(msg) {
+  hudEl.textContent = msg;
+  hudEl.classList.add("show");
+  setTimeout(() => hudEl.classList.remove("show"), 1500);
 }
 
-/* ————————————————————————————————
-   OPEN SELECTED VIDEO
-——————————————————————————————— */
-function openSelectedVideo() {
-  const items = document.querySelectorAll(".video-item");
-  if (items[selectedIndex]) {
-    items[selectedIndex].click();
-  }
-}
+// Events
+searchBtn.addEventListener("click", async () => {
+  const q = searchInput.value.trim();
+  if (!q) return;
+  currentTab = "search";
+  const data = await loadSearch(q);
+  nextPageToken = data.nextPageToken || null;
+  renderMainFeed(data.items);
+});
 
-/* ————————————————————————————————
-   CYCLE TABS LEFT/RIGHT
-——————————————————————————————— */
-function cycleTab(direction) {
-  const tabs = Array.from(document.querySelectorAll(".tab"));
-  let index = tabs.findIndex(t => t.dataset.tab === currentTab);
+shortsBtn.addEventListener("click", () => {
+  openShortsFeed();
+});
 
-  index = (index + direction + tabs.length) % tabs.length;
+closeShortsBtn.addEventListener("click", () => {
+  closeShortsFeed();
+});
 
-  setActiveTab(tabs[index].dataset.tab);
-}
-
-/* ————————————————————————————————
-   GESTURE HANDLER (EMG)
-——————————————————————————————— */
-function handleGesture(g) {
-  switch (g) {
-    case "swipeUp":
-      moveSelection(-1);
-      showHUD("↑");
-      break;
-
-    case "swipeDown":
-      moveSelection(1);
-      showHUD("↓");
-      break;
-
-    case "swipeLeft":
-      cycleTab(-1);
-      showHUD("◀");
-      break;
-
-    case "swipeRight":
-      cycleTab(1);
-      showHUD("▶");
-      break;
-
-    case "fist":
-      btnPlayPause.click();
-      break;
-
-    case "rotateIn":
-      btnBack.click();
-      break;
-
-    case "rotateOut":
-      btnForward.click();
-      break;
-
-    case "handOpen":
-      adjustBrightness(0.1);
-      break;
-
-    case "handClose":
-      adjustBrightness(-0.1);
-      break;
-
-    case "pinch":
-      adjustVolume(0.1);
-      break;
-
-    case "pinchHold":
-      adjustVolume(-0.1);
-      break;
-
-    case "doubleTap":
-      btnClose.click();
-      break;
-  }
-}
-/* ————————————————————————————————
-   BRIGHTNESS CONTROL
-——————————————————————————————— */
-let currentBrightness = 1; // 1 = normal
-
-function adjustBrightness(delta) {
-  currentBrightness = Math.min(1.5, Math.max(0.3, currentBrightness + delta));
-  document.body.style.filter = `brightness(${currentBrightness})`;
-  showHUD("Brightness: " + Math.round(currentBrightness * 100) + "%");
-}
-
-/* ————————————————————————————————
-   VOLUME CONTROL
-——————————————————————————————— */
-let currentVolume = 1; // 1 = 100%
-
-function adjustVolume(delta) {
-  currentVolume = Math.min(1, Math.max(0, currentVolume + delta));
-  if (ytPlayer && ytPlayer.setVolume) {
-    ytPlayer.setVolume(currentVolume * 100);
-  }
-  showHUD("Volume: " + Math.round(currentVolume * 100) + "%");
-}
-
-/* ————————————————————————————————
-   KEYBOARD NAVIGATION (OPTIONAL)
-——————————————————————————————— */
-document.addEventListener("keydown", (e) => {
-  if (currentTab === "search") return; // search uses its own keyboard
-
-  switch (e.key) {
-    case "ArrowUp":
-      moveSelection(-1);
-      break;
-
-    case "ArrowDown":
-      moveSelection(1);
-      break;
-
-    case "Enter":
-      openSelectedVideo();
-      break;
-
-    case "ArrowLeft":
-      cycleTab(-1);
-      break;
-
-    case "ArrowRight":
-      cycleTab(1);
-      break;
-
-    case " ":
-      btnPlayPause.click();
-      break;
+// Simple Shorts swipe
+let touchStartY = 0;
+document.addEventListener("touchstart", e => {
+  touchStartY = e.touches[0].clientY;
+});
+document.addEventListener("touchend", async e => {
+  if (!shortsActive) return;
+  const endY = e.changedTouches[0].clientY;
+  const diff = endY - touchStartY;
+  if (diff < -80) {
+    shortsIndex++;
+    if (shortsIndex >= shortsList.length - 3) {
+      await loadMoreShorts();
+    }
+    shortsIndex = Math.min(shortsList.length - 1, shortsIndex);
+    renderShortsVideo();
+  } else if (diff > 80) {
+    shortsIndex = Math.max(0, shortsIndex - 1);
+    renderShortsVideo();
   }
 });
 
-/* ————————————————————————————————
-   INITIALIZATION
-——————————————————————————————— */
-function init() {
-  // set default tab
-  setActiveTab("home");
-
-  // tab click listeners
-  document.querySelectorAll(".tab").forEach(tab => {
-    tab.addEventListener("click", () => {
-      setActiveTab(tab.dataset.tab);
-    });
-  });
-
-  // initialize wearable stubs
-  initMetaWearables();
-  initEmgWristband();
+// Init
+async function initApp() {
+  currentTab = "home";
+  const data = await loadHomeFeed();
+  nextPageToken = data.nextPageToken || null;
+  renderMainFeed(data.items);
 }
 
-/* ————————————————————————————————
-   START APP
-——————————————————————————————— */
-window.onload = init;
+window.onload = initApp;
