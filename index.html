@@ -1,594 +1,1786 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>MyTube Minimal</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ViewTube — Meta Ray-Ban Display</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+:root {
+  --gb: rgba(120,200,255,0.18);
+  --gc: rgba(15,20,35,0.62);
+  --gh: rgba(30,50,90,0.55);
+  --nc: rgba(0,220,255,0.85);
+  --nw: rgba(220,240,255,0.92);
+  --tp: rgba(210,235,255,0.95);
+  --ts: rgba(140,180,220,0.8);
+  --tm: rgba(90,130,175,0.7);
+  --ac: rgba(0,180,255,0.9);
+  --ag: rgba(0,150,255,0.3);
+  --red: rgba(255,55,55,0.9);
+  --br: 10px;
+  --fn: 'Segoe UI',system-ui,sans-serif;
+}
+body { font-family:var(--fn); background:#000; color:var(--tp); overflow:hidden; height:100vh; width:100vw; }
+
+.world-bg { position:fixed; inset:0; background:linear-gradient(135deg,rgba(5,10,25,0.88),rgba(10,18,35,0.82) 40%,rgba(8,15,30,0.85)); z-index:0; }
+.lens-frame { position:fixed; inset:0; background:radial-gradient(ellipse 90% 75% at 50% 50%,transparent 55%,rgba(0,30,80,0.4) 80%,rgba(0,10,40,0.8) 100%); z-index:1; pointer-events:none; }
+.scanlines { position:fixed; inset:0; background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,150,255,0.018) 3px,rgba(0,150,255,0.018) 4px); z-index:2; pointer-events:none; animation:scanMove 8s linear infinite; }
+@keyframes scanMove { to { background-position:0 100px; } }
+
+/* ── APP SHELL ── */
+#app { position:fixed; inset:0; z-index:10; display:flex; flex-direction:column; }
+
+/* ── TOP BAR ── */
+.topbar {
+  display:flex; align-items:center; padding:10px 16px; gap:10px;
+  background:rgba(5,10,22,0.75); border-bottom:0.5px solid var(--gb);
+  backdrop-filter:blur(20px); flex-shrink:0; z-index:20; position:relative;
+}
+.logo { display:flex; align-items:center; gap:7px; font-size:16px; font-weight:700; color:var(--nw); flex-shrink:0; }
+.logo-icon { width:26px; height:18px; background:var(--red); border-radius:4px; display:flex; align-items:center; justify-content:center; box-shadow:0 0 8px rgba(255,60,60,0.5); }
+.logo-icon::after { content:''; border-left:7px solid #fff; border-top:4px solid transparent; border-bottom:4px solid transparent; margin-left:2px; }
+
+.search-wrap {
+  flex:1; display:flex; align-items:center;
+  background:rgba(255,255,255,0.06); border:0.5px solid var(--gb);
+  border-radius:18px; padding:0 11px; gap:7px; transition:border-color .2s,box-shadow .2s;
+  position:relative;
+}
+.search-wrap:focus-within { border-color:var(--ac); box-shadow:0 0 10px var(--ag); }
+.search-wrap input { background:none; border:none; outline:none; color:var(--tp); font-size:12px; flex:1; font-family:var(--fn); padding:6px 0; }
+.search-wrap input::placeholder { color:var(--tm); }
+.si { color:var(--ts); cursor:pointer; display:flex; }
+.si svg { width:14px; height:14px; }
+
+#sdd { display:none; position:absolute; top:calc(100% + 5px); left:0; right:0; background:rgba(8,14,30,0.97); border:0.5px solid var(--gb); border-radius:var(--br); backdrop-filter:blur(20px); z-index:200; overflow:hidden; }
+#sdd.open { display:block; }
+.sri { display:flex; align-items:center; gap:8px; padding:8px 12px; font-size:12px; color:var(--tp); cursor:pointer; transition:background .15s; }
+.sri:hover { background:var(--gh); }
+.sri svg { flex-shrink:0; opacity:.5; }
+
+.tb-btn {
+  background:rgba(255,255,255,0.06); border:0.5px solid var(--gb); border-radius:7px;
+  color:var(--tp); font-size:11px; font-family:var(--fn); padding:5px 10px;
+  cursor:pointer; display:flex; align-items:center; gap:5px; transition:background .2s,box-shadow .2s; white-space:nowrap; flex-shrink:0;
+}
+.tb-btn:hover { background:rgba(0,150,255,0.15); box-shadow:0 0 8px rgba(0,150,255,0.2); }
+.tb-btn.active { background:rgba(0,150,255,0.2); border-color:var(--ac); box-shadow:0 0 10px var(--ag); }
+.tb-btn svg { width:13px; height:13px; }
+
+.dots-wrap { position:relative; flex-shrink:0; }
+.dots-menu { position:absolute; top:calc(100% + 7px); right:0; background:rgba(8,14,30,0.97); border:0.5px solid var(--gb); border-radius:var(--br); backdrop-filter:blur(20px); min-width:160px; z-index:300; display:none; overflow:hidden; }
+.dots-menu.open { display:block; }
+.di { display:flex; align-items:center; gap:9px; padding:10px 14px; font-size:12px; color:var(--tp); cursor:pointer; transition:background .15s; }
+.di:hover { background:var(--gh); }
+.di svg { width:14px; height:14px; opacity:.7; }
+
+/* ── MAIN BODY ── */
+.body-row { flex:1; display:flex; overflow:hidden; }
+
+/* LEFT: video player (when active) or video list */
+.left-col {
+  flex:1; display:flex; flex-direction:column; overflow:hidden;
+  border-right:0.5px solid var(--gb);
+  min-width:0;
+}
+
+/* Video list scroll area */
+.vlist-area {
+  flex:1; overflow-y:auto; padding:14px;
+  scrollbar-width:thin; scrollbar-color:rgba(0,150,255,0.3) transparent;
+}
+.vlist-area::-webkit-scrollbar { width:3px; }
+.vlist-area::-webkit-scrollbar-thumb { background:rgba(0,150,255,0.3); border-radius:3px; }
+
+/* Video grid */
+.vgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:12px; }
+.sec-label { font-size:10px; font-weight:600; color:var(--tm); text-transform:uppercase; letter-spacing:.8px; margin-bottom:10px; }
+
+.vcard { background:var(--gc); border:0.5px solid var(--gb); border-radius:var(--br); overflow:hidden; cursor:pointer; transition:transform .2s,box-shadow .2s,border-color .2s; backdrop-filter:blur(12px); }
+.vcard:hover { transform:translateY(-2px) scale(1.01); box-shadow:0 6px 20px rgba(0,120,255,0.2),0 0 0 1px rgba(0,180,255,0.2); border-color:rgba(0,180,255,0.35); }
+.vcard-thumb { width:100%; aspect-ratio:16/9; background:rgba(20,30,55,0.8); position:relative; overflow:hidden; }
+.vcard-thumb-ph { width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:28px; opacity:.35; }
+.vcard-dur { position:absolute; bottom:5px; right:5px; background:rgba(0,0,0,.75); color:#fff; font-size:9px; font-weight:600; padding:2px 4px; border-radius:3px; }
+.vcard-info { padding:8px 9px 10px; }
+.vcard-title { font-size:11px; font-weight:600; color:var(--tp); line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; margin-bottom:4px; }
+.vcard-meta { font-size:10px; color:var(--tm); }
+.vcard-meta span { display:block; line-height:1.5; }
+
+/* ── PLAYER area (replaces vlist on left when video open) ── */
+.player-area {
+  display:none; flex-direction:column; height:100%;
+}
+.player-area.show { display:flex; }
+
+.video-box { flex-shrink:0; position:relative; background:#000; }
+.video-box-inner {
+  width:100%; aspect-ratio:16/9;
+  background:rgba(5,10,20,0.9); display:flex; align-items:center; justify-content:center; flex-direction:column; gap:6px;
+}
+.video-box-inner .big-emoji { font-size:56px; filter:drop-shadow(0 0 14px rgba(0,180,255,.35)); }
+.video-box-inner p { font-size:11px; color:var(--tm); }
+
+.hide-ui-btn {
+  position:absolute; top:6px; right:6px;
+  background:rgba(0,0,0,.55); border:0.5px solid var(--gb); border-radius:5px;
+  color:var(--ts); font-size:10px; padding:3px 7px; cursor:pointer; font-family:var(--fn); z-index:5;
+}
+
+.pcontrols {
+  background:rgba(4,8,20,0.92); padding:7px 10px 6px;
+  border-top:0.5px solid var(--gb); transition:opacity .3s; flex-shrink:0;
+}
+.pcontrols.hid { opacity:0; pointer-events:none; }
+
+.prog-wrap { height:3px; background:rgba(255,255,255,.1); border-radius:2px; cursor:pointer; margin-bottom:7px; position:relative; }
+.prog-bar { height:100%; background:var(--ac); border-radius:2px; box-shadow:0 0 6px rgba(0,180,255,.6); width:0%; transition:width .1s linear; }
+.prog-thumb { position:absolute; top:50%; transform:translateY(-50%); width:9px; height:9px; background:var(--nw); border-radius:50%; left:0%; transition:left .1s linear; box-shadow:0 0 5px rgba(255,255,255,.5); }
+
+.ctrl-row { display:flex; align-items:center; gap:5px; justify-content:space-between; }
+.ctrl-l { display:flex; align-items:center; gap:5px; }
+.ctrl-r { display:flex; align-items:center; gap:4px; }
+.cb {
+  background:rgba(255,255,255,.06); border:0.5px solid rgba(120,200,255,.12); border-radius:5px;
+  color:var(--tp); width:28px; height:26px; display:flex; align-items:center; justify-content:center;
+  cursor:pointer; transition:all .15s; font-size:10px; font-family:var(--fn); flex-shrink:0;
+}
+.cb:hover { background:rgba(0,150,255,.2); box-shadow:0 0 7px rgba(0,150,255,.3); border-color:rgba(0,180,255,.3); }
+.cb svg { width:12px; height:12px; }
+.cb.play { width:32px; }
+.ct { font-size:10px; color:var(--ts); white-space:nowrap; }
+
+.pinfo { padding:9px 12px; border-bottom:0.5px solid var(--gb); flex-shrink:0; }
+.ptitle { font-size:12px; font-weight:600; color:var(--tp); line-height:1.4; margin-bottom:3px; }
+.pmeta { font-size:10px; color:var(--tm); }
+
+/* suggestions below player */
+.sugg-area { flex:1; overflow-y:auto; padding:8px 10px; scrollbar-width:thin; scrollbar-color:rgba(0,150,255,.2) transparent; }
+.sugg-area::-webkit-scrollbar { width:3px; }
+.sugg-area::-webkit-scrollbar-thumb { background:rgba(0,150,255,.25); border-radius:3px; }
+.sugg-lbl { font-size:10px; font-weight:600; color:var(--tm); text-transform:uppercase; letter-spacing:.5px; margin-bottom:7px; }
+.sc { display:flex; gap:7px; padding:5px; border-radius:7px; cursor:pointer; transition:background .15s; margin-bottom:5px; }
+.sc:hover { background:var(--gh); }
+.sthumb { width:80px; height:45px; flex-shrink:0; border-radius:5px; overflow:hidden; background:rgba(20,30,55,.8); position:relative; display:flex; align-items:center; justify-content:center; font-size:18px; opacity:.5; }
+.sdur { position:absolute; bottom:2px; right:2px; background:rgba(0,0,0,.75); color:#fff; font-size:8px; font-weight:600; padding:1px 3px; border-radius:2px; }
+.sinfo { flex:1; min-width:0; }
+.stitle { font-size:10px; font-weight:600; color:var(--tp); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; line-height:1.35; margin-bottom:2px; }
+.smeta { font-size:9px; color:var(--tm); }
+
+/* RIGHT SIDEBAR */
+.right-col {
+  width:280px; flex-shrink:0;
+  display:flex; flex-direction:column;
+  background:rgba(4,7,18,0.7); backdrop-filter:blur(20px);
+  overflow:hidden;
+}
+
+/* tabs in right col */
+.rtabs {
+  display:flex; flex-wrap:wrap; gap:3px; padding:10px 10px 0;
+  border-bottom:0.5px solid var(--gb); padding-bottom:8px; flex-shrink:0;
+}
+.rtab {
+  padding:5px 10px; font-size:11px; font-weight:500; color:var(--ts);
+  cursor:pointer; border:0.5px solid transparent; border-radius:6px;
+  transition:all .2s; user-select:none; white-space:nowrap;
+}
+.rtab:hover { color:var(--tp); background:rgba(255,255,255,.05); }
+.rtab.active { color:var(--nc); border-color:rgba(0,220,255,.3); background:rgba(0,220,255,.08); text-shadow:0 0 8px rgba(0,220,255,.5); }
+
+/* right tab content */
+.rtab-content { flex:1; overflow-y:auto; padding:12px 10px; scrollbar-width:thin; scrollbar-color:rgba(0,150,255,.2) transparent; }
+.rtab-content::-webkit-scrollbar { width:3px; }
+.rtab-content::-webkit-scrollbar-thumb { background:rgba(0,150,255,.25); border-radius:3px; }
+
+/* right-col video cards (list style) */
+.rcard { display:flex; gap:8px; background:var(--gc); border:0.5px solid var(--gb); border-radius:8px; overflow:hidden; cursor:pointer; transition:transform .15s,box-shadow .15s; backdrop-filter:blur(12px); margin-bottom:8px; }
+.rcard:hover { transform:translateY(-1px); box-shadow:0 4px 14px rgba(0,120,255,.18); border-color:rgba(0,180,255,.3); }
+.rthumb { width:80px; height:45px; flex-shrink:0; background:rgba(20,30,55,.8); display:flex; align-items:center; justify-content:center; font-size:20px; opacity:.45; position:relative; }
+.rdur { position:absolute; bottom:3px; right:3px; background:rgba(0,0,0,.75); color:#fff; font-size:8px; font-weight:600; padding:1px 3px; border-radius:2px; }
+.rinfo { flex:1; padding:6px 6px 6px 0; min-width:0; display:flex; flex-direction:column; justify-content:center; }
+.rtitle { font-size:11px; font-weight:600; color:var(--tp); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; line-height:1.35; margin-bottom:2px; }
+.rmeta { font-size:9px; color:var(--tm); }
+
+/* shorts in right */
+.short-row { display:grid; grid-template-columns:1fr 1fr; gap:7px; }
+.short-r { background:var(--gc); border:0.5px solid var(--gb); border-radius:8px; overflow:hidden; cursor:pointer; transition:transform .15s; backdrop-filter:blur(12px); }
+.short-r:hover { transform:translateY(-2px); }
+.short-r-thumb { width:100%; aspect-ratio:9/16; display:flex; align-items:center; justify-content:center; font-size:24px; opacity:.35; background:rgba(20,30,55,.8); }
+.short-r-info { padding:5px 7px 7px; }
+.short-r-title { font-size:10px; font-weight:600; color:var(--tp); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+
+/* movies in right */
+.movie-r { display:flex; gap:8px; background:var(--gc); border:0.5px solid var(--gb); border-radius:8px; overflow:hidden; cursor:pointer; transition:transform .15s; backdrop-filter:blur(12px); margin-bottom:7px; }
+.movie-r:hover { transform:translateY(-1px); box-shadow:0 4px 14px rgba(0,120,255,.15); }
+.movie-r-poster { width:52px; height:76px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:24px; opacity:.4; background:rgba(20,30,55,.8); }
+.movie-r-info { flex:1; padding:8px 8px 8px 0; display:flex; flex-direction:column; justify-content:center; }
+.movie-r-title { font-size:11px; font-weight:600; color:var(--tp); margin-bottom:3px; }
+.movie-r-meta { font-size:10px; color:var(--tm); }
+
+/* playlists in right */
+.pl-item { display:flex; align-items:center; gap:9px; background:var(--gc); border:0.5px solid var(--gb); border-radius:8px; padding:9px 10px; cursor:pointer; transition:background .15s; backdrop-filter:blur(12px); margin-bottom:6px; }
+.pl-item:hover { background:var(--gh); }
+.pl-icon { width:34px; height:34px; border-radius:6px; background:rgba(0,100,220,.2); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:16px; }
+.pl-name { font-size:12px; font-weight:600; color:var(--tp); }
+.pl-cnt { font-size:10px; color:var(--tm); }
+
+/* channel/sub items */
+.ch-item { display:flex; align-items:center; gap:9px; background:var(--gc); border:0.5px solid var(--gb); border-radius:8px; padding:9px 10px; cursor:pointer; transition:background .15s; backdrop-filter:blur(12px); margin-bottom:6px; }
+.ch-item:hover { background:var(--gh); }
+.ch-avatar { width:36px; height:36px; border-radius:50%; background:rgba(0,100,220,.2); display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+.ch-name { font-size:12px; font-weight:600; color:var(--tp); }
+.ch-sub { font-size:10px; color:var(--tm); }
+
+/* ── MINI PLAYER ── */
+#miniPlayer {
+  position:fixed; bottom:16px; right:16px; width:210px;
+  background:rgba(4,8,20,.95); border:0.5px solid var(--gb);
+  border-radius:var(--br); backdrop-filter:blur(20px);
+  box-shadow:0 8px 28px rgba(0,0,0,.65),0 0 0 0.5px rgba(0,180,255,.15);
+  z-index:500; display:none; cursor:grab;
+}
+#miniPlayer.vis { display:block; }
+#miniPlayer.dragging { cursor:grabbing; }
+.mini-drag { height:4px; width:36px; background:rgba(255,255,255,.2); border-radius:2px; margin:5px auto; }
+.mini-vid { width:100%; aspect-ratio:16/9; background:#000; display:flex; align-items:center; justify-content:center; font-size:28px; opacity:.4; }
+.mini-bar { display:flex; align-items:center; gap:5px; padding:5px 8px; }
+.mini-title { font-size:10px; color:var(--ts); flex:1; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+.mini-btn { background:none; border:none; color:var(--ts); cursor:pointer; padding:2px; display:flex; align-items:center; }
+.mini-btn:hover { color:var(--tp); }
+.mini-btn svg { width:11px; height:11px; }
+
+/* ── FULLSCREEN ── */
+#fsPlayer { position:fixed; inset:0; background:#000; z-index:900; display:none; flex-direction:column; }
+#fsPlayer.open { display:flex; }
+.fs-vid { flex:1; display:flex; align-items:center; justify-content:center; background:#000; position:relative; font-size:80px; opacity:.3; }
+.fs-ctrl { background:rgba(4,8,20,.92); padding:10px 16px 12px; border-top:0.5px solid var(--gb); backdrop-filter:blur(20px); transition:opacity .3s; }
+.fs-ctrl.hid { opacity:0; pointer-events:none; }
+.fs-prog { height:4px; background:rgba(255,255,255,.1); border-radius:2px; cursor:pointer; margin-bottom:9px; position:relative; }
+.fs-prog-bar { height:100%; background:var(--ac); border-radius:2px; box-shadow:0 0 7px rgba(0,180,255,.6); width:0%; transition:width .1s linear; }
+.fs-row { display:flex; align-items:center; gap:9px; }
+.fscb { background:rgba(255,255,255,.07); border:0.5px solid rgba(120,200,255,.15); border-radius:7px; color:var(--tp); width:38px; height:34px; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all .15s; font-size:11px; font-family:var(--fn); }
+.fscb:hover { background:rgba(0,150,255,.2); box-shadow:0 0 9px rgba(0,150,255,.35); }
+.fscb svg { width:15px; height:15px; }
+.fs-title { flex:1; font-size:13px; font-weight:600; color:var(--tp); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.fs-time { font-size:11px; color:var(--ts); white-space:nowrap; }
+.fs-hide { position:absolute; top:10px; right:10px; background:rgba(0,0,0,.55); border:0.5px solid var(--gb); border-radius:5px; color:var(--ts); font-size:10px; padding:3px 8px; cursor:pointer; font-family:var(--fn); }
+
+/* ── SHORTS VIEWER OVERLAY ── */
+#shortsOverlay {
+  position:fixed; inset:0; background:#000; z-index:800; display:none; flex-direction:column;
+}
+#shortsOverlay.open { display:flex; }
+.shorts-back-btn {
+  position:absolute; top:14px; left:14px; z-index:10;
+  background:rgba(0,0,0,.6); border:0.5px solid var(--gb); border-radius:8px;
+  color:var(--tp); font-size:12px; font-family:var(--fn);
+  padding:6px 14px; cursor:pointer; display:flex; align-items:center; gap:6px;
+  backdrop-filter:blur(10px);
+}
+.shorts-back-btn:hover { background:rgba(0,150,255,.2); }
+.shorts-back-btn svg { width:13px; height:13px; }
+.shorts-viewport {
+  flex:1; position:relative; overflow:hidden;
+}
+.shorts-track {
+  display:flex; flex-direction:column;
+  height:100%; transition:transform .35s cubic-bezier(.4,0,.2,1);
+}
+.short-slide {
+  width:100%; flex-shrink:0; height:100vh;
+  display:flex; align-items:center; justify-content:center;
+  position:relative; overflow:hidden;
+}
+.short-slide-bg {
+  position:absolute; inset:0;
+  display:flex; align-items:center; justify-content:center;
+  font-size:120px; opacity:.12;
+  background:radial-gradient(ellipse at center, rgba(0,60,120,.5) 0%, rgba(0,0,0,.9) 100%);
+}
+.short-slide-content {
+  position:relative; z-index:2;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  width:100%; height:100%;
+}
+.short-slide-emoji { font-size:80px; filter:drop-shadow(0 0 20px rgba(0,180,255,.4)); }
+.short-slide-info {
+  position:absolute; bottom:80px; left:20px; right:70px;
+}
+.short-slide-title { font-size:15px; font-weight:700; color:#fff; margin-bottom:4px; text-shadow:0 1px 8px rgba(0,0,0,.8); }
+.short-slide-channel { font-size:12px; color:rgba(255,255,255,.7); }
+.short-slide-actions {
+  position:absolute; right:14px; bottom:80px;
+  display:flex; flex-direction:column; align-items:center; gap:18px;
+}
+.short-action-btn {
+  display:flex; flex-direction:column; align-items:center; gap:3px;
+  cursor:pointer; color:rgba(255,255,255,.85);
+}
+.short-action-btn svg { width:24px; height:24px; }
+.short-action-btn span { font-size:10px; }
+.short-progress-dots {
+  position:absolute; right:6px; top:50%; transform:translateY(-50%);
+  display:flex; flex-direction:column; gap:5px; z-index:5;
+}
+.spd { width:3px; height:20px; border-radius:2px; background:rgba(255,255,255,.25); transition:all .3s; }
+.spd.act { background:rgba(255,255,255,.9); height:28px; }
+.shorts-swipe-hint {
+  position:absolute; bottom:20px; left:50%; transform:translateX(-50%);
+  font-size:11px; color:rgba(255,255,255,.4); display:flex; flex-direction:column; align-items:center; gap:3px;
+  animation:fadeHint 3s ease forwards;
+}
+@keyframes fadeHint { 0%{opacity:1} 70%{opacity:1} 100%{opacity:0} }
+.short-play-overlay {
+  position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+  width:60px; height:60px; border-radius:50%;
+  background:rgba(0,0,0,.45); display:flex; align-items:center; justify-content:center;
+  cursor:pointer; transition:opacity .2s; border:1.5px solid rgba(255,255,255,.3);
+}
+.short-play-overlay.hidden { opacity:0; pointer-events:none; }
+.short-play-overlay svg { width:24px; height:24px; }
+
+/* ── YOUTUBE AUTH POPUP ── */
+#ytAuthOverlay {
+  position:fixed; inset:0; z-index:1100;
+  background:rgba(0,0,0,.75); backdrop-filter:blur(6px);
+  display:none; align-items:center; justify-content:center;
+}
+#ytAuthOverlay.open { display:flex; }
+.ytauth-box {
+  background:rgba(8,14,30,.97); border:0.5px solid var(--gb);
+  border-radius:16px; padding:28px 24px 22px;
+  width:320px; max-width:90vw;
+  box-shadow:0 16px 48px rgba(0,0,0,.8),0 0 0 0.5px rgba(0,180,255,.15);
+  text-align:center; position:relative;
+}
+.ytauth-close {
+  position:absolute; top:10px; right:12px;
+  background:none; border:none; color:var(--tm);
+  font-size:18px; cursor:pointer; line-height:1;
+}
+.ytauth-close:hover { color:var(--tp); }
+.ytauth-logo { display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:18px; }
+.ytauth-logo-icon { width:32px; height:22px; background:var(--red); border-radius:5px; display:flex; align-items:center; justify-content:center; box-shadow:0 0 10px rgba(255,60,60,.5); }
+.ytauth-logo-icon::after { content:''; border-left:9px solid #fff; border-top:5px solid transparent; border-bottom:5px solid transparent; margin-left:2px; }
+.ytauth-logo span { font-size:17px; font-weight:700; color:var(--nw); }
+.ytauth-title { font-size:15px; font-weight:700; color:var(--tp); margin-bottom:6px; }
+.ytauth-sub { font-size:12px; color:var(--tm); margin-bottom:22px; line-height:1.5; }
+.ytauth-google-btn {
+  display:flex; align-items:center; justify-content:center; gap:10px;
+  width:100%; padding:11px 16px;
+  background:#fff; border:none; border-radius:8px;
+  cursor:pointer; font-size:14px; font-weight:600;
+  color:#3c4043; font-family:var(--fn);
+  transition:box-shadow .2s, transform .1s;
+  box-shadow:0 2px 8px rgba(0,0,0,.4);
+}
+.ytauth-google-btn:hover { box-shadow:0 4px 16px rgba(0,0,0,.5); transform:translateY(-1px); }
+.ytauth-google-btn:active { transform:scale(.98); }
+.ytauth-google-btn svg { width:20px; height:20px; flex-shrink:0; }
+.ytauth-divider { display:flex; align-items:center; gap:10px; margin:14px 0; }
+.ytauth-divider-line { flex:1; height:0.5px; background:var(--gb); }
+.ytauth-divider span { font-size:11px; color:var(--tm); }
+.ytauth-manual {
+  display:flex; flex-direction:column; gap:8px;
+}
+.ytauth-input {
+  background:rgba(255,255,255,.06); border:0.5px solid var(--gb);
+  border-radius:8px; padding:9px 12px; color:var(--tp);
+  font-size:13px; font-family:var(--fn); outline:none; width:100%;
+  transition:border-color .2s,box-shadow .2s;
+}
+.ytauth-input:focus { border-color:var(--ac); box-shadow:0 0 8px var(--ag); }
+.ytauth-input::placeholder { color:var(--tm); }
+.ytauth-submit {
+  background:rgba(0,150,255,.2); border:0.5px solid var(--ac);
+  border-radius:8px; color:var(--nc); font-size:13px;
+  font-family:var(--fn); padding:9px; cursor:pointer;
+  transition:background .2s,box-shadow .2s;
+}
+.ytauth-submit:hover { background:rgba(0,150,255,.35); box-shadow:0 0 12px var(--ag); }
+.ytauth-note { font-size:10px; color:var(--tm); margin-top:12px; line-height:1.5; }
+.ytauth-note a { color:rgba(80,180,255,.8); text-decoration:none; }
+
+/* logged-in profile card */
+.yt-profile-card {
+  background:rgba(0,80,180,.12); border:0.5px solid rgba(0,180,255,.25);
+  border-radius:10px; padding:14px; display:flex; align-items:center; gap:12px;
+  margin-bottom:14px;
+}
+.yt-avatar {
+  width:44px; height:44px; border-radius:50%; overflow:hidden;
+  background:rgba(0,100,220,.3); flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  font-size:20px; font-weight:700; color:var(--nc);
+  border:1.5px solid rgba(0,180,255,.3);
+}
+.yt-avatar img { width:100%; height:100%; object-fit:cover; }
+.yt-profile-info { flex:1; min-width:0; text-align:left; }
+.yt-profile-name { font-size:13px; font-weight:600; color:var(--tp); margin-bottom:2px; }
+.yt-profile-email { font-size:10px; color:var(--tm); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.yt-signout-btn {
+  background:rgba(255,255,255,.06); border:0.5px solid var(--gb);
+  border-radius:6px; color:var(--ts); font-size:10px;
+  padding:4px 9px; cursor:pointer; font-family:var(--fn);
+  transition:background .15s;
+}
+.yt-signout-btn:hover { background:rgba(255,60,60,.15); border-color:rgba(255,80,80,.3); color:rgba(255,160,160,.9); }
+
+.sub-ch-item {
+  display:flex; align-items:center; gap:10px;
+  background:var(--gc); border:0.5px solid var(--gb);
+  border-radius:8px; padding:10px 12px; margin-bottom:6px;
+  cursor:pointer; transition:background .15s; backdrop-filter:blur(12px);
+}
+.sub-ch-item:hover { background:var(--gh); }
+.sub-ch-avatar {
+  width:38px; height:38px; border-radius:50%; flex-shrink:0;
+  background:rgba(0,100,180,.25); display:flex; align-items:center;
+  justify-content:center; overflow:hidden;
+}
+.sub-ch-avatar img { width:100%; height:100%; object-fit:cover; }
+.sub-ch-initial { font-size:16px; font-weight:700; color:var(--nc); }
+.sub-ch-name { font-size:12px; font-weight:600; color:var(--tp); }
+.sub-ch-meta { font-size:10px; color:var(--tm); }
+.sub-badge {
+  margin-left:auto; background:rgba(255,50,50,.15); border:0.5px solid rgba(255,80,80,.3);
+  border-radius:4px; color:rgba(255,140,140,.9); font-size:9px; font-weight:600;
+  padding:2px 6px; white-space:nowrap;
+}
+.sub-new-badge {
+  background:rgba(0,180,80,.15); border-color:rgba(0,200,80,.3);
+  color:rgba(100,255,140,.9);
+}
+.yt-loading {
+  display:flex; flex-direction:column; align-items:center; gap:10px;
+  padding:30px 0; color:var(--tm); font-size:12px;
+}
+.yt-spinner {
+  width:28px; height:28px; border:2px solid rgba(0,180,255,.2);
+  border-top-color:var(--ac); border-radius:50%;
+  animation:spin .8s linear infinite;
+}
+@keyframes spin { to { transform:rotate(360deg); } }
+
+/* gesture hint */
+.ghint { position:fixed; bottom:14px; left:50%; transform:translateX(-50%); background:rgba(5,12,28,.82); border:0.5px solid var(--gb); border-radius:20px; padding:5px 14px; font-size:10px; color:var(--tm); backdrop-filter:blur(16px); z-index:30; display:flex; align-items:center; gap:12px; pointer-events:none; }
+.ghint span { display:flex; align-items:center; gap:4px; }
+.gdot { width:5px; height:5px; background:var(--nc); border-radius:50%; box-shadow:0 0 6px rgba(0,220,255,.8); animation:pulse 2s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.7)} }
+
+#toast { position:fixed; top:56px; left:50%; transform:translateX(-50%); background:rgba(0,150,255,.15); border:0.5px solid rgba(0,180,255,.3); border-radius:20px; padding:5px 16px; font-size:11px; color:var(--nc); backdrop-filter:blur(16px); z-index:999; opacity:0; transition:opacity .3s; pointer-events:none; }
+#toast.show { opacity:1; }
+</style>
 </head>
 <body>
-  <!-- Top Bar -->
-  <header class="topbar">
-    <div class="logo">MyTube</div>
-    <input id="searchInput" type="text" class="search" placeholder="Search">
-    <button id="searchBtn" class="btn">Search</button>
-    <button id="shortsBtn" class="btn btn-accent">Shorts</button>
-  </header>
 
-  <!-- Main Feed -->
-  <main id="feed" class="feed"></main>
+<div class="world-bg"></div>
+<div class="lens-frame"></div>
+<div class="scanlines"></div>
 
-  <!-- Shorts Overlay -->
-  <div id="shortsFeed" class="shorts hidden">
-    <div id="shortsContainer"></div>
-    <button id="closeShortsBtn" class="shorts-close">×</button>
+<div id="app">
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="logo">
+      <div class="logo-icon"></div>
+      ViewTube
+    </div>
+
+    <div class="search-wrap" id="searchWrap">
+      <div class="si"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="9" r="6"/><path d="m15 15 3 3"/></svg></div>
+      <input type="text" placeholder="Search ViewTube…" id="searchInput" autocomplete="off"
+        oninput="handleSearch(this.value)" onfocus="openSearch()" onblur="closeSearchDelay()">
+      <div id="sdd"></div>
+    </div>
+
+    <button class="tb-btn" id="miniBtn" onclick="toggleMini()">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="16" height="16" rx="2"/><rect x="10" y="10" width="8" height="7" rx="1" fill="currentColor" stroke="none" opacity=".5"/></svg>
+      Mini
+    </button>
+
+    <div class="dots-wrap">
+      <button class="tb-btn" onclick="toggleDots()">
+        <svg viewBox="0 0 20 20" fill="currentColor"><circle cx="10" cy="4" r="1.5"/><circle cx="10" cy="10" r="1.5"/><circle cx="10" cy="16" r="1.5"/></svg>
+      </button>
+      <div class="dots-menu" id="dotsMenu">
+        <div class="di" onclick="setTab('history');closeDots()">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="8"/><path d="M10 6v4l3 2"/></svg>History
+        </div>
+        <div class="di" onclick="setTab('subscriptions');closeDots()">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 17v-1a6 6 0 0 1 12 0v1"/><circle cx="10" cy="7" r="4"/></svg>Subscriptions
+        </div>
+        <div class="di" onclick="setTab('channel');closeDots()">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="5" width="14" height="10" rx="2"/><path d="m8 8 5 2-5 2V8z" fill="currentColor"/></svg>Channel
+        </div>
+      </div>
+    </div>
   </div>
 
-  <!-- HUD -->
-  <div class="hud" id="hud"></div>
+  <!-- BODY -->
+  <div class="body-row">
 
-  <script src="app.js"></script>
-</body>
-</html>
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-}
+    <!-- LEFT COLUMN: video list OR player -->
+    <div class="left-col">
 
-body {
-  background: #050505;
-  color: #fff;
-}
+      <!-- Video list (default view) -->
+      <div class="vlist-area" id="vlistArea">
+        <div class="sec-label">Recommended</div>
+        <div class="vgrid" id="mainGrid"></div>
+      </div>
 
-/* Top Bar */
-.topbar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  background: #111;
-  border-bottom: 1px solid #222;
-}
+      <!-- Player area (shown when video open & not mini) -->
+      <div class="player-area" id="playerArea">
+        <div class="video-box">
+          <div class="video-box-inner" id="vidBoxInner">
+            <div class="big-emoji">▶</div>
+            <p>Select a video</p>
+          </div>
+          <button class="hide-ui-btn" id="hideUiBtn" onclick="toggleHideUi()" style="display:none">Hide UI</button>
+        </div>
 
-.logo {
-  font-weight: 700;
-  font-size: 18px;
-}
+        <div class="pcontrols" id="pcontrols" style="display:none">
+          <div class="prog-wrap" onclick="scrub(event,this)">
+            <div class="prog-bar" id="progBar"></div>
+            <div class="prog-thumb" id="progThumb"></div>
+          </div>
+          <div class="ctrl-row">
+            <div class="ctrl-l">
+              <button class="cb" onclick="seek(-10)" title="−10s">
+                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 10a6 6 0 1 0 1.3-3.8"/><path d="M4 3v4h4"/><text x="8" y="14" font-size="5" fill="currentColor" stroke="none">10</text></svg>
+              </button>
+              <button class="cb play" id="playBtn" onclick="togglePlay()">
+                <svg id="playIcon" viewBox="0 0 20 20" fill="currentColor"><polygon points="5,3 17,10 5,17"/></svg>
+              </button>
+              <button class="cb" onclick="seek(10)" title="+10s">
+                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16 10a6 6 0 1 1-1.3-3.8"/><path d="M16 3v4h-4"/><text x="8" y="14" font-size="5" fill="currentColor" stroke="none">10</text></svg>
+              </button>
+              <span class="ct" id="ctTime">0:00 / 0:00</span>
+            </div>
+            <div class="ctrl-r">
+              <button class="cb" onclick="openFs()" title="Fullscreen">
+                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7V3h4M13 3h4v4M17 13v4h-4M7 17H3v-4"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
 
-.search {
-  flex: 1;
-  padding: 6px 10px;
-  border-radius: 999px;
-  border: 1px solid #333;
-  background: #000;
-  color: #fff;
-}
+        <div class="pinfo" id="pinfo" style="display:none">
+          <div class="ptitle" id="ptitle">—</div>
+          <div class="pmeta" id="pmeta">—</div>
+        </div>
 
-.btn {
-  padding: 6px 12px;
-  border-radius: 999px;
-  border: none;
-  background: #333;
-  color: #fff;
-  cursor: pointer;
-  font-size: 13px;
-}
+        <div class="sugg-area" id="suggArea" style="display:none">
+          <div class="sugg-lbl">Up next</div>
+          <div id="suggList"></div>
+        </div>
+      </div>
+    </div>
 
-.btn-accent {
-  background: #ff4b4b;
-}
+    <!-- RIGHT COLUMN: tabs + content -->
+    <div class="right-col">
+      <div class="rtabs" id="rtabs">
+        <div class="rtab active" data-tab="home" onclick="setTab('home')">Home</div>
+        <div class="rtab" data-tab="shorts" onclick="setTab('shorts')">Shorts</div>
+        <div class="rtab" data-tab="movies" onclick="setTab('movies')">Movies</div>
+        <div class="rtab" data-tab="playlist" onclick="setTab('playlist')">Playlist</div>
+        <div class="rtab" data-tab="history" onclick="setTab('history')" style="display:none">History</div>
+        <div class="rtab" data-tab="subscriptions" onclick="setTab('subscriptions')" style="display:none">Subscriptions</div>
+        <div class="rtab" data-tab="channel" onclick="setTab('channel')" style="display:none">Channel</div>
+      </div>
+      <div class="rtab-content" id="rtabContent"></div>
+    </div>
 
-/* Feed */
-.feed {
-  padding: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
+  </div>
+</div>
 
-/* Video Card */
-.video-card {
-  display: flex;
-  gap: 10px;
-  background: #111;
-  border-radius: 10px;
-  overflow: hidden;
-  border: 1px solid #222;
-  cursor: pointer;
-}
+<!-- YOUTUBE AUTH POPUP -->
+<div id="ytAuthOverlay">
+  <div class="ytauth-box">
+    <button class="ytauth-close" onclick="closeAuthPopup()">✕</button>
+    <div class="ytauth-logo">
+      <div class="ytauth-logo-icon"></div>
+      <span>ViewTube</span>
+    </div>
+    <div class="ytauth-title">Sign in with YouTube</div>
+    <div class="ytauth-sub">Connect your YouTube account to see your real subscriptions, history, and personalized feed.</div>
 
-.video-thumb {
-  width: 40%;
-  min-width: 40%;
-  background: #000;
-}
+    <!-- Google OAuth button -->
+    <button class="ytauth-google-btn" onclick="startGoogleOAuth()">
+      <!-- Google G logo -->
+      <svg viewBox="0 0 48 48">
+        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+        <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+        <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+        <path fill="none" d="M0 0h48v48H0z"/>
+      </svg>
+      Continue with Google
+    </button>
 
-.video-thumb img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
+    <div class="ytauth-divider">
+      <div class="ytauth-divider-line"></div>
+      <span>or enter API key</span>
+      <div class="ytauth-divider-line"></div>
+    </div>
 
-.video-info {
-  padding: 8px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
+    <div class="ytauth-manual">
+      <input class="ytauth-input" id="ytApiKeyInput" type="password"
+        placeholder="YouTube Data API v3 key"
+        oninput="validateApiKeyInput(this.value)">
+      <input class="ytauth-input" id="ytHandleInput" type="text"
+        placeholder="Your YouTube handle (e.g. @username)"
+        oninput="validateApiKeyInput()">
+      <button class="ytauth-submit" id="ytApiSubmit" onclick="signInWithApiKey()" disabled
+        style="opacity:.45">Load My Subscriptions</button>
+    </div>
 
-.video-title {
-  font-size: 14px;
-  font-weight: 600;
-  margin-bottom: 4px;
-}
+    <div class="ytauth-note">
+      Your credentials are never stored on any server. OAuth uses Google's secure flow.
+      API key mode uses the <a href="https://developers.google.com/youtube/v3" target="_blank">YouTube Data API v3</a> directly from your browser.
+    </div>
+  </div>
+</div>
 
-.video-channel {
-  font-size: 12px;
-  color: #aaa;
-  margin-bottom: 2px;
-}
+<!-- SHORTS OVERLAY -->
+<div id="shortsOverlay">
+  <button class="shorts-back-btn" onclick="closeShortsOverlay()">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 4l-7 6 7 6"/></svg>
+    Back
+  </button>
+  <div class="shorts-viewport" id="shortsViewport">
+    <div class="shorts-track" id="shortsTrack"></div>
+    <div class="short-progress-dots" id="shortsDots"></div>
+    <div class="shorts-swipe-hint" id="shortsHint">
+      <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 4v12M6 8l4-4 4 4"/></svg>
+      Swipe up for next
+    </div>
+  </div>
+</div>
 
-.video-meta {
-  font-size: 11px;
-  color: #777;
-}
+<!-- MINI PLAYER (bottom right) -->
+<div id="miniPlayer">
+  <div class="mini-drag" id="miniDragHandle"></div>
+  <div class="mini-vid" id="miniVid">▶</div>
+  <div class="mini-bar">
+    <span class="mini-title" id="miniTitle">No video</span>
+    <button class="mini-btn" onclick="togglePlay()">
+      <svg id="miniPlayIcon" viewBox="0 0 16 16" fill="currentColor"><polygon points="3,2 13,8 3,14"/></svg>
+    </button>
+    <button class="mini-btn" onclick="closeMini()">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3l10 10M13 3L3 13"/></svg>
+    </button>
+  </div>
+</div>
 
-/* Shorts Overlay */
-.shorts {
-  position: fixed;
-  inset: 0;
-  background: #000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-}
+<!-- FULLSCREEN -->
+<div id="fsPlayer">
+  <div class="fs-vid" id="fsVid">▶</div>
+  <div class="fs-ctrl" id="fsCtrl">
+    <div class="fs-prog" onclick="scrubFs(event,this)">
+      <div class="fs-prog-bar" id="fsProg"></div>
+    </div>
+    <div class="fs-row">
+      <button class="fscb" onclick="closeFs()">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 4l-7 6 7 6"/></svg>
+      </button>
+      <button class="fscb" onclick="seek(-10)">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 10a6 6 0 1 0 1.3-3.8"/><path d="M4 3v4h4"/></svg>
+      </button>
+      <button class="fscb" id="fsPlayBtn" onclick="togglePlay()">
+        <svg id="fsPlayIcon" viewBox="0 0 20 20" fill="currentColor"><polygon points="5,3 19,10 5,17"/></svg>
+      </button>
+      <button class="fscb" onclick="seek(10)">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16 10a6 6 0 1 1-1.3-3.8"/><path d="M16 3v4h-4"/></svg>
+      </button>
+      <div class="fs-title" id="fsTitle">—</div>
+      <span class="fs-time" id="fsTime">0:00 / 0:00</span>
+      <button class="fscb" onclick="closeFs()" style="width:auto;padding:0 10px;font-size:11px">Exit</button>
+    </div>
+  </div>
+  <button class="fs-hide" onclick="toggleFsHide()">Hide UI</button>
+</div>
 
-.shorts.hidden {
-  display: none;
-}
+<div class="ghint">
+  <span><div class="gdot"></div> Neural Band active</span>
+  <span>Tap: pause</span><span>Swipe: seek</span><span>Double tap: mini</span>
+</div>
 
-#shortsContainer {
-  width: 100%;
-  height: 100%;
-  position: relative;
-}
+<div id="toast"></div>
 
-.shortsVideo {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  border: none;
-  object-fit: cover;
-}
-
-.shorts-close {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  padding: 6px 10px;
-  border-radius: 999px;
-  border: none;
-  background: #222;
-  color: #fff;
-  cursor: pointer;
-}
-
-/* HUD */
-.hud {
-  position: fixed;
-  bottom: 10px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: #222;
-  color: #fff;
-  padding: 6px 12px;
-  border-radius: 999px;
-  font-size: 12px;
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-
-.hud.show {
-  opacity: 1;
-}
-// ---------- API ENGINE ----------
-const API_KEYS = [
-  "AIzaSyAiG74ZYcjR4K78NPfUe3sQGeJLnoBIXYU",
-  "AIzaSyDVDUackHINzULJ6qasLLKDZUIBBxTORTI",
-  "AIzaSyApAIjVvwL8DQMe5-B5z815hdJtpj3YLDg",
-  "AIzaSyAUKic3SobVT3S60-H9fWmdHZJVgdOzRPg",
-  "AIzaSyB7FKzBZCxfl4nwi6elI6wj-JCVXXtmA40",
-  "AIzaSyBTUdLTpyYG0-fuOUP1OkeX9tf06S-rVkY",
-  "AIzaSyAJbkJYrguKWmBl7Vyd6ObPXZf0zu8-p3E",
-  "AIzaSyCz8qs_I_hbgfLZXZj9QMX1sO74hF5k84Q",
-  "AIzaSyCAM-BEIynJUz3dkhRWOCrs3cdh5KJbbro",
-  "AIzaSyCQsQnRJB6KgGKnSpGD66v6HNwikLUdFQ8",
-  "AIzaSyCb6lnHEoOXWd0TWfJK71T_mOiM8O2kfrI",
-  "AIzaSyC6qu4BiEbQJ1uoy49GcvAy9_QxHKUE6Go",
-  "AIzaSyAtk1KIeZ9kFLNfhrqgNhmPzU4VJqTPeR8",
-  "AIzaSyCkq9rnLzqpfnr-LHUg-1AuIDb-GkWukPM",
-  "AIzaSyCzjoJptOBNzhkaxnNrkDZRP4SzsmTgTKQ",
-  "AIzaSyBt2YQ-X408_Ep3EYV4B70SgXeeADe_L08",
-  "AIzaSyCiEMfafGEgqpZ94b9ENjAg0UaIku0NRE8",
-  "AIzaSyA0prh1a0eN4fZ6MA_eB4MPJ0UH4LPsIAc",
-  "AIzaSyDiisGuMjbilWyxKAFpTPu4am8d5yQagJI",
-  "AIzaSyDI3sl7QYBrXOgAwCyjwJ23pV1nbjUMVL0",
-  "AIzaSyD_Jfk_5wuEdVhDEsQX9uy3BW2Fio7xe0s",
-  "AIzaSyCpAzwCaG2I8gEusAsDKnkoxVMdkPg1Vpk",
-  "AIzaSyCJ2cLDhXE-e_KYbnfS7DmrT-gtbL9yxCY",
-  "AIzaSyA2DSf373Pmv26YLpcv2gnUMeZd0bGgNug",
-  "AIzaSyC-66qDbGqKdEfQyGFeQPgYpRCjg802eLQ",
-  "AIzaSyBE_TgXpbeBMrkZhEGeEI3nZ5xC_BbbSd0"
+<script>
+// ═══════════════════════════════════════════════════
+// DATA — expanded pool for infinite scroll + personalization
+// ═══════════════════════════════════════════════════
+const ALL_VIDS = [
+  {id:'v1', title:'Stay Golden (Official Video)',       channel:'Temiwo Woods',      views:'48K',  ago:'3 weeks ago',   dur:'3:05', emoji:'🎵', bg:'#1a2a4a', tags:['indie','mellow','r&b']},
+  {id:'v2', title:'Elysian — Full Album Stream',        channel:'Temiwo Woods',      views:'22K',  ago:'2 months ago',  dur:'3:12', emoji:'🌊', bg:'#1a3040', tags:['indie','album','chill']},
+  {id:'v3', title:'Weightless',                         channel:'Arlo Parks',        views:'1.3M', ago:'1 year ago',    dur:'4:07', emoji:'🌿', bg:'#1a2a1a', tags:['indie','mellow','soft']},
+  {id:'v4', title:'Love Me Not',                        channel:'Ravyn Lenae',       views:'3.8M', ago:'1 year ago',    dur:'3:28', emoji:'🌙', bg:'#2a1a3a', tags:['r&b','neo-soul','mellow']},
+  {id:'v5', title:'Jealous',                            channel:'Mahalia',           views:'2.1M', ago:'8 months ago',  dur:'3:06', emoji:'🔥', bg:'#3a1a1a', tags:['r&b','soul','vocal']},
+  {id:'v6', title:'Liquid Spirit',                      channel:'Gregory Porter',    views:'4.2M', ago:'5 years ago',   dur:'4:41', emoji:'🎷', bg:'#1a2030', tags:['jazz','soul','classic']},
+  {id:'v7', title:'Golden Hour',                        channel:'KACEY MUSGRAVES',   views:'12M',  ago:'3 years ago',   dur:'3:35', emoji:'☀️', bg:'#2a2010', tags:['pop','country','chill']},
+  {id:'v8', title:'Motley Crew',                        channel:'Post Malone',       views:'280M', ago:'2 years ago',   dur:'3:37', emoji:'🤘', bg:'#201010', tags:['pop','hiphop','loud']},
+  {id:'v9', title:'Softly',                             channel:'Kiana Ledé',        views:'900K', ago:'6 months ago',  dur:'3:14', emoji:'💜', bg:'#1a102a', tags:['r&b','mellow','vocal']},
+  {id:'v10',title:'Superstar',                          channel:'Usher',             views:'15M',  ago:'4 years ago',   dur:'5:12', emoji:'⭐', bg:'#201a00', tags:['r&b','dance','classic']},
+  {id:'v11',title:'Blinding Lights',                    channel:'The Weeknd',        views:'1.2B', ago:'4 years ago',   dur:'3:20', emoji:'🌃', bg:'#200010', tags:['pop','synth','dance']},
+  {id:'v12',title:'Espresso',                           channel:'Sabrina Carpenter', views:'800M', ago:'1 year ago',    dur:'2:55', emoji:'☕', bg:'#2a1500', tags:['pop','upbeat','dance']},
+  {id:'v13',title:'Flowers',                            channel:'Miley Cyrus',       views:'450M', ago:'2 years ago',   dur:'3:21', emoji:'🌸', bg:'#2a1020', tags:['pop','empowerment','upbeat']},
+  {id:'v14',title:'As It Was',                          channel:'Harry Styles',      views:'700M', ago:'3 years ago',   dur:'2:37', emoji:'🎸', bg:'#102a10', tags:['pop','indie','mellow']},
+  {id:'v15',title:'Anti-Hero',                          channel:'Taylor Swift',      views:'600M', ago:'3 years ago',   dur:'3:21', emoji:'🦋', bg:'#1a1a2a', tags:['pop','indie','introspective']},
+  {id:'v16',title:'Bad Habit',                          channel:'Steve Lacy',        views:'250M', ago:'2 years ago',   dur:'3:52', emoji:'🎶', bg:'#1a2a1a', tags:['indie','r&b','neo-soul']},
+  {id:'v17',title:'Creepin\'',                          channel:'Metro Boomin',      views:'310M', ago:'2 years ago',   dur:'3:18', emoji:'🌑', bg:'#100010', tags:['hiphop','r&b','dark']},
+  {id:'v18',title:'Ella Baila Sola',                    channel:'Eslabon Armado',    views:'600M', ago:'1 year ago',    dur:'3:12', emoji:'🎺', bg:'#2a1a00', tags:['latin','regional','viral']},
+  {id:'v19',title:'Angel Pt. 1',                        channel:'Fast X Soundtrack', views:'180M', ago:'1 year ago',    dur:'3:30', emoji:'👼', bg:'#0a1a2a', tags:['pop','hiphop','cinematic']},
+  {id:'v20',title:'Cruel Summer',                       channel:'Taylor Swift',      views:'500M', ago:'5 years ago',   dur:'2:58', emoji:'🌞', bg:'#2a2a00', tags:['pop','synth','upbeat']},
+  {id:'v21',title:'Rich Flex',                          channel:'Drake',             views:'400M', ago:'2 years ago',   dur:'3:53', emoji:'💎', bg:'#1a1000', tags:['hiphop','trap','loud']},
+  {id:'v22',title:'Calm Down',                          channel:'Rema',              views:'350M', ago:'2 years ago',   dur:'3:35', emoji:'🌴', bg:'#0a2a1a', tags:['afrobeats','chill','dance']},
+  {id:'v23',title:'Unholy',                             channel:'Sam Smith',         views:'320M', ago:'2 years ago',   dur:'2:37', emoji:'🔔', bg:'#1a0a1a', tags:['pop','dark','dance']},
+  {id:'v24',title:'Lift Me Up',                         channel:'Rihanna',           views:'280M', ago:'2 years ago',   dur:'3:34', emoji:'🕊️', bg:'#0a1020', tags:['pop','cinematic','mellow']},
+  {id:'v25',title:'Late Night Talking',                 channel:'Harry Styles',      views:'200M', ago:'3 years ago',   dur:'2:57', emoji:'🌙', bg:'#102010', tags:['pop','indie','chill']},
+  {id:'v26',title:'About Damn Time',                    channel:'Lizzo',             views:'280M', ago:'3 years ago',   dur:'3:13', emoji:'✊', bg:'#2a1000', tags:['pop','funk','upbeat']},
+  {id:'v27',title:'Running Up That Hill',               channel:'Kate Bush',         views:'350M', ago:'3 years ago',   dur:'5:03', emoji:'🏃', bg:'#1a1030', tags:['classic','synth','mellow']},
+  {id:'v28',title:'Break My Soul',                      channel:'Beyoncé',           views:'320M', ago:'3 years ago',   dur:'4:38', emoji:'💃', bg:'#1a0a20', tags:['dance','house','empowerment']},
+  {id:'v29',title:'Lavender Haze',                      channel:'Taylor Swift',      views:'210M', ago:'3 years ago',   dur:'3:22', emoji:'💜', bg:'#150a2a', tags:['pop','synth','introspective']},
+  {id:'v30',title:'Stargazing',                         channel:'Travis Scott',      views:'300M', ago:'6 years ago',   dur:'3:48', emoji:'🌟', bg:'#0a0a20', tags:['hiphop','trap','cinematic']},
+  {id:'v31',title:'Essence',                            channel:'Wizkid',            views:'280M', ago:'4 years ago',   dur:'4:03', emoji:'🌺', bg:'#0a2010', tags:['afrobeats','r&b','dance']},
+  {id:'v32',title:'Heat Waves',                         channel:'Glass Animals',     views:'600M', ago:'4 years ago',   dur:'3:59', emoji:'🌊', bg:'#001a1a', tags:['indie','chill','electronic']},
+  {id:'v33',title:'Drivers License',                    channel:'Olivia Rodrigo',    views:'400M', ago:'4 years ago',   dur:'4:02', emoji:'🚗', bg:'#0a1020', tags:['pop','indie','emotional']},
+  {id:'v34',title:'Save Your Tears',                    channel:'The Weeknd',        views:'450M', ago:'5 years ago',   dur:'3:36', emoji:'😢', bg:'#200010', tags:['pop','synth','dark']},
+  {id:'v35',title:'Peaches',                            channel:'Justin Bieber',     views:'380M', ago:'4 years ago',   dur:'3:18', emoji:'🍑', bg:'#2a1500', tags:['r&b','pop','chill']},
+  {id:'v36',title:'Bad Guy',                            channel:'Billie Eilish',     views:'600M', ago:'6 years ago',   dur:'3:14', emoji:'😈', bg:'#001a00', tags:['pop','dark','indie']},
+  {id:'v37',title:'Industry Baby',                      channel:'Lil Nas X',         views:'500M', ago:'4 years ago',   dur:'3:32', emoji:'🎺', bg:'#201000', tags:['hiphop','pop','loud']},
+  {id:'v38',title:'Butter',                             channel:'BTS',               views:'600M', ago:'4 years ago',   dur:'2:44', emoji:'🧈', bg:'#201a00', tags:['kpop','pop','dance']},
+  {id:'v39',title:'Easy On Me',                         channel:'Adele',             views:'500M', ago:'4 years ago',   dur:'3:44', emoji:'🕯️', bg:'#1a1000', tags:['pop','soul','emotional']},
+  {id:'v40',title:'Ghost',                              channel:'Justin Bieber',     views:'250M', ago:'4 years ago',   dur:'2:33', emoji:'👻', bg:'#0a0a1a', tags:['pop','emotional','introspective']},
 ];
 
-function getRandomKey() {
-  return API_KEYS[Math.floor(Math.random() * API_KEYS.length)];
+const SHORTS = [
+  {id:'s1', title:'Sunset timelapse 30s',    channel:'NatureVibes',   views:'2.1M', emoji:'🌅', likes:'48K'},
+  {id:'s2', title:'Quick pasta hack',         channel:'FoodShorts',    views:'890K', emoji:'🍝', likes:'22K'},
+  {id:'s3', title:'Cat does backflip',        channel:'PetMoments',    views:'4.5M', emoji:'🐱', likes:'310K'},
+  {id:'s4', title:'Neon art tutorial',        channel:'ArtByte',       views:'1.2M', emoji:'✨', likes:'87K'},
+  {id:'s5', title:'5 min workout',            channel:'FitFlash',      views:'3.3M', emoji:'💪', likes:'140K'},
+  {id:'s6', title:'Space fact #42',           channel:'CosmosClips',   views:'600K', emoji:'🚀', likes:'55K'},
+  {id:'s7', title:'Rain sounds 60s',          channel:'SleepWave',     views:'5M',   emoji:'🌧️', likes:'200K'},
+  {id:'s8', title:'Baby penguin walks',       channel:'ZooClips',      views:'8M',   emoji:'🐧', likes:'420K'},
+  {id:'s9', title:'Holographic nails DIY',    channel:'GlowCraft',     views:'1.8M', emoji:'💅', likes:'95K'},
+  {id:'s10',title:'Guitar riff in 10s',       channel:'RiffRocket',    views:'2.4M', emoji:'🎸', likes:'180K'},
+  {id:'s11',title:'Fastest rubik\'s cube',    channel:'SpeedCube',     views:'9M',   emoji:'🎯', likes:'500K'},
+  {id:'s12',title:'Tokyo at night 30s',       channel:'CityLens',      views:'3.1M', emoji:'🗼', likes:'160K'},
+];
+
+const MOVIES = [
+  {id:'m1',title:'Interstellar',       year:'2014',genre:'Sci-Fi',  rating:'8.7',emoji:'🌌'},
+  {id:'m2',title:'Arrival',            year:'2016',genre:'Sci-Fi',  rating:'7.9',emoji:'🛸'},
+  {id:'m3',title:'Dune: Part One',     year:'2021',genre:'Epic',    rating:'8.0',emoji:'🏜️'},
+  {id:'m4',title:'The Matrix',         year:'1999',genre:'Action',  rating:'8.7',emoji:'💊'},
+  {id:'m5',title:'Blade Runner 2049',  year:'2017',genre:'Sci-Fi',  rating:'8.0',emoji:'🤖'},
+  {id:'m6',title:'Her',                year:'2013',genre:'Drama',   rating:'8.0',emoji:'🌸'},
+];
+
+const PLAYLISTS = [
+  {id:'pl1',name:'Chill Vibes ✦',       count:24,emoji:'🎵'},
+  {id:'pl2',name:'Workout Bangers',      count:18,emoji:'🔥'},
+  {id:'pl3',name:'Late Night Coding',    count:12,emoji:'💻'},
+  {id:'pl4',name:'Road Trip Mix',        count:31,emoji:'🚗'},
+  {id:'pl5',name:'Morning Routine',       count:8,emoji:'☀️'},
+];
+
+// ═══════════════════════════════════════════════════
+// PERSONALIZATION ENGINE
+// Two pillars: (1) watch-history personalization, (2) collaborative filtering
+// ═══════════════════════════════════════════════════
+const Persona = {
+  // Simulated user profile built from watch history
+  watchHistory: ['v1','v2','v3','v4','v9'],   // watched Temiwo, Arlo Parks, Ravyn Lenae, Kiana Ledé
+  searchHistory: ['indie r&b', 'neo-soul', 'mellow music'],
+  likedChannels: ['Temiwo Woods', 'Arlo Parks'],
+  likedTags: {},   // accumulated tag weights
+
+  // Simulated "similar users" clusters for collaborative filtering
+  userClusters: [
+    { users:'Cluster A – indie/neo-soul fans', sharedWatched:['v3','v4','v9','v16','v24','v32','v33'], tags:['indie','r&b','neo-soul','mellow'] },
+    { users:'Cluster B – late-night chill',    sharedWatched:['v7','v14','v25','v27','v32'],           tags:['chill','indie','synth','mellow'] },
+    { users:'Cluster C – r&b/soul',            sharedWatched:['v4','v5','v6','v10','v28','v31'],       tags:['r&b','soul','classic','dance'] },
+  ],
+
+  // Score each video for the current user
+  scoreVideo(v) {
+    let score = 0;
+
+    // Pillar 1 — personalization from own history
+    // Boost channels already watched
+    if (this.likedChannels.includes(v.channel)) score += 30;
+
+    // Boost tags from watch history
+    (v.tags||[]).forEach(tag => {
+      score += (this.likedTags[tag] || 0) * 5;
+    });
+
+    // Avoid already-watched (slight penalty so they still appear further down)
+    if (this.watchHistory.includes(v.id)) score -= 10;
+
+    // Pillar 2 — collaborative filtering
+    // Find clusters that watched videos similar to my history
+    this.userClusters.forEach(cluster => {
+      const overlap = cluster.sharedWatched.filter(id => this.watchHistory.includes(id)).length;
+      if (overlap > 0) {
+        // Boost videos this cluster also watches that I haven't
+        if (cluster.sharedWatched.includes(v.id) && !this.watchHistory.includes(v.id)) {
+          score += overlap * 8;
+        }
+        // Boost tag matches with this cluster
+        const tagOverlap = (v.tags||[]).filter(t => cluster.tags.includes(t)).length;
+        score += tagOverlap * overlap * 3;
+      }
+    });
+
+    // Small random freshness factor (simulates engagement signal noise)
+    score += Math.random() * 6;
+
+    return score;
+  },
+
+  // Record a watch event and update tag weights
+  recordWatch(v) {
+    if (!this.watchHistory.includes(v.id)) this.watchHistory.push(v.id);
+    if (!this.likedChannels.includes(v.channel) && this.watchHistory.filter(id=>{
+      const vid=ALL_VIDS.find(x=>x.id===id); return vid&&vid.channel===v.channel;
+    }).length >= 2) this.likedChannels.push(v.channel);
+
+    (v.tags||[]).forEach(tag => {
+      this.likedTags[tag] = (this.likedTags[tag]||0) + 1;
+    });
+  },
+
+  // Return personalized feed sorted by score
+  getFeed(exclude=[]) {
+    return [...ALL_VIDS]
+      .filter(v => !exclude.includes(v.id))
+      .map(v => ({...v, _score: this.scoreVideo(v)}))
+      .sort((a,b) => b._score - a._score);
+  }
+};
+
+// Build initial tag weights from simulated history
+Persona.watchHistory.forEach(id => {
+  const v = ALL_VIDS.find(x=>x.id===id);
+  if (v) (v.tags||[]).forEach(tag => { Persona.likedTags[tag]=(Persona.likedTags[tag]||0)+1; });
+});
+
+// ═══════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════
+let curVid = null, playing = false, uiHid = false, fsUiHid = false;
+let miniOn = false, pct = 0, progTimer = null;
+let curTab = 'home';
+
+// Infinite scroll state per section
+const scrollState = {
+  home:  { page:0, batchSize:20, pool:[], loading:false, done:false },
+  right: { page:0, batchSize:20, pool:[], loading:false, done:false },
+  movies:{ page:0, batchSize:6,  pool:[], loading:false, done:false },
+};
+
+// ═══════════════════════════════════════════════════
+// INFINITE SCROLL — LEFT MAIN GRID
+// ═══════════════════════════════════════════════════
+function initScrollState() {
+  // Build personalized pool once
+  scrollState.home.pool = Persona.getFeed();
+  scrollState.right.pool = Persona.getFeed();
+  scrollState.movies.pool = MOVIES;
 }
 
-async function fetchYouTube(endpoint, params, retries = 4) {
-  const url = new URL("https://www.googleapis.com/youtube/v3/" + endpoint);
-  Object.entries(params).forEach(([k, v]) => {
-    if (v !== undefined && v !== null) url.searchParams.set(k, v);
-  });
+function getNextBatch(key) {
+  const s = scrollState[key];
+  if (s.done || s.loading) return [];
+  const start = s.page * s.batchSize;
+  const batch = s.pool.slice(start, start + s.batchSize);
+  if (batch.length === 0 || batch.length < s.batchSize) s.done = true;
+  s.page++;
+  return batch;
+}
 
-  for (let i = 0; i < retries; i++) {
-    url.searchParams.set("key", getRandomKey());
+function renderVCard(v) {
+  return `<div class="vcard" onclick="playVideo('${v.id}')">
+    <div class="vcard-thumb" style="background:${v.bg||'#1a2a4a'}">
+      <div class="vcard-thumb-ph">${v.emoji}</div>
+      <div class="vcard-dur">${v.dur||''}</div>
+    </div>
+    <div class="vcard-info">
+      <div class="vcard-title">${v.title}</div>
+      <div class="vcard-meta"><span>${v.channel}</span><span>${v.views} views · ${v.ago||''}</span></div>
+    </div>
+  </div>`;
+}
+
+function initMainGrid() {
+  initScrollState();
+  const grid = document.getElementById('mainGrid');
+  grid.innerHTML = '';
+  const batch = getNextBatch('home');
+  grid.innerHTML = batch.map(renderVCard).join('') + '<div id="homeLoadMore" style="height:40px"></div>';
+  applyTilt();
+
+  // Intersection Observer for infinite scroll
+  const sentinel = document.getElementById('homeLoadMore');
+  const obs = new IntersectionObserver(entries => {
+    if (!entries[0].isIntersecting) return;
+    if (scrollState.home.done) { sentinel.innerHTML='<div style="text-align:center;padding:12px;font-size:11px;color:var(--tm)">All caught up ✓</div>'; obs.disconnect(); return; }
+    scrollState.home.loading = true;
+    sentinel.innerHTML = '<div style="text-align:center;padding:10px;font-size:11px;color:var(--tm);animation:pulse 1.5s infinite">Loading more…</div>';
+    setTimeout(()=>{
+      const more = getNextBatch('home');
+      scrollState.home.loading = false;
+      if (more.length===0) { sentinel.innerHTML='<div style="text-align:center;padding:12px;font-size:11px;color:var(--tm)">All caught up ✓</div>'; obs.disconnect(); return; }
+      sentinel.insertAdjacentHTML('beforebegin', more.map(renderVCard).join(''));
+      sentinel.innerHTML = '<div style="height:40px"></div>';
+      applyTilt();
+    }, 400);
+  }, {threshold:0.1});
+  obs.observe(sentinel);
+}
+
+// ═══════════════════════════════════════════════════
+// RIGHT TABS
+// ═══════════════════════════════════════════════════
+function setTab(tab) {
+  curTab = tab;
+  document.querySelectorAll('.rtab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+  if (['history','subscriptions','channel'].includes(tab)) {
+    const el = document.querySelector(`.rtab[data-tab="${tab}"]`);
+    if (el) el.style.display = '';
+  }
+  // Open Shorts overlay instead of rendering in sidebar
+  if (tab === 'shorts') { openShortsOverlay(0); return; }
+  renderTab();
+}
+
+function renderTab() {
+  const el = document.getElementById('rtabContent');
+  switch(curTab) {
+    case 'home':          el.innerHTML = renderRHome(); setupRightInfiniteScroll(); break;
+    case 'movies':        el.innerHTML = renderRMovies(); break;
+    case 'playlist':      el.innerHTML = renderRPlaylist(); break;
+    case 'history':       el.innerHTML = renderRHistory(); break;
+    case 'subscriptions': el.innerHTML = renderRSubs(); break;
+    case 'channel':       el.innerHTML = renderRChannel(); break;
+    default:              el.innerHTML = renderRHome(); setupRightInfiniteScroll();
+  }
+  applyTilt();
+}
+
+function renderRCard(v) {
+  return `<div class="rcard" onclick="playVideo('${v.id}')">
+    <div class="rthumb" style="background:${v.bg||'#1a2a4a'}">${v.emoji}<div class="rdur">${v.dur||''}</div></div>
+    <div class="rinfo"><div class="rtitle">${v.title}</div><div class="rmeta">${v.channel}<br>${v.views} views</div></div>
+  </div>`;
+}
+
+function renderRHome() {
+  // Reset right scroll state each time
+  scrollState.right.page = 0;
+  scrollState.right.done = false;
+  scrollState.right.loading = false;
+  scrollState.right.pool = Persona.getFeed();
+  const batch = getNextBatch('right');
+  return '<div class="sec-label">For You</div>' +
+    batch.map(renderRCard).join('') +
+    '<div id="rightLoadMore" style="height:30px"></div>';
+}
+
+function setupRightInfiniteScroll() {
+  const sentinel = document.getElementById('rightLoadMore');
+  if (!sentinel) return;
+  const content = document.getElementById('rtabContent');
+  const obs = new IntersectionObserver(entries => {
+    if (!entries[0].isIntersecting) return;
+    if (scrollState.right.done) { sentinel.innerHTML='<div style="text-align:center;padding:10px;font-size:10px;color:var(--tm)">All caught up ✓</div>'; obs.disconnect(); return; }
+    scrollState.right.loading = true;
+    sentinel.innerHTML = '<div style="text-align:center;padding:8px;font-size:10px;color:var(--tm);animation:pulse 1.5s infinite">Loading…</div>';
+    setTimeout(()=>{
+      const more = getNextBatch('right');
+      scrollState.right.loading = false;
+      if (more.length===0) { sentinel.innerHTML='<div style="text-align:center;padding:10px;font-size:10px;color:var(--tm)">All caught up ✓</div>'; obs.disconnect(); return; }
+      sentinel.insertAdjacentHTML('beforebegin', more.map(renderRCard).join(''));
+      sentinel.innerHTML = '<div style="height:30px"></div>';
+      applyTilt();
+    }, 350);
+  }, {root:content, threshold:0.1});
+  obs.observe(sentinel);
+}
+
+function renderRMovies() {
+  return '<div class="sec-label">Movies</div>' +
+    MOVIES.map(m=>`<div class="movie-r" onclick="playVideo('${m.id}')">
+      <div class="movie-r-poster">${m.emoji}</div>
+      <div class="movie-r-info"><div class="movie-r-title">${m.title}</div><div class="movie-r-meta">${m.year} · ⭐ ${m.rating}<br>${m.genre}</div></div>
+    </div>`).join('');
+}
+function renderRPlaylist() {
+  return '<div class="sec-label">Your Playlists</div>' +
+    PLAYLISTS.map(p=>`<div class="pl-item" onclick="toast('Playing ${p.name}')">
+      <div class="pl-icon">${p.emoji}</div>
+      <div><div class="pl-name">${p.name}</div><div class="pl-cnt">${p.count} videos</div></div>
+    </div>`).join('');
+}
+function renderRHistory() {
+  return '<div class="sec-label">Watch History</div>' +
+    Persona.watchHistory.slice().reverse().map(id=>{
+      const v=ALL_VIDS.find(x=>x.id===id); return v?renderRCard(v):'';
+    }).join('') +
+    '<div class="sec-label" style="margin-top:10px">Recently Discovered</div>' +
+    ALL_VIDS.filter(v=>!Persona.watchHistory.includes(v.id)).slice(0,6).map(renderRCard).join('');
+}
+// ═══════════════════════════════════════════════════
+// YOUTUBE AUTH STATE
+// ═══════════════════════════════════════════════════
+const YTAuth = {
+  // OAuth 2.0 config — replace CLIENT_ID with your own from Google Cloud Console
+  // https://console.cloud.google.com/apis/credentials
+  CLIENT_ID: 'YOUR_GOOGLE_OAUTH_CLIENT_ID.apps.googleusercontent.com',
+  SCOPES: 'https://www.googleapis.com/auth/youtube.readonly',
+  REDIRECT_URI: window.location.href.split('?')[0].split('#')[0],
+
+  // Runtime state (never persisted — stays in memory only)
+  accessToken: null,
+  apiKey: null,
+  profile: null,          // { name, email, avatarUrl, initials }
+  subscriptions: [],      // fetched from YouTube API
+  loading: false,
+  error: null,
+  method: null,           // 'oauth' | 'apikey'
+
+  get isLoggedIn() { return !!(this.accessToken || this.apiKey); },
+
+  // ── OAuth PKCE flow ──────────────────────────────
+  async startOAuth() {
+    // Generate PKCE code_verifier + code_challenge
+    const verifier = this._randomStr(64);
+    sessionStorage.setItem('_ytpkce', verifier);
+    const challenge = await this._pkceChallenge(verifier);
+
+    const params = new URLSearchParams({
+      client_id: this.CLIENT_ID,
+      redirect_uri: this.REDIRECT_URI,
+      response_type: 'code',
+      scope: this.SCOPES,
+      code_challenge: challenge,
+      code_challenge_method: 'S256',
+      access_type: 'online',
+      prompt: 'select_account',
+      state: 'viewtube_auth',
+    });
+    window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
+  },
+
+  // Handle redirect back from Google (picks up ?code= in URL)
+  async handleOAuthRedirect() {
+    const url = new URL(window.location.href);
+    const code = url.searchParams.get('code');
+    const state = url.searchParams.get('state');
+    if (!code || state !== 'viewtube_auth') return false;
+
+    // Clean URL
+    window.history.replaceState({}, '', window.location.pathname);
+
+    // Exchange code → token (requires a backend; show clear instructions here)
+    // In a deployed app: POST to your server /api/yt-token with code + verifier
+    // For now we show the user a friendly message and fall back to API key mode
+    this.error = 'oauth_no_backend';
+    return false;
+  },
+
+  // ── API key flow ─────────────────────────────────
+  async signInWithApiKey(key, handle) {
+    this.loading = true;
+    this.error = null;
+    this.apiKey = key.trim();
+    this.method = 'apikey';
+
     try {
-      const res = await fetch(url.toString());
-      if (!res.ok) continue;
-      return res.json();
-    } catch {
-      continue;
-    }
-  }
-  return { items: [] };
-}
+      // Resolve handle → channel ID
+      const searchRes = await this._ytFetch(
+        `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(handle)}&type=channel&maxResults=1&key=${this.apiKey}`
+      );
+      if (!searchRes.items?.length) throw new Error('Channel not found for that handle.');
+      const ch = searchRes.items[0].snippet;
+      const channelId = searchRes.items[0].id.channelId || searchRes.items[0].snippet.channelId;
 
-// ---------- HISTORY + PERSONALIZATION ----------
-const userHistory = {
-  channels: {},
-  videos: {},
-  categories: {},
-  watchTime: {},
-  lastWatched: [],
-  timeOfDay: { morning: 0, afternoon: 0, evening: 0, night: 0 }
+      // Set profile from channel info
+      this.profile = {
+        name: ch.channelTitle || ch.title || handle,
+        email: handle,
+        avatarUrl: ch.thumbnails?.default?.url || null,
+        initials: (ch.channelTitle||handle).slice(0,1).toUpperCase(),
+      };
+
+      // Fetch subscriptions for this channel
+      await this._fetchSubs(channelId);
+      this.loading = false;
+      return true;
+    } catch(e) {
+      this.loading = false;
+      this.error = e.message || 'API error. Check your key and handle.';
+      return false;
+    }
+  },
+
+  async _fetchSubs(channelId) {
+    let subs = [], pageToken = '';
+    do {
+      const pt = pageToken ? `&pageToken=${pageToken}` : '';
+      const res = await this._ytFetch(
+        `https://www.googleapis.com/youtube/v3/subscriptions?part=snippet&channelId=${channelId}&maxResults=50&order=alphabetical${pt}&key=${this.apiKey}`
+      );
+      if (!res.items) break;
+      subs.push(...res.items.map(i=>({
+        id: i.snippet.resourceId.channelId,
+        name: i.snippet.title,
+        thumb: i.snippet.thumbnails?.default?.url || null,
+        description: i.snippet.description || '',
+      })));
+      pageToken = res.nextPageToken || '';
+    } while (pageToken && subs.length < 200);
+    this.subscriptions = subs;
+  },
+
+  async _ytFetch(url) {
+    const res = await fetch(url);
+    if (!res.ok) {
+      const err = await res.json().catch(()=>({error:{message:res.statusText}}));
+      throw new Error(err?.error?.message || `HTTP ${res.status}`);
+    }
+    return res.json();
+  },
+
+  signOut() {
+    this.accessToken = null;
+    this.apiKey = null;
+    this.profile = null;
+    this.subscriptions = [];
+    this.error = null;
+    this.method = null;
+    this.loading = false;
+  },
+
+  _randomStr(len) {
+    const arr = new Uint8Array(len);
+    crypto.getRandomValues(arr);
+    return btoa(String.fromCharCode(...arr)).replace(/[^a-zA-Z0-9]/g,'').slice(0,len);
+  },
+
+  async _pkceChallenge(verifier) {
+    const enc = new TextEncoder().encode(verifier);
+    const hash = await crypto.subtle.digest('SHA-256', enc);
+    return btoa(String.fromCharCode(...new Uint8Array(hash)))
+      .replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  },
 };
 
-const trendingHistory = {
-  global: 0,
-  categories: {},
-  channels: {}
+// Check for OAuth redirect on load
+window.addEventListener('load', async () => {
+  const handled = await YTAuth.handleOAuthRedirect();
+  if (handled) { setTab('subscriptions'); closeDots(); }
+});
+
+// ── Auth popup controls ──────────────────────────
+function openAuthPopup() {
+  document.getElementById('ytAuthOverlay').classList.add('open');
+}
+function closeAuthPopup() {
+  document.getElementById('ytAuthOverlay').classList.remove('open');
+}
+
+function startGoogleOAuth() {
+  if (YTAuth.CLIENT_ID === 'YOUR_GOOGLE_OAUTH_CLIENT_ID.apps.googleusercontent.com') {
+    // No real client ID set — show setup instructions
+    showOAuthSetupInfo();
+    return;
+  }
+  YTAuth.startOAuth();
+}
+
+function showOAuthSetupInfo() {
+  const box = document.querySelector('.ytauth-box');
+  box.innerHTML = `
+    <button class="ytauth-close" onclick="closeAuthPopup();resetAuthBox()">✕</button>
+    <div class="ytauth-logo" style="margin-bottom:14px">
+      <div class="ytauth-logo-icon"></div><span style="font-size:17px;font-weight:700;color:var(--nw)">ViewTube</span>
+    </div>
+    <div class="ytauth-title" style="margin-bottom:10px">Set up Google OAuth</div>
+    <div style="text-align:left;font-size:11px;color:var(--ts);line-height:1.7;background:rgba(255,255,255,.04);border:0.5px solid var(--gb);border-radius:8px;padding:12px 14px;margin-bottom:14px">
+      <b style="color:var(--tp)">1.</b> Go to <a href="https://console.cloud.google.com/apis/credentials" target="_blank" style="color:rgba(80,180,255,.85)">Google Cloud Console → Credentials</a><br>
+      <b style="color:var(--tp)">2.</b> Create an <b style="color:var(--tp)">OAuth 2.0 Client ID</b> (type: Web application)<br>
+      <b style="color:var(--tp)">3.</b> Add <code style="background:rgba(255,255,255,.08);padding:1px 5px;border-radius:3px;font-size:10px">${window.location.origin}</code> as an authorized origin<br>
+      <b style="color:var(--tp)">4.</b> Enable the <b style="color:var(--tp)">YouTube Data API v3</b> in your project<br>
+      <b style="color:var(--tp)">5.</b> Paste the <b style="color:var(--tp)">Client ID</b> into <code style="background:rgba(255,255,255,.08);padding:1px 5px;border-radius:3px;font-size:10px">YTAuth.CLIENT_ID</code> in the source
+    </div>
+    <div style="font-size:11px;color:var(--tm);margin-bottom:16px">Or use the <b style="color:var(--ts)">API key mode</b> below — just an API key, no OAuth required.</div>
+    <button onclick="resetAuthBox()" style="background:rgba(0,150,255,.15);border:0.5px solid var(--ac);border-radius:8px;color:var(--nc);font-size:12px;padding:8px 20px;cursor:pointer;font-family:var(--fn);width:100%">← Back to sign in</button>`;
+}
+
+function resetAuthBox() {
+  // Re-render the original popup content
+  document.querySelector('.ytauth-box').innerHTML = `
+    <button class="ytauth-close" onclick="closeAuthPopup()">✕</button>
+    <div class="ytauth-logo">
+      <div class="ytauth-logo-icon"></div><span>ViewTube</span>
+    </div>
+    <div class="ytauth-title">Sign in with YouTube</div>
+    <div class="ytauth-sub">Connect your YouTube account to see your real subscriptions, history, and personalized feed.</div>
+    <button class="ytauth-google-btn" onclick="startGoogleOAuth()">
+      <svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+      Continue with Google
+    </button>
+    <div class="ytauth-divider"><div class="ytauth-divider-line"></div><span>or enter API key</span><div class="ytauth-divider-line"></div></div>
+    <div class="ytauth-manual">
+      <input class="ytauth-input" id="ytApiKeyInput" type="password" placeholder="YouTube Data API v3 key" oninput="validateApiKeyInput()">
+      <input class="ytauth-input" id="ytHandleInput" type="text" placeholder="Your YouTube handle (e.g. @username)" oninput="validateApiKeyInput()">
+      <button class="ytauth-submit" id="ytApiSubmit" onclick="signInWithApiKey()" disabled style="opacity:.45">Load My Subscriptions</button>
+    </div>
+    <div class="ytauth-note">Your credentials are never stored on any server. OAuth uses Google's secure flow. API key mode uses the <a href="https://developers.google.com/youtube/v3" target="_blank">YouTube Data API v3</a> directly from your browser.</div>`;
+}
+
+function validateApiKeyInput() {
+  const key = document.getElementById('ytApiKeyInput')?.value?.trim();
+  const handle = document.getElementById('ytHandleInput')?.value?.trim();
+  const btn = document.getElementById('ytApiSubmit');
+  if (!btn) return;
+  const ok = key && key.length > 10 && handle && handle.length > 1;
+  btn.disabled = !ok;
+  btn.style.opacity = ok ? '1' : '.45';
+}
+
+async function signInWithApiKey() {
+  const key = document.getElementById('ytApiKeyInput')?.value?.trim();
+  const handle = document.getElementById('ytHandleInput')?.value?.trim();
+  if (!key || !handle) return;
+
+  // Show loading state inside popup
+  const box = document.querySelector('.ytauth-box');
+  const originalContent = box.innerHTML;
+  box.innerHTML = `
+    <div class="yt-loading" style="padding:40px 0">
+      <div class="yt-spinner"></div>
+      <div>Fetching your subscriptions…</div>
+      <div style="font-size:10px;color:var(--tm);margin-top:4px">Connecting to YouTube API</div>
+    </div>`;
+
+  const ok = await YTAuth.signInWithApiKey(key, handle);
+
+  if (ok) {
+    closeAuthPopup();
+    // Update personalization with real subscriptions
+    YTAuth.subscriptions.forEach(ch => {
+      if (!Persona.likedChannels.includes(ch.name)) Persona.likedChannels.push(ch.name);
+    });
+    toast(`✓ Signed in as ${YTAuth.profile.name}`);
+    // Re-render subscriptions tab
+    document.getElementById('rtabContent').innerHTML = renderRSubs();
+    applyTilt();
+  } else {
+    box.innerHTML = `
+      <button class="ytauth-close" onclick="closeAuthPopup();resetAuthBox()">✕</button>
+      <div style="text-align:center;padding:20px 0 10px">
+        <div style="font-size:28px;margin-bottom:10px">⚠️</div>
+        <div style="font-size:14px;font-weight:600;color:var(--tp);margin-bottom:8px">Sign-in failed</div>
+        <div style="font-size:12px;color:var(--tm);margin-bottom:18px;line-height:1.5">${YTAuth.error || 'Unknown error. Check your API key and handle.'}</div>
+        <button onclick="resetAuthBox()" style="background:rgba(0,150,255,.15);border:0.5px solid var(--ac);border-radius:8px;color:var(--nc);font-size:12px;padding:8px 20px;cursor:pointer;font-family:var(--fn)">Try again</button>
+      </div>`;
+  }
+}
+
+function ytSignOut() {
+  YTAuth.signOut();
+  toast('Signed out of YouTube');
+  document.getElementById('rtabContent').innerHTML = renderRSubs();
+}
+
+// ── Render subscriptions (auth-aware) ────────────
+function renderRSubs() {
+  if (YTAuth.loading) {
+    return `<div class="yt-loading"><div class="yt-spinner"></div><div>Loading subscriptions…</div></div>`;
+  }
+
+  if (!YTAuth.isLoggedIn) {
+    // Not logged in — show sign-in prompt
+    return `
+      <div style="text-align:center;padding:24px 10px 16px">
+        <div style="font-size:36px;margin-bottom:12px;filter:drop-shadow(0 0 10px rgba(0,180,255,.3))">📺</div>
+        <div style="font-size:14px;font-weight:700;color:var(--tp);margin-bottom:6px">Your Subscriptions</div>
+        <div style="font-size:11px;color:var(--tm);margin-bottom:20px;line-height:1.6">Sign in with your YouTube account to see your real subscriptions, get notified about new uploads, and power your personalized feed.</div>
+        <button onclick="openAuthPopup()" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:11px;background:rgba(255,50,50,.18);border:0.5px solid rgba(255,80,80,.45);border-radius:9px;color:rgba(255,160,160,.95);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--fn);transition:background .2s;margin-bottom:10px" onmouseover="this.style.background='rgba(255,50,50,.3)'" onmouseout="this.style.background='rgba(255,50,50,.18)'">
+          <svg width="16" height="16" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+          Sign in with Google
+        </button>
+        <div style="font-size:10px;color:var(--tm)">or use YouTube Data API key mode</div>
+      </div>
+      <div class="sec-label" style="margin-top:6px">Sample channels</div>
+      ${[...new Set(ALL_VIDS.map(v=>v.channel))].slice(0,6).map(c=>{
+        const v=ALL_VIDS.find(x=>x.channel===c);
+        return v?`<div class="sub-ch-item" onclick="toast('Sign in to follow ${c}')">
+          <div class="sub-ch-avatar"><span class="sub-ch-initial">${c[0]}</span></div>
+          <div><div class="sub-ch-name">${c}</div><div class="sub-ch-meta">${ALL_VIDS.filter(x=>x.channel===c).length} videos in feed</div></div>
+        </div>`:'';
+      }).join('')}`;
+  }
+
+  // Logged in — show profile + real subscriptions
+  const p = YTAuth.profile;
+  const avatarHtml = p.avatarUrl
+    ? `<img src="${p.avatarUrl}" alt="${p.name}" onerror="this.parentNode.innerHTML='<span class=sub-ch-initial>${p.initials}</span>'">`
+    : `<span class="sub-ch-initial">${p.initials}</span>`;
+
+  const subsHtml = YTAuth.subscriptions.length > 0
+    ? YTAuth.subscriptions.map((ch,i)=>`
+        <div class="sub-ch-item" onclick="toast('Opening ${ch.name}')">
+          <div class="sub-ch-avatar">
+            ${ch.thumb
+              ? `<img src="${ch.thumb}" alt="${ch.name}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.style.display='none'">`
+              : `<span class="sub-ch-initial">${ch.name[0]}</span>`}
+          </div>
+          <div style="flex:1;min-width:0">
+            <div class="sub-ch-name">${ch.name}</div>
+            <div class="sub-ch-meta">${ch.description ? ch.description.slice(0,40)+'…' : 'Subscribed'}</div>
+          </div>
+          ${i < 3 ? '<div class="sub-badge sub-new-badge">NEW</div>' : ''}
+        </div>`).join('')
+    : `<div style="text-align:center;padding:20px;font-size:12px;color:var(--tm)">No public subscriptions found for this channel.<br><br>Note: YouTube API only returns subscriptions set to public.</div>`;
+
+  return `
+    <div class="yt-profile-card">
+      <div class="yt-avatar">${avatarHtml}</div>
+      <div class="yt-profile-info">
+        <div class="yt-profile-name">${p.name}</div>
+        <div class="yt-profile-email">${p.email}</div>
+      </div>
+      <button class="yt-signout-btn" onclick="ytSignOut()">Sign out</button>
+    </div>
+    <div class="sec-label">${YTAuth.subscriptions.length} Subscriptions</div>
+    ${subsHtml}`;
+}
+function renderRChannel() {
+  return `<div style="text-align:center;padding:16px 0 12px">
+    <div style="width:52px;height:52px;border-radius:50%;background:rgba(0,100,220,.25);display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 8px">🎵</div>
+    <div style="font-size:14px;font-weight:700;color:var(--tp)">Temiwo Woods</div>
+    <div style="font-size:11px;color:var(--tm);margin:3px 0 10px">12.4K subscribers</div>
+    <button onclick="toast('Subscribed!')" style="background:rgba(255,50,50,.2);border:0.5px solid rgba(255,80,80,.4);border-radius:6px;color:rgba(255,160,160,.9);font-size:11px;padding:5px 16px;cursor:pointer;font-family:var(--fn)">Subscribe</button>
+  </div><div class="sec-label">Videos</div>` +
+  ALL_VIDS.slice(0,4).map(renderRCard).join('');
+}
+
+// ═══════════════════════════════════════════════════
+// PLAY VIDEO
+// ═══════════════════════════════════════════════════
+function playVideo(id) {
+  const v = ALL_VIDS.find(x=>x.id===id)||SHORTS.find(x=>x.id===id)||MOVIES.find(x=>x.id===id);
+  if (!v) return;
+
+  // Record watch for personalization engine
+  Persona.recordWatch(v);
+
+  curVid = v;
+  playing = true;
+  pct = 0;
+
+  if (miniOn) {
+    document.getElementById('miniVid').textContent = v.emoji||'▶';
+    document.getElementById('miniTitle').textContent = v.title;
+    updateMiniPlayIcon(true);
+    startProgress();
+    toast('▶ ' + v.title);
+    return;
+  }
+  showPlayer(v);
+}
+
+function showPlayer(v) {
+  document.getElementById('vlistArea').style.display = 'none';
+  document.getElementById('playerArea').classList.add('show');
+  document.getElementById('vidBoxInner').innerHTML =
+    `<div class="big-emoji">${v.emoji||'▶'}</div><p>Now Playing</p>`;
+  document.getElementById('hideUiBtn').style.display = '';
+  document.getElementById('pcontrols').style.display = '';
+  document.getElementById('pinfo').style.display = '';
+  document.getElementById('suggArea').style.display = '';
+  document.getElementById('ptitle').textContent = v.title;
+  document.getElementById('pmeta').textContent = (v.channel||'') + ' · ' + (v.views||'') + ' views · ' + (v.ago||v.year||'');
+  document.getElementById('fsTitle').textContent = v.title;
+  updatePlayIcon(true);
+  startProgress();
+  renderSuggestions(v.id);
+}
+
+function renderSuggestions(cid) {
+  // Personalized suggestions: scored feed excluding current
+  const feed = Persona.getFeed([cid]).slice(0,10);
+  document.getElementById('suggList').innerHTML = feed.map(v=>`
+    <div class="sc" onclick="playVideo('${v.id}')">
+      <div class="sthumb" style="background:${v.bg||'#1a2a4a'}">${v.emoji}<div class="sdur">${v.dur||''}</div></div>
+      <div class="sinfo"><div class="stitle">${v.title}</div><div class="smeta">${v.channel} · ${v.views} views</div></div>
+    </div>`).join('');
+}
+
+// ═══════════════════════════════════════════════════
+// SHORTS OVERLAY — YouTube-style vertical swipe viewer
+// ═══════════════════════════════════════════════════
+let shortsIdx = 0;
+let shortsPlaying = true;
+let shortsTouchStartY = 0;
+let shortsDragY = 0;
+let shortsDragging = false;
+
+function openShortsOverlay(startIdx) {
+  shortsIdx = startIdx || 0;
+  document.getElementById('shortsOverlay').classList.add('open');
+  buildShortsTrack();
+  updateShortsDots();
+  // Show hint briefly
+  const hint = document.getElementById('shortsHint');
+  hint.style.animation = 'none'; hint.style.opacity='1';
+  setTimeout(()=>{ hint.style.animation='fadeHint 3s ease forwards'; }, 50);
+}
+
+function closeShortsOverlay() {
+  document.getElementById('shortsOverlay').classList.remove('open');
+  // Restore Shorts tab active state so clicking it again works
+  document.querySelectorAll('.rtab').forEach(t => t.classList.toggle('active', t.dataset.tab === curTab));
+}
+
+function buildShortsTrack() {
+  const track = document.getElementById('shortsTrack');
+  track.innerHTML = SHORTS.map((s,i)=>`
+    <div class="short-slide" id="ss${i}">
+      <div class="short-slide-bg">${s.emoji}</div>
+      <div class="short-slide-content">
+        <div class="short-slide-emoji">${s.emoji}</div>
+        <div class="short-play-overlay" id="spo${i}" onclick="toggleShortPlay(${i})">
+          <svg viewBox="0 0 20 20" fill="currentColor" id="spIcon${i}"><rect x="4" y="3" width="4" height="14"/><rect x="12" y="3" width="4" height="14"/></svg>
+        </div>
+      </div>
+      <div class="short-slide-info">
+        <div class="short-slide-title">${s.title}</div>
+        <div class="short-slide-channel">@${s.channel} · ${s.views} views</div>
+      </div>
+      <div class="short-slide-actions">
+        <div class="short-action-btn" onclick="toast('❤️ ${s.likes}')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          <span>${s.likes}</span>
+        </div>
+        <div class="short-action-btn" onclick="toast('💬 Comment')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          <span>Reply</span>
+        </div>
+        <div class="short-action-btn" onclick="toast('↗ Share')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+          <span>Share</span>
+        </div>
+      </div>
+    </div>`).join('');
+
+  goToShort(shortsIdx, false);
+}
+
+function goToShort(idx, animate=true) {
+  shortsIdx = Math.max(0, Math.min(SHORTS.length-1, idx));
+  const track = document.getElementById('shortsTrack');
+  track.style.transition = animate ? 'transform .35s cubic-bezier(.4,0,.2,1)' : 'none';
+  track.style.transform = `translateY(${-shortsIdx * 100}vh)`;
+  updateShortsDots();
+  // Show play icon overlay briefly
+  const po = document.getElementById(`spo${shortsIdx}`);
+  if (po) { po.classList.remove('hidden'); setTimeout(()=>po.classList.add('hidden'),1200); }
+  toast(`${shortsIdx+1} / ${SHORTS.length}`);
+}
+
+function toggleShortPlay(i) {
+  shortsPlaying = !shortsPlaying;
+  const icon = document.getElementById(`spIcon${i}`);
+  if (icon) icon.innerHTML = shortsPlaying
+    ? '<rect x="4" y="3" width="4" height="14"/><rect x="12" y="3" width="4" height="14"/>'
+    : '<polygon points="5,3 19,10 5,17"/>';
+  const po = document.getElementById(`spo${i}`);
+  if (po) { po.classList.remove('hidden'); if (shortsPlaying) setTimeout(()=>po.classList.add('hidden'),1000); }
+}
+
+function updateShortsDots() {
+  document.getElementById('shortsDots').innerHTML =
+    SHORTS.map((_,i)=>`<div class="spd ${i===shortsIdx?'act':''}"></div>`).join('');
+}
+
+// Touch / wheel swipe for shorts
+const svp = document.getElementById('shortsViewport');
+svp.addEventListener('touchstart', e=>{ shortsTouchStartY=e.touches[0].clientY; shortsDragging=true; }, {passive:true});
+svp.addEventListener('touchmove', e=>{ if(!shortsDragging)return; shortsDragY=e.touches[0].clientY-shortsTouchStartY; }, {passive:true});
+svp.addEventListener('touchend', ()=>{
+  if (!shortsDragging) return;
+  shortsDragging = false;
+  if (shortsDragY < -50) goToShort(shortsIdx+1);
+  else if (shortsDragY > 50) goToShort(shortsIdx-1);
+  shortsDragY = 0;
+});
+
+// Mouse wheel for desktop
+svp.addEventListener('wheel', e=>{
+  e.preventDefault();
+  if (e.deltaY > 40) goToShort(shortsIdx+1);
+  else if (e.deltaY < -40) goToShort(shortsIdx-1);
+}, {passive:false});
+
+// Keyboard arrows in shorts
+document.addEventListener('keydown', e=>{
+  if (!document.getElementById('shortsOverlay').classList.contains('open')) return;
+  if (e.key==='ArrowDown') { e.preventDefault(); goToShort(shortsIdx+1); }
+  if (e.key==='ArrowUp')   { e.preventDefault(); goToShort(shortsIdx-1); }
+  if (e.key==='Escape')    closeShortsOverlay();
+});
+
+// ═══════════════════════════════════════════════════
+// MINI TOGGLE
+// ═══════════════════════════════════════════════════
+function toggleMini() {
+  miniOn = !miniOn;
+  const mp = document.getElementById('miniPlayer');
+  const btn = document.getElementById('miniBtn');
+  mp.classList.toggle('vis', miniOn);
+  btn.classList.toggle('active', miniOn);
+  if (miniOn) {
+    document.getElementById('playerArea').classList.remove('show');
+    document.getElementById('vlistArea').style.display = '';
+    if (curVid) {
+      document.getElementById('miniVid').textContent = curVid.emoji||'▶';
+      document.getElementById('miniTitle').textContent = curVid.title;
+      updateMiniPlayIcon(playing);
+    }
+    toast('Mini player on');
+  } else {
+    if (curVid) showPlayer(curVid);
+    toast('Mini player off');
+  }
+}
+
+function closeMini() {
+  miniOn = false;
+  document.getElementById('miniPlayer').classList.remove('vis');
+  document.getElementById('miniBtn').classList.remove('active');
+  if (curVid) showPlayer(curVid);
+}
+
+// ═══════════════════════════════════════════════════
+// PLAYBACK CONTROLS
+// ═══════════════════════════════════════════════════
+function togglePlay() {
+  if (!curVid) return;
+  playing = !playing;
+  updatePlayIcon(playing);
+  updateMiniPlayIcon(playing);
+  updateFsPlayIcon(playing);
+  if (playing) startProgress();
+  toast(playing ? '▶ Playing' : '⏸ Paused');
+}
+
+function seek(secs) {
+  if (!curVid) return;
+  const dur = parseDur(curVid.dur||'3:30');
+  pct = Math.min(100, Math.max(0, pct + (secs/dur*100)));
+  updateProgress();
+  toast(secs > 0 ? '⏩ +'+secs+'s' : '⏪ '+secs+'s');
+}
+
+function startProgress() {
+  if (progTimer) clearInterval(progTimer);
+  const dur = parseDur(curVid?.dur||'3:30');
+  progTimer = setInterval(()=>{
+    if (!playing) return;
+    pct = Math.min(100, pct + (100/(dur*10)));
+    updateProgress();
+    if (pct >= 100) { clearInterval(progTimer); playing=false; updatePlayIcon(false); updateMiniPlayIcon(false); updateFsPlayIcon(false); }
+  }, 100);
+}
+
+function updateProgress() {
+  const dur = parseDur(curVid?.dur||'3:30');
+  const g = p=>document.getElementById(p);
+  if(g('progBar'))   g('progBar').style.width   = pct+'%';
+  if(g('progThumb')) g('progThumb').style.left  = pct+'%';
+  if(g('fsProg'))    g('fsProg').style.width    = pct+'%';
+  const elapsed = Math.floor((pct/100)*dur);
+  const s = fmt(elapsed)+' / '+fmt(dur);
+  if(g('ctTime')) g('ctTime').textContent = s;
+  if(g('fsTime')) g('fsTime').textContent = s;
+}
+
+function parseDur(s) { const p=s.split(':'); return +p[0]*60 + +p[1]; }
+function fmt(s) { const m=Math.floor(s/60),sec=Math.floor(s%60); return m+':'+(sec<10?'0':'')+sec; }
+
+function updatePlayIcon(p) {
+  const i=document.getElementById('playIcon');
+  if(i) i.innerHTML=p?'<rect x="4" y="3" width="4" height="14"/><rect x="12" y="3" width="4" height="14"/>':'<polygon points="5,3 17,10 5,17"/>';
+}
+function updateMiniPlayIcon(p) {
+  const i=document.getElementById('miniPlayIcon');
+  if(i) i.innerHTML=p?'<rect x="2" y="2" width="4" height="12"/><rect x="10" y="2" width="4" height="12"/>':'<polygon points="3,2 13,8 3,14"/>';
+}
+function updateFsPlayIcon(p) {
+  const i=document.getElementById('fsPlayIcon');
+  if(i) i.innerHTML=p?'<rect x="4" y="3" width="4" height="14"/><rect x="12" y="3" width="4" height="14"/>':'<polygon points="5,3 19,10 5,17"/>';
+}
+
+function scrub(e,el) { const r=el.getBoundingClientRect(); pct=((e.clientX-r.left)/r.width)*100; updateProgress(); }
+function scrubFs(e,el) { scrub(e,el); }
+
+// ═══════════════════════════════════════════════════
+// HIDE UI
+// ═══════════════════════════════════════════════════
+function toggleHideUi() {
+  uiHid = !uiHid;
+  document.getElementById('pcontrols').classList.toggle('hid', uiHid);
+  document.getElementById('hideUiBtn').textContent = uiHid ? 'Show UI' : 'Hide UI';
+  toast(uiHid ? 'Controls hidden' : 'Controls visible');
+}
+function toggleFsHide() {
+  fsUiHid = !fsUiHid;
+  document.getElementById('fsCtrl').classList.toggle('hid', fsUiHid);
+  document.querySelector('.fs-hide').textContent = fsUiHid ? 'Show UI' : 'Hide UI';
+}
+
+// ═══════════════════════════════════════════════════
+// FULLSCREEN — back button returns to player (not list)
+// ═══════════════════════════════════════════════════
+function openFs() {
+  if (!curVid) return;
+  document.getElementById('fsVid').textContent = curVid.emoji||'▶';
+  document.getElementById('fsVid').style.fontSize = '80px';
+  document.getElementById('fsVid').style.opacity = '.3';
+  document.getElementById('fsTitle').textContent = curVid.title;
+  document.getElementById('fsPlayer').classList.add('open');
+  updateFsPlayIcon(playing);
+}
+
+function closeFs() {
+  // Remove fullscreen
+  document.getElementById('fsPlayer').classList.remove('open');
+  // Restore player panel exactly as it was — video list stays hidden, player stays shown
+  if (curVid && !miniOn) {
+    document.getElementById('vlistArea').style.display = 'none';
+    document.getElementById('playerArea').classList.add('show');
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// SEARCH
+// ═══════════════════════════════════════════════════
+const SUGGS = ['Temiwo Woods','Arlo Parks','Sabrina Carpenter','The Weeknd','chill music','lo-fi beats','coding music','ambient sound','travel vlog','indie r&b','neo-soul'];
+function handleSearch(q) {
+  const dd=document.getElementById('sdd');
+  if (!q.trim()) { dd.classList.remove('open'); dd.innerHTML=''; return; }
+  const hits=[...ALL_VIDS,...SHORTS,...MOVIES].filter(v=>(v.title||'').toLowerCase().includes(q.toLowerCase())||(v.channel||'').toLowerCase().includes(q.toLowerCase())).slice(0,4);
+  const sg=SUGGS.filter(s=>s.toLowerCase().includes(q.toLowerCase())).slice(0,3);
+  dd.innerHTML=[
+    ...hits.map(v=>`<div class="sri" onclick="searchSel('${v.id}')"><svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5,4 17,10 5,16"/></svg>${v.title||v.name}</div>`),
+    ...sg.map(s=>`<div class="sri" onclick="toast('Searching: ${s}')"><svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="9" r="6"/><path d="m15 15 3 3"/></svg>${s}</div>`)
+  ].join('');
+  dd.classList.add('open');
+}
+function searchSel(id) { document.getElementById('sdd').classList.remove('open'); playVideo(id); }
+function openSearch() { const q=document.getElementById('searchInput').value; if(q) handleSearch(q); }
+function closeSearchDelay() { setTimeout(()=>document.getElementById('sdd').classList.remove('open'),200); }
+
+// ═══════════════════════════════════════════════════
+// DOTS
+// ═══════════════════════════════════════════════════
+function toggleDots() { document.getElementById('dotsMenu').classList.toggle('open'); }
+function closeDots() { document.getElementById('dotsMenu').classList.remove('open'); }
+document.addEventListener('click',e=>{
+  if(!e.target.closest('.dots-wrap')) closeDots();
+  if(!e.target.closest('.search-wrap')) document.getElementById('sdd').classList.remove('open');
+});
+
+// ═══════════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════════
+let toastT;
+function toast(m) {
+  const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show');
+  clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),1800);
+}
+
+// ═══════════════════════════════════════════════════
+// MINI DRAG
+// ═══════════════════════════════════════════════════
+let drag=false,ox=0,oy=0;
+const mp=document.getElementById('miniPlayer'), dh=document.getElementById('miniDragHandle');
+dh.addEventListener('mousedown',e=>{drag=true;const r=mp.getBoundingClientRect();ox=e.clientX-r.left;oy=e.clientY-r.top;mp.classList.add('dragging');e.preventDefault();});
+document.addEventListener('mousemove',e=>{if(!drag)return;mp.style.right='auto';mp.style.bottom='auto';mp.style.left=(e.clientX-ox)+'px';mp.style.top=(e.clientY-oy)+'px';});
+document.addEventListener('mouseup',()=>{drag=false;mp.classList.remove('dragging');});
+
+// ═══════════════════════════════════════════════════
+// META GESTURES (Neural Band / Cap Touch)
+// ═══════════════════════════════════════════════════
+const MetaGestures = {
+  init() {
+    if (typeof window.MetaDAT !== 'undefined') {
+      window.MetaDAT.display.setTransparency(0.45);
+      window.MetaDAT.display.setProjectionMode('holographic');
+    }
+    if (typeof window.MetaNeuralBand !== 'undefined') {
+      window.MetaNeuralBand.capTouch.onGesture(g => {
+        if(g.type==='single_tap') togglePlay();
+        else if(g.type==='double_tap') toggleMini();
+        else if(g.type==='swipe_forward') seek(10);
+        else if(g.type==='swipe_back') seek(-10);
+        else if(g.type==='swipe_up') {
+          if(document.getElementById('shortsOverlay').classList.contains('open')) goToShort(shortsIdx+1);
+          else openFs();
+        }
+        else if(g.type==='swipe_down') {
+          if(document.getElementById('shortsOverlay').classList.contains('open')) goToShort(shortsIdx-1);
+          else closeFs();
+        }
+        else if(g.type==='long_press') toggleHideUi();
+      });
+      window.MetaNeuralBand.emg.onGesture(g => {
+        if(g.type==='pinch') toggleMini();
+        else if(g.type==='clench') togglePlay();
+        else if(g.type==='spread') openFs();
+      });
+    } else {
+      document.addEventListener('keydown',e=>{
+        if(document.getElementById('shortsOverlay').classList.contains('open')) return;
+        if(e.key===' '){e.preventDefault();togglePlay();}
+        else if(e.key==='ArrowRight') seek(10);
+        else if(e.key==='ArrowLeft') seek(-10);
+        else if(e.key==='m') toggleMini();
+        else if(e.key==='f') openFs();
+        else if(e.key==='Escape') closeFs();
+        else if(e.key==='h'&&curVid) toggleHideUi();
+      });
+    }
+  }
 };
 
-function getTimeBucket() {
-  const h = new Date().getHours();
-  if (h < 12) return "morning";
-  if (h < 17) return "afternoon";
-  if (h < 21) return "evening";
-  return "night";
-}
-
-function updateHistory(snippet, videoId, watchSeconds = 0) {
-  const ch = snippet.channelId;
-  const cat = snippet.categoryId;
-
-  if (ch) userHistory.channels[ch] = (userHistory.channels[ch] || 0) + 1;
-  if (videoId) userHistory.videos[videoId] = (userHistory.videos[videoId] || 0) + 1;
-  if (cat) userHistory.categories[cat] = (userHistory.categories[cat] || 0) + 1;
-  if (videoId) userHistory.watchTime[videoId] = (userHistory.watchTime[videoId] || 0) + watchSeconds;
-
-  if (videoId) {
-    userHistory.lastWatched.unshift(videoId);
-    if (userHistory.lastWatched.length > 50) userHistory.lastWatched.pop();
-  }
-
-  const bucket = getTimeBucket();
-  userHistory.timeOfDay[bucket]++;
-
-  if (snippet.isTrending) {
-    trendingHistory.global++;
-    if (cat) trendingHistory.categories[cat] = (trendingHistory.categories[cat] || 0) + 1;
-    if (ch) trendingHistory.channels[ch] = (trendingHistory.channels[ch] || 0) + 1;
-  }
-}
-
-// ---------- RANKING + RANDOMIZATION ----------
-function scoreVideo(item) {
-  const stats = item.statistics || {};
-  const snippet = item.snippet || {};
-
-  const views = Number(stats.viewCount || 0);
-  const likes = Number(stats.likeCount || 0);
-  const published = snippet.publishedAt ? new Date(snippet.publishedAt) : new Date();
-  const ageHours = (Date.now() - published.getTime()) / 3600000;
-
-  const freshnessBoost = 1 / Math.max(1, ageHours / 12);
-  const engagement = (likes + 1) / (views + 50);
-
-  const id = item.id?.videoId || item.id;
-  const channelBoost = userHistory.channels[snippet.channelId] || 1;
-  const videoBoost = userHistory.videos[id] || 1;
-  const categoryBoost = userHistory.categories[snippet.categoryId] || 1;
-
-  const bucket = getTimeBucket();
-  const timeBoost = userHistory.timeOfDay[bucket] || 1;
-  const watchBoost = userHistory.watchTime[id] || 0;
-
-  const trendingBoost =
-    (snippet.isTrending ? 1.5 : 1) *
-    (trendingHistory.global * 0.02 +
-     (trendingHistory.categories[snippet.categoryId] || 0) * 0.03 +
-     (trendingHistory.channels[snippet.channelId] || 0) * 0.04);
-
-  return (
-    freshnessBoost * 0.20 +
-    engagement * 0.20 +
-    channelBoost * 0.15 +
-    categoryBoost * 0.10 +
-    videoBoost * 0.10 +
-    timeBoost * 0.05 +
-    watchBoost * 0.05 +
-    trendingBoost * 0.15
-  );
-}
-
-function weightedShuffle(videos) {
-  const maxScore = Math.max(...videos.map(v => v._score || 0)) || 1;
-  return videos
-    .map(v => {
-      const normalized = (v._score || 0) / maxScore;
-      const weight = Math.pow(normalized, 0.7);
-      return { item: v, weight: weight + Math.random() * 0.3 };
-    })
-    .sort((a, b) => b.weight - a.weight)
-    .map(v => v.item);
-}
-
-// ---------- FEED ENGINE ----------
-let currentTab = "home";
-let nextPageToken = null;
-
-async function loadHomeFeed(pageToken = null) {
-  const [personal, trending] = await Promise.all([
-    fetchYouTube("videos", {
-      part: "snippet,statistics",
-      chart: "mostPopular",
-      maxResults: 20,
-      regionCode: "US",
-      pageToken: pageToken || undefined
-    }),
-    fetchYouTube("videos", {
-      part: "snippet,statistics",
-      chart: "mostPopular",
-      maxResults: 20,
-      regionCode: "US"
-    })
-  ]);
-
-  (trending.items || []).forEach(v => v.snippet.isTrending = true);
-
-  let combined = (personal.items || []).concat(trending.items || []);
-  combined = combined.map(v => {
-    v._score = scoreVideo(v);
-    return v;
-  });
-  combined = weightedShuffle(combined);
-
-  return { items: combined, nextPageToken: personal.nextPageToken || null };
-}
-
-async function loadSearch(query, pageToken = null) {
-  const data = await fetchYouTube("search", {
-    part: "snippet",
-    q: query,
-    type: "video",
-    maxResults: 20,
-    pageToken: pageToken || undefined
-  });
-
-  let items = data.items || [];
-  items = items.map(v => {
-    v._score = scoreVideo(v);
-    return v;
-  });
-  items = weightedShuffle(items);
-
-  return { items, nextPageToken: data.nextPageToken || null };
-}
-
-// ---------- SHORTS ENGINE ----------
-let shortsList = [];
-let shortsIndex = 0;
-let shortsActive = false;
-let shortsNextPageToken = null;
-
-async function loadShorts(pageToken = null) {
-  const data = await fetchYouTube("videos", {
-    part: "snippet,statistics",
-    chart: "mostPopular",
-    maxResults: 20,
-    regionCode: "US",
-    videoCategoryId: "24",
-    pageToken: pageToken || undefined
-  });
-  (data.items || []).forEach(v => v.snippet.isTrending = true);
-  let items = data.items || [];
-  items = items.map(v => {
-    v._score = scoreVideo(v);
-    return v;
-  });
-  items = weightedShuffle(items);
-  return { items, nextPageToken: data.nextPageToken || null };
-}
-
-async function openShortsFeed() {
-  const data = await loadShorts();
-  shortsList = data.items;
-  shortsNextPageToken = data.nextPageToken || null;
-  shortsIndex = 0;
-  shortsActive = true;
-  document.getElementById("shortsFeed").classList.remove("hidden");
-  renderShortsVideo();
-}
-
-function closeShortsFeed() {
-  shortsActive = false;
-  document.getElementById("shortsFeed").classList.add("hidden");
-  document.getElementById("shortsContainer").innerHTML = "";
-}
-
-function renderShortsVideo() {
-  const container = document.getElementById("shortsContainer");
-  container.innerHTML = "";
-  const item = shortsList[shortsIndex];
-  if (!item) return;
-  const videoId = item.id?.videoId || item.id;
-  const iframe = document.createElement("iframe");
-  iframe.className = "shortsVideo";
-  iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=0&controls=0&loop=1&playlist=${videoId}`;
-  iframe.allow = "autoplay; encrypted-media";
-  container.appendChild(iframe);
-}
-
-async function loadMoreShorts() {
-  if (!shortsNextPageToken) return;
-  const data = await loadShorts(shortsNextPageToken);
-  shortsNextPageToken = data.nextPageToken || null;
-  shortsList = shortsList.concat(data.items);
-}
-
-// ---------- AUTO REFRESH ----------
-async function refreshFeed() {
-  if (currentTab !== "home") return;
-  const data = await loadHomeFeed();
-  nextPageToken = data.nextPageToken || null;
-  renderMainFeed(data.items);
-}
-
-async function refreshShortsFeed() {
-  if (!shortsActive) return;
-  const data = await loadShorts();
-  shortsList = data.items;
-  shortsNextPageToken = data.nextPageToken || null;
-  shortsIndex = 0;
-  renderShortsVideo();
-}
-
-setInterval(refreshFeed, 1000 * 60 * 5);
-setInterval(refreshShortsFeed, 1000 * 60 * 3);
-
-// ---------- UI RENDER + EVENTS ----------
-const feedEl = document.getElementById("feed");
-const searchInput = document.getElementById("searchInput");
-const searchBtn = document.getElementById("searchBtn");
-const shortsBtn = document.getElementById("shortsBtn");
-const closeShortsBtn = document.getElementById("closeShortsBtn");
-const hudEl = document.getElementById("hud");
-
-function renderMainFeed(items) {
-  feedEl.innerHTML = "";
-  items.forEach(item => {
-    const snippet = item.snippet || {};
-    const stats = item.statistics || {};
-    const videoId = item.id?.videoId || item.id;
-
-    const card = document.createElement("div");
-    card.className = "video-card";
-
-    const thumb = document.createElement("div");
-    thumb.className = "video-thumb";
-    const img = document.createElement("img");
-    img.src = snippet.thumbnails?.medium?.url || "";
-    thumb.appendChild(img);
-
-    const info = document.createElement("div");
-    info.className = "video-info";
-
-    const title = document.createElement("div");
-    title.className = "video-title";
-    title.textContent = snippet.title || "Untitled";
-
-    const channel = document.createElement("div");
-    channel.className = "video-channel";
-    channel.textContent = snippet.channelTitle || "Unknown channel";
-
-    const meta = document.createElement("div");
-    meta.className = "video-meta";
-    meta.textContent = `${stats.viewCount || 0} views`;
-
-    info.appendChild(title);
-    info.appendChild(channel);
-    info.appendChild(meta);
-
-    card.appendChild(thumb);
-    card.appendChild(info);
-
-    card.onclick = () => {
-      updateHistory(snippet, videoId, 0);
-      showHUD("Video clicked");
-    };
-
-    feedEl.appendChild(card);
+// Holographic tilt
+function applyTilt() {
+  document.querySelectorAll('.rcard,.movie-r,.vcard').forEach(c=>{
+    if(c._tilt) return; c._tilt=true;
+    c.addEventListener('mousemove',e=>{
+      const r=c.getBoundingClientRect(),x=((e.clientX-r.left)/r.width-.5)*10,y=((e.clientY-r.top)/r.height-.5)*-7;
+      c.style.transform=`perspective(400px) rotateY(${x}deg) rotateX(${y}deg) translateY(-1px)`;
+    });
+    c.addEventListener('mouseleave',()=>c.style.transform='');
   });
 }
 
-function showHUD(msg) {
-  hudEl.textContent = msg;
-  hudEl.classList.add("show");
-  setTimeout(() => hudEl.classList.remove("show"), 1500);
-}
-
-// Events
-searchBtn.addEventListener("click", async () => {
-  const q = searchInput.value.trim();
-  if (!q) return;
-  currentTab = "search";
-  const data = await loadSearch(q);
-  nextPageToken = data.nextPageToken || null;
-  renderMainFeed(data.items);
-});
-
-shortsBtn.addEventListener("click", () => {
-  openShortsFeed();
-});
-
-closeShortsBtn.addEventListener("click", () => {
-  closeShortsFeed();
-});
-
-// Simple Shorts swipe
-let touchStartY = 0;
-document.addEventListener("touchstart", e => {
-  touchStartY = e.touches[0].clientY;
-});
-document.addEventListener("touchend", async e => {
-  if (!shortsActive) return;
-  const endY = e.changedTouches[0].clientY;
-  const diff = endY - touchStartY;
-  if (diff < -80) {
-    shortsIndex++;
-    if (shortsIndex >= shortsList.length - 3) {
-      await loadMoreShorts();
-    }
-    shortsIndex = Math.min(shortsList.length - 1, shortsIndex);
-    renderShortsVideo();
-  } else if (diff > 80) {
-    shortsIndex = Math.max(0, shortsIndex - 1);
-    renderShortsVideo();
-  }
-});
-
-// Init
-async function initApp() {
-  currentTab = "home";
-  const data = await loadHomeFeed();
-  nextPageToken = data.nextPageToken || null;
-  renderMainFeed(data.items);
-}
-
-window.onload = initApp;
+// ═══════════════════════════════════════════════════
+// START
+// ═══════════════════════════════════════════════════
+initMainGrid();
+renderTab();
+MetaGestures.init();
+</script>
+</body>
+</html>
