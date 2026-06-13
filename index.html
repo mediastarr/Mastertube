@@ -87,10 +87,11 @@ body { font-family:var(--fn); background:#000; color:var(--tp); overflow:hidden;
 
 /* Video list scroll area */
 .vlist-area {
-  flex:1; overflow-y:auto; padding:14px;
+  flex:1; overflow-y:auto; overflow-x:hidden; padding:14px;
   scrollbar-width:thin; scrollbar-color:rgba(0,150,255,0.3) transparent;
   -webkit-overflow-scrolling:touch; touch-action:pan-y;
-  position:relative; z-index:5;
+  position:relative; z-index:6;
+  overscroll-behavior:contain;
 }
 .vlist-area::-webkit-scrollbar { width:3px; }
 .vlist-area::-webkit-scrollbar-thumb { background:rgba(0,150,255,0.3); border-radius:3px; }
@@ -157,7 +158,13 @@ body { font-family:var(--fn); background:#000; color:var(--tp); overflow:hidden;
 .pmeta { font-size:10px; color:var(--tm); }
 
 /* suggestions below player */
-.sugg-area { flex:1; overflow-y:auto; padding:8px 10px; scrollbar-width:thin; scrollbar-color:rgba(0,150,255,.2) transparent; }
+.sugg-area {
+  flex:1; overflow-y:auto; overflow-x:hidden;
+  padding:8px 10px;
+  scrollbar-width:thin; scrollbar-color:rgba(0,150,255,.2) transparent;
+  -webkit-overflow-scrolling:touch; touch-action:pan-y;
+  overscroll-behavior:contain; position:relative; z-index:6;
+}
 .sugg-area::-webkit-scrollbar { width:3px; }
 .sugg-area::-webkit-scrollbar-thumb { background:rgba(0,150,255,.25); border-radius:3px; }
 .sugg-lbl { font-size:10px; font-weight:600; color:var(--tm); text-transform:uppercase; letter-spacing:.5px; margin-bottom:7px; }
@@ -179,9 +186,12 @@ body { font-family:var(--fn); background:#000; color:var(--tp); overflow:hidden;
 
 /* tabs in right col */
 .rtabs {
-  display:flex; flex-wrap:wrap; gap:3px; padding:10px 10px 0;
-  border-bottom:0.5px solid var(--gb); padding-bottom:8px; flex-shrink:0;
+  display:flex; flex-wrap:nowrap; gap:3px; padding:8px 10px;
+  border-bottom:0.5px solid var(--gb); flex-shrink:0;
+  overflow-x:auto; scrollbar-width:none;
+  -webkit-overflow-scrolling:touch;
 }
+.rtabs::-webkit-scrollbar { display:none; }
 .rtab {
   padding:5px 10px; font-size:11px; font-weight:500; color:var(--ts);
   cursor:pointer; border:0.5px solid transparent; border-radius:6px;
@@ -191,7 +201,14 @@ body { font-family:var(--fn); background:#000; color:var(--tp); overflow:hidden;
 .rtab.active { color:var(--nc); border-color:rgba(0,220,255,.3); background:rgba(0,220,255,.08); text-shadow:0 0 8px rgba(0,220,255,.5); }
 
 /* right tab content */
-.rtab-content { flex:1; overflow-y:auto; padding:12px 10px; scrollbar-width:thin; scrollbar-color:rgba(0,150,255,.2) transparent; -webkit-overflow-scrolling:touch; touch-action:pan-y; position:relative; z-index:5; }
+.rtab-content {
+  flex:1; overflow-y:auto; overflow-x:hidden;
+  padding:12px 10px;
+  scrollbar-width:thin; scrollbar-color:rgba(0,150,255,.2) transparent;
+  -webkit-overflow-scrolling:touch; touch-action:pan-y;
+  position:relative; z-index:6;
+  overscroll-behavior:contain;
+}
 .rtab-content::-webkit-scrollbar { width:3px; }
 .rtab-content::-webkit-scrollbar-thumb { background:rgba(0,150,255,.25); border-radius:3px; }
 
@@ -941,6 +958,8 @@ Persona.watchHistory.forEach(id => {
 let curVid = null, playing = false, uiHid = false, fsUiHid = false;
 let miniOn = false, pct = 0, progTimer = null;
 let curTab = 'home';
+let shortsIdx = 0, shortsLoadedCount = 0;
+const SHORTS_BATCH = 10;
 
 // ═══════════════════════════════════════════════════
 // UNIFIED INFINITE SCROLL ENGINE
@@ -992,7 +1011,7 @@ function setupInfiniteScroll(key, container, cardFn, sentinelId, prependHtml='')
       sentinel.innerHTML = '';
       applyTilt();
     }, 350);
-  }, { root: container.closest('.rtab-content, .vlist-area'), threshold: 0.05 });
+  }, { root: container.closest('.rtab-content') || container.closest('.vlist-area') || null, threshold: 0.05 });
   obs.observe(sentinel);
   applyTilt();
 }
@@ -1102,9 +1121,123 @@ function setTab(tab) {
   renderTab();
 }
 
+// ═══════════════════════════════════════════════════
+// YOUTUBE DATA API v3 — Real feeds (Home / Shorts / Movies)
+// Every tab tap re-fetches fresh data
+// ═══════════════════════════════════════════════════
+const YT_API_KEYS = [
+  'AIzaSyAQUxDKTdrQyCEXHBirQrEZ5pb9JaWibus',
+  'AIzaSyCK-FLtaBwhWcBiTWvUv7HhS34Z3O9LLvA',
+  'AIzaSyDkmFEOre2r1rcpUKvLkm3Siw5FDORXbNY',
+  'AIzaSyBwjcpX9eyHEDtJ5JwgEUb8EOF3YCePCMw',
+  'AIzaSyCfZpn1YBNdEXopAM-lOv5hoEvHoCKNo30',
+  'AIzaSyCLydlFt2Hl3qDD0DFkAaALLEcn-5JjTqQ',
+  'AIzaSyDUcS13prh73HQB8Cl8GKvhbRi0AGofMDQ',
+  'AIzaSyCHp3NvAXwjRRtYkw0t6Kj3TvIn3Izfx0o',
+  'AIzaSyASan345SwgI0lcXKNK-DSW9-lhm4NqqGs',
+  'AIzaSyArTrelF7wIG3RYDWLP7BzUkoN2qxcM-HY',
+  'AIzaSyBBDbaKVgzQ5ETh37MN6qeLHVap1RPKU4s',
+  'AIzaSyDO3RiiR_DeO1a_3A_2Ll71uusRrnswgIM',
+  'AIzaSyAvIf8brzBEbdGnpGoPkIaSF2ApObzihnM',
+  'AIzaSyCSgQatlbI6edL894VVO-PtMCMbLAqccR4',
+];
+let _ytKeyIdx = 0;
+const _ytExhausted = new Set();
+
+async function ytFetch(url) {
+  for (let attempt = 0; attempt < YT_API_KEYS.length; attempt++) {
+    const idx = (_ytKeyIdx + attempt) % YT_API_KEYS.length;
+    if (_ytExhausted.has(idx)) continue;
+    const fullUrl = url + (url.includes('?') ? '&' : '?') + 'key=' + YT_API_KEYS[idx];
+    try {
+      const res = await fetch(fullUrl);
+      if (res.status === 403 || res.status === 429) {
+        _ytExhausted.add(idx); _ytKeyIdx = (idx + 1) % YT_API_KEYS.length; continue;
+      }
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return await res.json();
+    } catch(e) { if (!_ytExhausted.has(idx)) throw e; }
+  }
+  throw new Error('All API keys exhausted');
+}
+
+// Convert YouTube API video item → our card format
+function ytItemToCard(item) {
+  const sn = item.snippet || {};
+  const id = item.id?.videoId || item.id || item.contentDetails?.videoId || '';
+  const thumb = sn.thumbnails?.medium?.url || sn.thumbnails?.default?.url || '';
+  return { id, ytId: id, title: sn.title||'', channel: sn.channelTitle||'', views:'', ago: sn.publishedAt ? timeAgo(sn.publishedAt) : '', thumb, dur:'', emoji:'▶', bg:'#1a2a4a', _isYT:true };
+}
+
+function timeAgo(iso) {
+  const d = (Date.now() - new Date(iso)) / 1000;
+  if (d < 3600) return Math.floor(d/60)+'m ago';
+  if (d < 86400) return Math.floor(d/3600)+'h ago';
+  if (d < 2592000) return Math.floor(d/86400)+'d ago';
+  if (d < 31536000) return Math.floor(d/2592000)+'mo ago';
+  return Math.floor(d/31536000)+'y ago';
+}
+
+function renderRCardYT(v) {
+  if (v._isYT && v.thumb) {
+    return `<div class="rcard" onclick="openYTVideo('${v.ytId}','${v.title.replace(/'/g,"\\'")}')">
+      <div class="rthumb" style="padding:0;background:#000;overflow:hidden">
+        <img src="${v.thumb}" style="width:100%;height:100%;object-fit:cover;display:block" loading="lazy">
+        <div class="rdur">${v.dur||''}</div>
+      </div>
+      <div class="rinfo"><div class="rtitle">${v.title}</div><div class="rmeta">${v.channel}<br>${v.ago}</div></div>
+    </div>`;
+  }
+  return renderRCard(v);
+}
+
+function renderVCardYT(v) {
+  if (v._isYT && v.thumb) {
+    return `<div class="vcard" onclick="openYTVideo('${v.ytId}','${v.title.replace(/'/g,"\\'")}')">
+      <div class="vcard-thumb" style="background:#000">
+        <img src="${v.thumb}" style="width:100%;height:100%;object-fit:cover;display:block" loading="lazy">
+        <div class="vcard-dur">${v.dur||''}</div>
+      </div>
+      <div class="vcard-info">
+        <div class="vcard-title">${v.title}</div>
+        <div class="vcard-meta"><span>${v.channel}</span><span>${v.ago}</span></div>
+      </div>
+    </div>`;
+  }
+  return renderVCard(v);
+}
+
+function openYTVideo(ytId, title) {
+  // Open real YouTube video in player panel via embed
+  const v = { id: ytId, ytId, title, channel:'YouTube', views:'', ago:'', dur:'', emoji:'▶', bg:'#000', _isYT:true };
+  Persona.recordWatch(v);
+  curVid = v; playing = true; pct = 0;
+  if (miniOn) { document.getElementById('miniVid').textContent = '▶'; document.getElementById('miniTitle').textContent = title; updateMiniPlayIcon(true); toast('▶ ' + title); return; }
+  document.getElementById('vlistArea').style.display = 'none';
+  document.getElementById('playerArea').classList.add('show');
+  document.getElementById('vidBoxInner').innerHTML =
+    `<iframe src="https://www.youtube.com/embed/${ytId}?autoplay=1&controls=1" allow="autoplay;fullscreen" allowfullscreen style="width:100%;height:100%;border:none;display:block"></iframe>`;
+  document.getElementById('hideUiBtn').style.display = '';
+  document.getElementById('pcontrols').style.display = 'none'; // YT has its own controls
+  document.getElementById('pinfo').style.display = '';
+  document.getElementById('suggArea').style.display = '';
+  document.getElementById('ptitle').textContent = title;
+  document.getElementById('pmeta').textContent = 'YouTube';
+  document.getElementById('fsTitle').textContent = title;
+  renderSuggestions(ytId);
+}
+
+// ── LOADING SKELETON ───────────────────────────────
+function skeletonCards(n, type='list') {
+  const s = `<div style="background:rgba(255,255,255,.04);border-radius:8px;animation:pulse 1.5s ease-in-out infinite;margin-bottom:8px;${type==='list'?'height:56px':'aspect-ratio:16/9;margin-bottom:12px'}"></div>`;
+  return Array(n).fill(s).join('');
+}
+
+// ── renderTab: REFRESHES EVERY TAP ────────────────
 function renderTab() {
   const el = document.getElementById('rtabContent');
   el.innerHTML = '';
+  el.scrollTop = 0;
   switch(curTab) {
     case 'home':          renderRHomeInfinite(el); break;
     case 'movies':        renderRMoviesInfinite(el); break;
@@ -1117,25 +1250,54 @@ function renderTab() {
   applyTilt();
 }
 
-// ── RIGHT HOME (For You) ────────────────────────────
+// ── RIGHT HOME — real YT trending + personalized, refreshes every tap ──
 function renderRHomeInfinite(container) {
-  const pool = Persona.getFeed();
-  initScrollKey('rHome', pool, 20);
-  container.innerHTML = `<div class="sec-label">For You</div>`;
-  setupInfiniteScroll('rHome', container, renderRCard, 'rHomeMore');
+  container.innerHTML = `<div class="sec-label">For You</div>${skeletonCards(5,'list')}`;
+  // Fetch real YouTube trending videos
+  ytFetch('https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&chart=mostPopular&regionCode=US&maxResults=20&videoCategoryId=10')
+    .then(data => {
+      const ytItems = (data.items||[]).map(item => ({
+        id: item.id, ytId: item.id, title: item.snippet.title, channel: item.snippet.channelTitle,
+        views:'', ago: timeAgo(item.snippet.publishedAt), thumb: item.snippet.thumbnails?.medium?.url||'',
+        dur:'', emoji:'▶', bg:'#1a2a4a', _isYT:true
+      }));
+      // Merge with personalized local pool (scored), YT items first
+      const localPool = Persona.getFeed().slice(0,20);
+      const merged = [...ytItems, ...localPool];
+      initScrollKey('rHome', merged, 20);
+      container.innerHTML = `<div class="sec-label">For You — Live Feed</div>`;
+      setupInfiniteScroll('rHome', container, renderRCardYT, 'rHomeMore');
+    })
+    .catch(() => {
+      // Fallback to personalized local pool if API fails
+      const pool = Persona.getFeed();
+      initScrollKey('rHome', pool, 20);
+      container.innerHTML = `<div class="sec-label">For You</div>`;
+      setupInfiniteScroll('rHome', container, renderRCard, 'rHomeMore');
+    });
 }
 
-// ── RIGHT MOVIES ────────────────────────────────────
+// ── RIGHT MOVIES — real YT movies search, refreshes every tap ──
 function renderRMoviesInfinite(container) {
-  initScrollKey('rMovies', MOVIES, 20);
-  container.innerHTML = `<div class="sec-label">Movies</div>`;
-  setupInfiniteScroll('rMovies', container, renderMovieCard, 'rMoviesMore');
+  container.innerHTML = `<div class="sec-label">Movies</div>${skeletonCards(5,'list')}`;
+  ytFetch('https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=1&maxResults=20&q=full+movie+free&videoEmbeddable=true')
+    .then(data => {
+      const ytItems = (data.items||[]).map(ytItemToCard);
+      const merged = [...ytItems, ...MOVIES.map(m=>({...m, _isYT:false}))];
+      initScrollKey('rMovies', merged, 20);
+      container.innerHTML = `<div class="sec-label">Movies — Live</div>`;
+      setupInfiniteScroll('rMovies', container, renderRCardYT, 'rMoviesMore');
+    })
+    .catch(() => {
+      initScrollKey('rMovies', MOVIES, 20);
+      container.innerHTML = `<div class="sec-label">Movies</div>`;
+      setupInfiniteScroll('rMovies', container, renderMovieCard, 'rMoviesMore');
+    });
 }
 
 // ── RIGHT HISTORY ────────────────────────────────────
 function renderRHistoryInfinite(container) {
   const backBtn = `<button onclick="goHome()" style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.06);border:0.5px solid var(--gb);border-radius:7px;color:var(--ts);font-size:11px;padding:5px 10px;cursor:pointer;font-family:var(--fn);margin-bottom:12px" onmouseover="this.style.background='rgba(0,150,255,.15)'" onmouseout="this.style.background='rgba(255,255,255,.06)'"><svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 4l-7 6 7 6"/></svg> Home</button>`;
-  // Build history pool: watched first (reversed), then rest
   const watched = Persona.watchHistory.slice().reverse().map(id=>ALL_VIDS.find(x=>x.id===id)).filter(Boolean);
   const rest = ALL_VIDS.filter(v=>!Persona.watchHistory.includes(v.id));
   const pool = [...watched, ...rest];
@@ -1162,43 +1324,35 @@ function renderRChannelInfinite(container) {
 function setupSubsInfinite() {
   if (!YTAuth.isLoggedIn || YTAuth.subscriptions.length === 0) return;
   const container = document.getElementById('rtabContent');
-  if (!container) return;
-  const sentinel = document.getElementById('subsLoadMore');
-  if (sentinel) return; // already set up
-
+  if (!container || document.getElementById('subsLoadMore')) return;
   const pool = YTAuth.subscriptions;
   initScrollKey('rSubs', pool, 20);
-  // Render first batch inline (already rendered in renderRSubs), just add sentinel + observer
   const existing = container.querySelectorAll('.sub-ch-item');
   const insertAfter = existing[existing.length-1] || container.lastElementChild;
-  if (insertAfter) {
-    const s = document.createElement('div');
-    s.id = 'subsLoadMore';
-    s.style.cssText = 'height:36px;display:flex;align-items:center;justify-content:center';
-    insertAfter.after(s);
-    // Advance page past already-rendered items
-    scrollState.rSubs.page = Math.ceil(existing.length / 20);
-
-    const obs = new IntersectionObserver(entries => {
-      if (!entries[0].isIntersecting || scrollState.rSubs.loading) return;
-      if (scrollState.rSubs.done) { s.innerHTML=`<span style="font-size:10px;color:var(--tm);padding:8px">✓ All loaded</span>`; obs.disconnect(); return; }
-      scrollState.rSubs.loading = true;
-      s.innerHTML = `<div style="width:18px;height:18px;border:2px solid rgba(0,180,255,.2);border-top-color:var(--ac);border-radius:50%;animation:spin .7s linear infinite"></div>`;
-      setTimeout(() => {
-        const more = getNextBatch('rSubs');
-        scrollState.rSubs.loading = false;
-        if (more.length === 0) { s.innerHTML=`<span style="font-size:10px;color:var(--tm);padding:8px">✓ All loaded</span>`; obs.disconnect(); return; }
-        const html = more.map((ch,i)=>`
-          <div class="sub-ch-item" onclick="toast('Opening ${ch.name}')">
-            <div class="sub-ch-avatar">${ch.thumb?`<img src="${ch.thumb}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:`<span class="sub-ch-initial">${ch.name[0]}</span>`}</div>
-            <div style="flex:1;min-width:0"><div class="sub-ch-name">${ch.name}</div><div class="sub-ch-meta">${ch.description?ch.description.slice(0,40)+'…':'Subscribed'}</div></div>
-          </div>`).join('');
-        s.insertAdjacentHTML('beforebegin', html);
-        s.innerHTML = '';
-      }, 350);
-    }, { root: container, threshold: 0.05 });
-    obs.observe(s);
-  }
+  if (!insertAfter) return;
+  const s = document.createElement('div');
+  s.id = 'subsLoadMore';
+  s.style.cssText = 'height:36px;display:flex;align-items:center;justify-content:center';
+  insertAfter.after(s);
+  scrollState.rSubs.page = Math.ceil(existing.length / 20);
+  const obs = new IntersectionObserver(entries => {
+    if (!entries[0].isIntersecting || scrollState.rSubs.loading) return;
+    if (scrollState.rSubs.done) { s.innerHTML=`<span style="font-size:10px;color:var(--tm);padding:8px">✓ All loaded</span>`; obs.disconnect(); return; }
+    scrollState.rSubs.loading = true;
+    s.innerHTML = `<div style="width:18px;height:18px;border:2px solid rgba(0,180,255,.2);border-top-color:var(--ac);border-radius:50%;animation:spin .7s linear infinite"></div>`;
+    setTimeout(() => {
+      const more = getNextBatch('rSubs');
+      scrollState.rSubs.loading = false;
+      if (more.length === 0) { s.innerHTML=`<span style="font-size:10px;color:var(--tm);padding:8px">✓ All loaded</span>`; obs.disconnect(); return; }
+      s.insertAdjacentHTML('beforebegin', more.map((ch,i)=>`
+        <div class="sub-ch-item" onclick="toast('Opening ${ch.name}')">
+          <div class="sub-ch-avatar">${ch.thumb?`<img src="${ch.thumb}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:`<span class="sub-ch-initial">${ch.name[0]}</span>`}</div>
+          <div style="flex:1;min-width:0"><div class="sub-ch-name">${ch.name}</div><div class="sub-ch-meta">${ch.description?ch.description.slice(0,40)+'…':'Subscribed'}</div></div>
+        </div>`).join(''));
+      s.innerHTML = '';
+    }, 350);
+  }, { root: container, threshold: 0.05 });
+  obs.observe(s);
 }
 
 function renderRPlaylist() {
@@ -1207,6 +1361,173 @@ function renderRPlaylist() {
       <div class="pl-icon">${p.emoji}</div>
       <div><div class="pl-name">${p.name}</div><div class="pl-cnt">${p.count} videos</div></div>
     </div>`).join('');
+}
+
+// ── LEFT HOME: also refresh every tap via real YT trending ──
+function initMainGrid() {
+  document.getElementById('vlistArea').querySelectorAll('div[style*="align-items:center"]').forEach(el => el.remove());
+  const vlistArea = document.getElementById('vlistArea');
+  vlistArea.scrollTop = 0;
+  const grid = document.getElementById('mainGrid');
+  grid.innerHTML = `<div class="sec-label" style="margin-bottom:10px">Recommended For You</div>${skeletonCards(3,'grid')}`;
+
+  // Try real YT popular videos first
+  ytFetch('https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&chart=mostPopular&regionCode=US&maxResults=20')
+    .then(data => {
+      const ytItems = (data.items||[]).map(item => ({
+        id: item.id, ytId: item.id, title: item.snippet.title, channel: item.snippet.channelTitle,
+        views:'', ago: timeAgo(item.snippet.publishedAt), thumb: item.snippet.thumbnails?.medium?.url||'',
+        dur:'', emoji:'▶', bg:'#1a2a4a', _isYT:true
+      }));
+      const localPool = Persona.getFeed().slice(0,20);
+      buildMainGrid(vlistArea, grid, [...ytItems, ...localPool]);
+    })
+    .catch(() => {
+      buildMainGrid(vlistArea, grid, Persona.getFeed());
+    });
+}
+
+function buildMainGrid(vlistArea, grid, pool) {
+  initScrollKey('home', pool, 20);
+  grid.innerHTML = '';
+  const sec = document.createElement('div');
+  sec.className = 'sec-label'; sec.style.marginBottom = '10px';
+  sec.textContent = 'Recommended For You';
+  grid.appendChild(sec);
+  const wrapper = document.createElement('div');
+  wrapper.id = 'homeScrollWrap';
+  grid.appendChild(wrapper);
+  const sentinel = document.createElement('div');
+  sentinel.id = 'homeLoadMore';
+  sentinel.style.cssText = 'height:36px;display:flex;align-items:center;justify-content:center;margin-top:8px';
+  grid.appendChild(sentinel);
+
+  function loadBatch() {
+    const batch = getNextBatch('home');
+    if (batch.length === 0) { sentinel.innerHTML=`<span style="font-size:10px;color:var(--tm);padding:8px">✓ All loaded</span>`; obs.disconnect(); return; }
+    wrapper.insertAdjacentHTML('beforeend', `<div class="vgrid" style="margin-bottom:14px">${batch.map(renderVCardYT).join('')}</div>`);
+    applyTilt();
+  }
+  loadBatch();
+
+  const obs = new IntersectionObserver(entries => {
+    if (!entries[0].isIntersecting || scrollState.home.loading) return;
+    if (scrollState.home.done) { sentinel.innerHTML=`<span style="font-size:10px;color:var(--tm);padding:8px">✓ All loaded</span>`; obs.disconnect(); return; }
+    scrollState.home.loading = true;
+    sentinel.innerHTML = `<div style="width:18px;height:18px;border:2px solid rgba(0,180,255,.2);border-top-color:var(--ac);border-radius:50%;animation:spin .7s linear infinite"></div>`;
+    setTimeout(() => { scrollState.home.loading = false; sentinel.innerHTML = ''; loadBatch(); }, 350);
+  }, { root: vlistArea, threshold: 0.05 });
+  obs.observe(sentinel);
+}
+
+// ── SHORTS — real YT Shorts, refreshes every tap ──
+// (openShortsOverlay is called from setTab; here we extend it to fetch real shorts)
+const _shortsOverlayOpen = openShortsOverlay; // keep ref before override
+function openShortsOverlay(startIdx) {
+  shortsIdx = startIdx || 0;
+  shortsLoadedCount = 0;
+  document.getElementById('shortsOverlay').classList.add('open');
+  const hint = document.getElementById('shortsHint');
+  hint.style.animation = 'none'; hint.style.opacity = '1';
+  setTimeout(() => { hint.style.animation = 'fadeHint 3s ease forwards'; }, 50);
+
+  // Always fetch fresh Shorts from YouTube every time overlay opens
+  const track = document.getElementById('shortsTrack');
+  track.innerHTML = `<div style="width:100%;height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px"><div style="width:28px;height:28px;border:2px solid rgba(0,180,255,.2);border-top-color:var(--ac);border-radius:50%;animation:spin .7s linear infinite"></div><div style="font-size:12px;color:var(--tm)">Loading Shorts…</div></div>`;
+
+  ytFetch('https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoDuration=short&maxResults=20&q=shorts+viral+2024')
+    .then(data => {
+      const ytShorts = (data.items||[]).map((item,i) => ({
+        id: 's_yt_'+i, ytId: item.id?.videoId||'', title: item.snippet.title,
+        channel: item.snippet.channelTitle, views:'', likes:'♥',
+        emoji: '▶', _isYT:true,
+        thumb: item.snippet.thumbnails?.high?.url || item.snippet.thumbnails?.medium?.url || ''
+      }));
+      const merged = [...ytShorts, ...SHORTS];
+      // Replace SHORTS pool for this session
+      _ytShortsPool.length = 0;
+      merged.forEach(s => _ytShortsPool.push(s));
+      shortsLoadedCount = 0;
+      buildShortsTrackFromPool(true);
+    })
+    .catch(() => {
+      // Fallback to local pool
+      _ytShortsPool.length = 0;
+      SHORTS.forEach(s => _ytShortsPool.push(s));
+      shortsLoadedCount = 0;
+      buildShortsTrackFromPool(true);
+    });
+}
+const _ytShortsPool = [...SHORTS];
+
+function buildShortsTrackFromPool(reset) {
+  const track = document.getElementById('shortsTrack');
+  if (reset) { track.innerHTML = ''; shortsLoadedCount = 0; }
+  const end = Math.min(shortsLoadedCount + SHORTS_BATCH, _ytShortsPool.length);
+  for (let i = shortsLoadedCount; i < end; i++) {
+    track.insertAdjacentHTML('beforeend', shortSlideHTMLFromPool(_ytShortsPool[i], i));
+  }
+  shortsLoadedCount = end;
+  updateShortsDots();
+  goToShort(shortsIdx, false);
+}
+
+function shortSlideHTMLFromPool(s, i) {
+  const bg = s.thumb ? `<img src="${s.thumb}" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;opacity:.4" loading="lazy">` : `<div style="font-size:120px;opacity:.12;position:absolute">${s.emoji}</div>`;
+  return `<div class="short-slide" id="ss${i}">
+    <div class="short-slide-bg" style="position:absolute;inset:0;overflow:hidden">${bg}</div>
+    <div class="short-slide-content">
+      <div class="short-slide-emoji">${s._isYT && s.thumb ? `<img src="${s.thumb}" style="width:180px;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.6)" loading="lazy">` : s.emoji}</div>
+      <div class="short-play-overlay" id="spo${i}" onclick="${s._isYT ? `openYTVideo('${s.ytId}','${(s.title||'').replace(/'/g,"\\'")}')` : `toggleShortPlay(${i})`}">
+        <svg viewBox="0 0 20 20" fill="currentColor" id="spIcon${i}"><polygon points="5,3 19,10 5,17"/></svg>
+      </div>
+    </div>
+    <div class="short-slide-info">
+      <div class="short-slide-title">${s.title}</div>
+      <div class="short-slide-channel">@${s.channel}${s.views ? ' · '+s.views+' views' : ''}</div>
+    </div>
+    <div class="short-slide-actions">
+      <div class="short-action-btn" onclick="toast('❤️ ${s.likes||'Like'}')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        <span>${s.likes||'Like'}</span>
+      </div>
+      <div class="short-action-btn" onclick="toast('💬 Comment')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <span>Reply</span>
+      </div>
+      <div class="short-action-btn" onclick="toast('↗ Share')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+        <span>Share</span>
+      </div>
+    </div>
+  </div>`;
+}
+
+function updateShortsDots() {
+  const total = _ytShortsPool.length || SHORTS.length;
+  document.getElementById('shortsDots').innerHTML =
+    Array(total).fill(0).map((_,i) => `<div class="spd ${i===shortsIdx?'act':''}" style="${i>=shortsLoadedCount?'opacity:.3':''}"></div>`).join('');
+}
+
+function maybeLoadMoreShorts() {
+  if (shortsIdx >= shortsLoadedCount - 3 && shortsLoadedCount < _ytShortsPool.length) {
+    buildShortsTrackFromPool(false);
+  }
+}
+
+function goToShort(idx, animate = true) {
+  const max = Math.max(0, shortsLoadedCount - 1);
+  shortsIdx = Math.max(0, Math.min(max, idx));
+  const track = document.getElementById('shortsTrack');
+  if (!track) return;
+  track.style.transition = animate ? 'transform .35s cubic-bezier(.4,0,.2,1)' : 'none';
+  track.style.transform = `translateY(${-shortsIdx * 100}vh)`;
+  updateShortsDots();
+  const po = document.getElementById(`spo${shortsIdx}`);
+  if (po) { po.classList.remove('hidden'); setTimeout(() => po.classList.add('hidden'), 1200); }
+  const total = _ytShortsPool.length || SHORTS.length;
+  toast(`${shortsIdx + 1} / ${total}`);
+  maybeLoadMoreShorts();
 }
 // ═══════════════════════════════════════════════════
 // YOUTUBE AUTH STATE
@@ -1218,13 +1539,6 @@ const YTAuth = {
 
   // Rotating API key pool — tries each key in sequence, skips quota-exceeded keys
   _apiKeys: [
-    'AIzaSyCLydlFt2Hl3qDD0DFkAaALLEcn-5JjTqQ',
-    'AIzaSyDUcS13prh73HQB8Cl8GKvhbRi0AGofMDQ',
-    'AIzaSyCHp3NvAXwjRRtYkw0t6Kj3TvIn3Izfx0o',
-    'AIzaSyDFDH19FJ0d1i0ZrB7ALR1bdNQyLk8wMoE',
-    'AIzaSyCMMQj3sH_Zk7k_dO6H8_Kzbax9F04yFYc',
-    'AIzaSyABzBkBv7U0r0MOUW4Ha76wh-5pSUg1iks',
-    'AIzaSyDWIRyYCUkMF-wLwV7m_bYVuzPTwYDQvVc',
     'AIzaSyAQUxDKTdrQyCEXHBirQrEZ5pb9JaWibus',
     'AIzaSyCK-FLtaBwhWcBiTWvUv7HhS34Z3O9LLvA',
     'AIzaSyDkmFEOre2r1rcpUKvLkm3Siw5FDORXbNY',
@@ -1642,92 +1956,14 @@ function renderSuggestions(cid) {
 }
 
 // ═══════════════════════════════════════════════════
-// SHORTS OVERLAY — YouTube-style vertical swipe viewer with infinite load
+// SHORTS touch / wheel / keyboard — uses goToShort defined above
 // ═══════════════════════════════════════════════════
-let shortsIdx = 0;
 let shortsPlaying = true;
-let shortsTouchStartY = 0;
-let shortsDragY = 0;
-let shortsDragging = false;
-let shortsLoadedCount = 0;
-const SHORTS_BATCH = 10;
-
-function openShortsOverlay(startIdx) {
-  shortsIdx = startIdx || 0;
-  shortsLoadedCount = 0;
-  document.getElementById('shortsOverlay').classList.add('open');
-  buildShortsTrack(true);
-  const hint = document.getElementById('shortsHint');
-  hint.style.animation = 'none'; hint.style.opacity = '1';
-  setTimeout(() => { hint.style.animation = 'fadeHint 3s ease forwards'; }, 50);
-}
+let shortsTouchStartY = 0, shortsDragY = 0, shortsDragging = false;
 
 function closeShortsOverlay() {
   document.getElementById('shortsOverlay').classList.remove('open');
   document.querySelectorAll('.rtab').forEach(t => t.classList.toggle('active', t.dataset.tab === curTab));
-}
-
-function shortSlideHTML(s, i) {
-  return `<div class="short-slide" id="ss${i}">
-    <div class="short-slide-bg">${s.emoji}</div>
-    <div class="short-slide-content">
-      <div class="short-slide-emoji">${s.emoji}</div>
-      <div class="short-play-overlay" id="spo${i}" onclick="toggleShortPlay(${i})">
-        <svg viewBox="0 0 20 20" fill="currentColor" id="spIcon${i}"><rect x="4" y="3" width="4" height="14"/><rect x="12" y="3" width="4" height="14"/></svg>
-      </div>
-    </div>
-    <div class="short-slide-info">
-      <div class="short-slide-title">${s.title}</div>
-      <div class="short-slide-channel">@${s.channel} · ${s.views} views</div>
-    </div>
-    <div class="short-slide-actions">
-      <div class="short-action-btn" onclick="toast('❤️ ${s.likes}')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-        <span>${s.likes}</span>
-      </div>
-      <div class="short-action-btn" onclick="toast('💬 Comment')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-        <span>Reply</span>
-      </div>
-      <div class="short-action-btn" onclick="toast('↗ Share')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
-        <span>Share</span>
-      </div>
-    </div>
-  </div>`;
-}
-
-function buildShortsTrack(reset) {
-  const track = document.getElementById('shortsTrack');
-  if (reset) { track.innerHTML = ''; shortsLoadedCount = 0; }
-  const end = Math.min(shortsLoadedCount + SHORTS_BATCH, SHORTS.length);
-  for (let i = shortsLoadedCount; i < end; i++) {
-    track.insertAdjacentHTML('beforeend', shortSlideHTML(SHORTS[i], i));
-  }
-  shortsLoadedCount = end;
-  updateShortsDots();
-  goToShort(shortsIdx, false);
-}
-
-function maybeLoadMoreShorts() {
-  // Load next batch when within 3 slides of the loaded end
-  if (shortsIdx >= shortsLoadedCount - 3 && shortsLoadedCount < SHORTS.length) {
-    buildShortsTrack(false);
-  }
-}
-
-function goToShort(idx, animate = true) {
-  const max = shortsLoadedCount - 1;
-  shortsIdx = Math.max(0, Math.min(max, idx));
-  const track = document.getElementById('shortsTrack');
-  if (!track) return;
-  track.style.transition = animate ? 'transform .35s cubic-bezier(.4,0,.2,1)' : 'none';
-  track.style.transform = `translateY(${-shortsIdx * 100}vh)`;
-  updateShortsDots();
-  const po = document.getElementById(`spo${shortsIdx}`);
-  if (po) { po.classList.remove('hidden'); setTimeout(() => po.classList.add('hidden'), 1200); }
-  toast(`${shortsIdx + 1} / ${SHORTS.length}`);
-  maybeLoadMoreShorts();
 }
 
 function toggleShortPlay(i) {
@@ -1738,11 +1974,6 @@ function toggleShortPlay(i) {
     : '<polygon points="5,3 19,10 5,17"/>';
   const po = document.getElementById(`spo${i}`);
   if (po) { po.classList.remove('hidden'); if (shortsPlaying) setTimeout(()=>po.classList.add('hidden'),1000); }
-}
-
-function updateShortsDots() {
-  document.getElementById('shortsDots').innerHTML =
-    SHORTS.map((_,i) => `<div class="spd ${i===shortsIdx?'act':''}" style="${i>=shortsLoadedCount?'opacity:.3':''}"></div>`).join('');
 }
 
 // Touch / wheel swipe for shorts
@@ -1757,14 +1988,12 @@ svp.addEventListener('touchend', ()=>{
   shortsDragY = 0;
 });
 
-// Mouse wheel for desktop
 svp.addEventListener('wheel', e=>{
   e.preventDefault();
   if (e.deltaY > 40) goToShort(shortsIdx+1);
   else if (e.deltaY < -40) goToShort(shortsIdx-1);
 }, {passive:false});
 
-// Keyboard arrows in shorts
 document.addEventListener('keydown', e=>{
   if (!document.getElementById('shortsOverlay').classList.contains('open')) return;
   if (e.key==='ArrowDown') { e.preventDefault(); goToShort(shortsIdx+1); }
