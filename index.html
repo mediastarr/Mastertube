@@ -1,1669 +1,631 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ViewTube AR OS — Holographic Edition</title>
+  <meta charset="UTF-8" />
+  <title>AR ViewTube Panel</title>
+  <meta name="viewport" content="width=600, initial-scale=1.0" />
+  <style>
+    :root {
+      --panel-size: 600px;
+      --accent: #ff0000;
+      --text-main: #ffffff;
+      --text-sub: #b3b3b3;
+      --glass-bg: rgba(0, 0, 0, 0.55);
+      --border-soft: rgba(255, 255, 255, 0.18);
+      --shadow-soft: 0 18px 40px rgba(0, 0, 0, 0.6);
+      --radius-lg: 18px;
+      --radius-md: 12px;
+      --radius-sm: 8px;
+      --transition-fast: 0.18s ease-out;
+    }
 
-<style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
 
-/* ═══════════════════════════════════════════════════
-   GLOBAL RESET + BASE
-   ═══════════════════════════════════════════════════ */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: transparent;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+        "Segoe UI", sans-serif;
+      color: var(--text-main);
+    }
 
-body {
-  background: #000;
-  color: #fff;
-  font-family: system-ui, sans-serif;
-  overflow: hidden;
-}
+    #ar-panel {
+      position: relative;
+      width: var(--panel-size);
+      height: var(--panel-size);
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(18px);
+      box-shadow: var(--shadow-soft);
+      background: rgba(0, 0, 0, 0.1);
+      display: flex;
+      flex-direction: column;
+    }
 
-/* Scroll container */
-#vlistArea {
-  position: absolute;
-  top: 58px;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  overflow-y: auto;
-  padding: 14px;
-}
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 10px 14px 6px;
+    }
 
-/* Tabs */
-.tabs {
-  display: flex;
-  gap: 10px;
-  padding: 10px 14px;
-  background: rgba(255,255,255,0.04);
-  border-bottom: 1px solid rgba(255,255,255,0.08);
-}
+    .top-left {
+      max-width: 60%;
+    }
 
-.rtab {
-  padding: 6px 12px;
-  border-radius: 8px;
-  cursor: pointer;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.12);
-  transition: background .15s, border-color .15s;
-}
+    .video-title {
+      font-size: 14px;
+      font-weight: 600;
+    }
 
-.rtab.active,
-.rtab:focus {
-  background: rgba(0,150,255,0.22);
-  border-color: rgba(0,180,255,0.55);
-}
+    .video-meta {
+      margin-top: 2px;
+      font-size: 11px;
+      color: var(--text-sub);
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
 
-/* Video grid */
-.vgrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 14px;
-  margin-bottom: 20px;
-}
+    .top-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
 
-/* Video card */
-.vcard {
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 12px;
-  padding: 10px;
-  cursor: pointer;
-  transition: transform .15s, box-shadow .15s, border-color .15s;
-}
+    .channel-block {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+    }
 
-/* Focus ring */
-.focusable:focus {
-  outline: 2px solid rgba(0,180,255,0.9);
-  outline-offset: 3px;
-}
+    .channel-name {
+      font-size: 12px;
+      font-weight: 600;
+    }
 
-/* ═══════════════════════════════════════════════════
-   PLAYER AREA
-   ═══════════════════════════════════════════════════ */
-#playerArea {
-  position: absolute;
-  top: 58px;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  padding: 20px;
-  display: none;
-  flex-direction: column;
-  align-items: center;
-  overflow-y: auto;
-}
+    .channel-subs {
+      font-size: 11px;
+      color: var(--text-sub);
+    }
 
-#playerArea.show {
-  display: flex;
-}
+    .subscribe-btn {
+      padding: 6px 12px;
+      border-radius: 999px;
+      border: none;
+      background: var(--accent);
+      color: #fff;
+      font-size: 11px;
+      cursor: pointer;
+    }
 
-#vidBoxInner {
-  width: 100%;
-  max-width: 720px;
-  height: 360px;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 64px;
-  margin-bottom: 14px;
-}
+    .main-layout {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      gap: 10px;
+      padding: 6px 14px 8px;
+    }
 
-/* PLAYER CONTROLS */
-#pcontrols {
-  display: flex;
-  gap: 14px;
-  justify-content: center;
-  margin-bottom: 14px;
-}
+    .player-card {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      border-radius: var(--radius-md);
+      background: var(--glass-bg);
+      border: 1px solid var(--border-soft);
+      padding: 8px;
+    }
 
-.pbtn {
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(0,150,255,0.25);
-  border-radius: 10px;
-  padding: 10px 14px;
-  font-size: 14px;
-  color: #dff3ff;
-  cursor: pointer;
-  transition: background .15s, border-color .15s, transform .15s;
-}
+    .player-video {
+      position: relative;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      background: #111;
+    }
 
-.pbtn:hover,
-.pbtn:focus {
-  background: rgba(0,150,255,0.22);
-  border-color: rgba(0,180,255,0.55);
-  transform: translateY(-2px);
-}
+    .player-video iframe {
+      width: 100%;
+      height: 220px;
+      border: none;
+    }
 
-.pbtn:active {
-  transform: scale(0.96);
-}
+    .player-overlay {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      padding: 6px 8px;
+      background: linear-gradient(
+        to top,
+        rgba(0, 0, 0, 0.7),
+        rgba(0, 0, 0, 0.0)
+      );
+    }
 
-/* PLAYER INFO */
-#pinfo {
-  width: 100%;
-  max-width: 720px;
-  margin-bottom: 20px;
-}
+    .progress-row {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
 
-#ptitle {
-  font-size: 18px;
-  font-weight: 600;
-  margin-bottom: 4px;
-}
+    .time-label {
+      font-size: 11px;
+      color: var(--text-sub);
+    }
 
-#pmeta {
-  font-size: 12px;
-  color: #aaa;
-}
+    .progress-bar {
+      width: 100%;
+      height: 3px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.25);
+      overflow: hidden;
+    }
 
-/* Suggestions */
-#suggArea {
-  width: 100%;
-  max-width: 720px;
-}
+    #progress-fill {
+      width: 20%;
+      height: 100%;
+      background: var(--accent);
+    }
 
-.sc {
-  display: flex;
-  gap: 10px;
-  padding: 10px;
-  background: rgba(255,255,255,0.05);
-  border-radius: 10px;
-  margin-bottom: 10px;
-  cursor: pointer;
-}
+    .engagement-row {
+      display: flex;
+      gap: 8px;
+    }
 
-.sc:hover,
-.sc:focus {
-  background: rgba(0,150,255,0.18);
-}
+    .engage-btn {
+      padding: 5px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border-soft);
+      background: rgba(0, 0, 0, 0.7);
+      color: var(--text-main);
+      font-size: 11px;
+      cursor: pointer;
+    }
 
-.sthumb {
-  width: 80px;
-  height: 50px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 26px;
-}
+    .description-block {
+      font-size: 11px;
+      color: var(--text-sub);
+      max-height: 70px;
+      overflow: hidden;
+    }
 
-.sinfo {
-  flex: 1;
-}
+    .related-column {
+      border-radius: var(--radius-md);
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid var(--border-soft);
+      padding: 6px;
+      overflow-y: auto;
+    }
 
-.stitle {
-  font-size: 14px;
-  font-weight: 600;
-}
+    .related-column::-webkit-scrollbar {
+      width: 4px;
+    }
+    .related-column::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .related-column::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.25);
+      border-radius: 999px;
+    }
 
-.smeta {
-  font-size: 11px;
-  color: #aaa;
-}
+    .related-card {
+      display: grid;
+      grid-template-columns: 0.9fr 1.1fr;
+      gap: 6px;
+      padding: 6px;
+      margin-bottom: 6px;
+      border-radius: var(--radius-md);
+      background: rgba(0, 0, 0, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      cursor: pointer;
+      transition: transform var(--transition-fast), box-shadow var(--transition-fast),
+        background var(--transition-fast);
+    }
 
-/* ═══════════════════════════════════════════════════
-   FULLSCREEN PLAYER
-   ═══════════════════════════════════════════════════ */
-#fsPlayer {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.92);
-  display: none;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
+    .related-card:hover {
+      transform: translateY(-2px);
+      background: rgba(0, 0, 0, 0.95);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.7);
+    }
 
-#fsPlayer.open {
-  display: flex;
-}
+    .related-thumb {
+      width: 100%;
+      padding-top: 56.25%;
+      border-radius: var(--radius-sm);
+      background-size: cover;
+      background-position: center;
+    }
 
-#fsCtrl {
-  display: flex;
-  gap: 14px;
-  margin-top: 20px;
-}
+    .related-info {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 2px;
+    }
 
-.fs-btn {
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(0,150,255,0.25);
-  border-radius: 10px;
-  padding: 10px 14px;
-  font-size: 14px;
-  color: #dff3ff;
-  cursor: pointer;
-}
+    .related-title {
+      font-size: 11px;
+      font-weight: 600;
+    }
 
-.fs-btn:hover,
-.fs-btn:focus {
-  background: rgba(0,150,255,0.22);
-  border-color: rgba(0,180,255,0.55);
-}
+    .related-channel {
+      font-size: 10px;
+      color: var(--text-sub);
+    }
 
-/* ═══════════════════════════════════════════════════
-   AI SMART RECOMMENDATIONS PANEL
-   ═══════════════════════════════════════════════════ */
-#aiPanel {
-  position: fixed;
-  top: 70px;
-  right: 14px;
-  width: 260px;
-  max-height: calc(100vh - 90px);
-  background: rgba(10,10,20,0.96);
-  border-radius: 14px;
-  border: 1px solid rgba(0,180,255,0.45);
-  box-shadow: 0 0 24px rgba(0,180,255,0.35);
-  padding: 10px;
-  display: none;
-  flex-direction: column;
-  gap: 8px;
-  z-index: 40;
-}
+    .related-meta {
+      font-size: 10px;
+      color: var(--text-sub);
+    }
 
-.ai-rec {
-  background: rgba(255,255,255,0.04);
-  border-radius: 10px;
-  padding: 8px;
-  font-size: 12px;
-  cursor: pointer;
-}
+    .bottom-hud {
+      padding: 6px 14px 10px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
 
-.ai-rec:hover,
-.ai-rec:focus {
-  background: rgba(0,180,255,0.18);
-}
+    .mini-player {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.8);
+      border: 1px solid var(--border-soft);
+    }
 
-/* ═══════════════════════════════════════════════════
-   DEPTH FOG + BACKGROUND BLUR
-   ═══════════════════════════════════════════════════ */
-#depthFog {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  backdrop-filter: blur(12px);
-  background:
-    radial-gradient(circle at 50% 20%, rgba(0,0,0,0.55), rgba(0,0,0,0.9)),
-    linear-gradient(to bottom, rgba(0,0,0,0.0), rgba(0,0,0,0.85));
-  opacity: 0.0;
-  transition: opacity .35s;
-  z-index: 0;
-}
+    .mini-thumb {
+      width: 40px;
+      height: 24px;
+      border-radius: var(--radius-sm);
+      background-size: cover;
+      background-position: center;
+      background-color: #222;
+    }
 
-/* ═══════════════════════════════════════════════════
-   CHROMATIC EDGE SHIMMER
-   ═══════════════════════════════════════════════════ */
-.holo-edge {
-  position: relative;
-}
+    .mini-info {
+      display: flex;
+      flex-direction: column;
+    }
 
-.holo-edge::after {
-  content: '';
-  position: absolute;
-  inset: -1px;
-  border-radius: inherit;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity .2s;
-  background:
-    linear-gradient(90deg, rgba(0,180,255,0.6), transparent),
-    linear-gradient(270deg, rgba(255,80,160,0.6), transparent);
-  mix-blend-mode: screen;
-}
+    .mini-title {
+      font-size: 10px;
+    }
 
-.holo-edge:focus::after,
-.holo-edge:hover::after {
-  opacity: 1;
-}
+    .mini-channel {
+      font-size: 9px;
+      color: var(--text-sub);
+    }
 
-/* ═══════════════════════════════════════════════════
-   SOFT AR SHADOWS
-   ═══════════════════════════════════════════════════ */
-.holo-shadow {
-  box-shadow:
-    0 18px 40px rgba(0,0,0,0.65),
-    0 0 0 1px rgba(255,255,255,0.04);
-}
+    .mini-controls {
+      display: flex;
+      gap: 6px;
+      margin-left: 8px;
+    }
 
-/* ═══════════════════════════════════════════════════
-   BORDER PULSE
-   ═══════════════════════════════════════════════════ */
-@keyframes borderPulse {
-  0%   { border-color: rgba(0,180,255,0.25); }
-  50%  { border-color: rgba(0,255,200,0.85); }
-  100% { border-color: rgba(0,180,255,0.25); }
-}
-
-.pulse-border:focus {
-  animation: borderPulse 1.4s ease-in-out infinite;
-}
-
-/* ═══════════════════════════════════════════════════
-   AMBIENT OCCLUSION UNDER BUTTONS
-   ═══════════════════════════════════════════════════ */
-.btn-ao {
-  position: relative;
-}
-
-.btn-ao::before {
-  content: '';
-  position: absolute;
-  left: 10%;
-  right: 10%;
-  bottom: -6px;
-  height: 10px;
-  border-radius: 50%;
-  background: radial-gradient(circle,
-    rgba(0,0,0,0.55),
-    transparent 70%);
-  opacity: 0.7;
-  pointer-events: none;
-}
-
-/* ═══════════════════════════════════════════════════
-   VOLUMETRIC GLOW
-   ═══════════════════════════════════════════════════ */
-.volumetric {
-  position: relative;
-}
-
-.volumetric::after {
-  content: '';
-  position: absolute;
-  inset: -12px;
-  border-radius: inherit;
-  background: radial-gradient(circle,
-    rgba(0,180,255,0.35),
-    transparent 70%);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity .2s;
-}
-
-.volumetric:focus::after,
-.volumetric:hover::after {
-  opacity: 1;
-}
-
-</style>
+    .mini-btn {
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--border-soft);
+      background: rgba(0, 0, 0, 0.9);
+      color: var(--text-sub);
+      font-size: 9px;
+      cursor: pointer;
+    }
+  </style>
 </head>
 <body>
-
-<!-- ═══════════════════════════════════════════════════
-     HOLOGRAPHIC HUD STATUS
-     ═══════════════════════════════════════════════════ -->
-<div id="floatingStatus" style="
-  position:fixed;
-  top:14px;
-  left:50%;
-  transform:translateX(-50%);
-  background:rgba(0,0,0,0.45);
-  padding:6px 14px;
-  border-radius:10px;
-  border:1px solid rgba(0,180,255,0.35);
-  font-size:12px;
-  letter-spacing:0.5px;
-  opacity:0.35;
-  transition:opacity .25s;
-  z-index:9999;
-">
-  <span id="fstText">META RAY-BAN · HOLOGRAPHIC MODE</span>
-</div>
-
-<!-- ═══════════════════════════════════════════════════
-     HOLOGRAPHIC DEPTH PARTICLES
-     ═══════════════════════════════════════════════════ -->
-<div id="depthParticles" style="
-  position:fixed;
-  inset:0;
-  pointer-events:none;
-  overflow:hidden;
-  z-index:1;
-"></div>
-
-<!-- ═══════════════════════════════════════════════════
-     HOLOGRAPHIC BLOOM LAYER
-     ═══════════════════════════════════════════════════ -->
-<div id="holoBloom" style="
-  position:fixed;
-  inset:0;
-  pointer-events:none;
-  z-index:2;
-  opacity:0.4;
-  transition:opacity .2s;
-"></div>
-
-<!-- ═══════════════════════════════════════════════════
-     CHROMA LAYER (PARALLAX COLOR)
-     ═══════════════════════════════════════════════════ -->
-<div id="chromaLayer" style="
-  position:fixed;
-  inset:0;
-  pointer-events:none;
-  mix-blend-mode:screen;
-  background:radial-gradient(circle at 50% 50%,
-    rgba(0,180,255,0.08),
-    transparent 70%);
-  z-index:3;
-"></div>
-
-<!-- ═══════════════════════════════════════════════════
-     DEPTH FOG + BACKGROUND BLUR (NEW)
-     ═══════════════════════════════════════════════════ -->
-<div id="depthFog"></div>
-
-<!-- ═══════════════════════════════════════════════════
-     TOP NAV BAR
-     ═══════════════════════════════════════════════════ -->
-<div style="
-  position:fixed;
-  top:0;
-  left:0;
-  right:0;
-  height:58px;
-  background:rgba(0,0,0,0.65);
-  border-bottom:1px solid rgba(255,255,255,0.08);
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  padding:0 14px;
-  z-index:50;
-">
-
-  <!-- Left: App title -->
-  <div style="font-size:16px;font-weight:600;letter-spacing:0.5px;">
-    ViewTube AR OS
-  </div>
-
-  <!-- Right: Search + Dots -->
-  <div class="search-wrap" style="display:flex;align-items:center;gap:10px;position:relative;">
-    <input id="searchInput" class="focusable holo-edge volumetric" tabindex="0"
-      placeholder="Search"
-      style="
-        width:160px;
-        padding:6px 10px;
-        border-radius:8px;
-        border:1px solid rgba(255,255,255,0.15);
-        background:rgba(255,255,255,0.06);
-        color:#fff;
-        font-size:13px;
-      ">
-
-    <!-- Search dropdown -->
-    <div id="sdd" style="
-      position:absolute;
-      top:36px;
-      right:0;
-      width:240px;
-      background:rgba(0,0,0,0.85);
-      border:1px solid rgba(255,255,255,0.12);
-      border-radius:10px;
-      padding:6px 0;
-      display:none;
-      flex-direction:column;
-      z-index:200;
-    "></div>
-
-    <!-- Dots menu -->
-    <div class="dots-wrap" style="position:relative;">
-      <button id="dotsBtn" class="focusable holo-edge volumetric btn-ao pulse-border" tabindex="0"
-        onclick="toggleDots()" style="
-        background:rgba(255,255,255,0.06);
-        border:1px solid rgba(255,255,255,0.12);
-        border-radius:8px;
-        padding:6px 10px;
-        cursor:pointer;
-      ">⋮</button>
-
-      <div id="dotsMenu" class="dots-menu" style="
-        position:absolute;
-        top:36px;
-        right:0;
-        width:180px;
-        background:rgba(0,0,0,0.85);
-        border:1px solid rgba(255,255,255,0.12);
-        border-radius:10px;
-        padding:6px 0;
-        display:none;
-        flex-direction:column;
-        z-index:200;
-      ">
-        <div class="di focusable holo-edge volumetric" tabindex="0" style="padding:8px 12px;cursor:pointer;">Settings</div>
-        <div class="di focusable holo-edge volumetric" tabindex="0" style="padding:8px 12px;cursor:pointer;">About</div>
+  <div id="ar-panel">
+    <header class="top-bar">
+      <div class="top-left">
+        <div class="video-title" id="video-title">
+          Temiwo Woods – Stay Golden (Official Video)
+        </div>
+        <div class="video-meta">
+          <span id="video-views">48K views</span>
+          <span>•</span>
+          <span id="video-age">3 weeks ago</span>
+        </div>
       </div>
-    </div>
-  </div>
-</div>
-
-<!-- ═══════════════════════════════════════════════════
-     TABS
-     ═══════════════════════════════════════════════════ -->
-<div class="tabs" style="margin-top:58px;">
-  <div class="rtab focusable holo-edge volumetric" data-tab="home" tabindex="0" onclick="switchTab('home')">Home</div>
-  <div class="rtab focusable holo-edge volumetric" data-tab="shorts" tabindex="0" onclick="switchTab('shorts')">Shorts</div>
-  <div class="rtab focusable holo-edge volumetric" data-tab="subs" tabindex="0" onclick="switchTab('subs')">Subscriptions</div>
-  <div class="rtab focusable holo-edge volumetric" data-tab="movies" tabindex="0" onclick="switchTab('movies')">Movies</div>
-  <div class="rtab focusable holo-edge volumetric" data-tab="history" tabindex="0" onclick="switchTab('history')">History</div>
-</div>
-
-<!-- ═══════════════════════════════════════════════════
-     MAIN GRID AREA
-     ═══════════════════════════════════════════════════ -->
-<div id="vlistArea">
-  <div id="mainGrid"></div>
-</div>
-
-<!-- ═══════════════════════════════════════════════════
-     PLAYER AREA (with all effects)
-     ═══════════════════════════════════════════════════ -->
-<div id="playerArea" class="holo-edge holo-shadow volumetric">
-
-  <div id="vidBoxInner" class="holo-edge holo-shadow volumetric">
-    <!-- Emoji / placeholder injected by JS -->
-  </div>
-
-  <!-- Centered, shrink-to-fit controls -->
-  <div id="pcontrols">
-    <button class="pbtn focusable holo-edge volumetric btn-ao pulse-border" tabindex="0" onclick="togglePlay()" aria-label="Play/Pause">
-      <svg id="playIcon" width="20" height="20" viewBox="0 0 20 20"></svg>
-    </button>
-
-    <button class="pbtn focusable holo-edge volumetric btn-ao pulse-border" tabindex="0" onclick="seek(-10)" aria-label="Rewind 10 seconds">
-      ⏪ 10s
-    </button>
-
-    <button class="pbtn focusable holo-edge volumetric btn-ao pulse-border" tabindex="0" onclick="seek(10)" aria-label="Forward 10 seconds">
-      ⏩ 10s
-    </button>
-
-    <button class="pbtn focusable holo-edge volumetric btn-ao pulse-border" tabindex="0" onclick="openFs()" aria-label="Fullscreen">
-      ⛶
-    </button>
-
-    <button class="pbtn focusable holo-edge volumetric btn-ao pulse-border" tabindex="0" onclick="toggleHideUi()" aria-label="Hide UI">
-      👁
-    </button>
-  </div>
-
-  <div id="pinfo" class="holo-edge volumetric">
-    <div id="ptitle"></div>
-    <div id="pmeta"></div>
-  </div>
-
-  <div id="suggArea"></div>
-</div>
-
-<!-- ═══════════════════════════════════════════════════
-     AI SMART RECOMMENDATIONS PANEL
-     ═══════════════════════════════════════════════════ -->
-<div id="aiPanel">
-  <div style="font-size:13px;font-weight:600;margin-bottom:6px;">
-    Smart Recommendations
-  </div>
-  <div id="aiPanelBody"></div>
-</div>
-<!-- ═══════════════════════════════════════════════════
-     SHORTS OVERLAY
-     ═══════════════════════════════════════════════════ -->
-<div id="shortsOverlay" style="
-  position:fixed;
-  inset:0;
-  background:#000;
-  display:none;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  z-index:9000;
-">
-
-  <!-- Shorts track (vertical stack) -->
-  <div id="shortsTrack" style="
-    position:absolute;
-    top:0;
-    left:0;
-    right:0;
-    bottom:0;
-    overflow:hidden;
-  "></div>
-
-  <!-- Shorts dots -->
-  <div id="shortsDots" style="
-    position:absolute;
-    right:20px;
-    top:50%;
-    transform:translateY(-50%);
-    display:flex;
-    flex-direction:column;
-    gap:8px;
-  "></div>
-
-</div>
-
-<!-- ═══════════════════════════════════════════════════
-     MINI‑PLAYER (DRAGGABLE, HOLOGRAPHIC)
-     ═══════════════════════════════════════════════════ -->
-<div id="miniPlayer" class="holo-edge holo-shadow volumetric" style="
-  position:fixed;
-  width:200px;
-  height:112px;
-  bottom:20px;
-  right:20px;
-  background:rgba(0,0,0,0.75);
-  border:1px solid rgba(255,255,255,0.12);
-  border-radius:12px;
-  display:none;
-  flex-direction:column;
-  z-index:8000;
-">
-
-  <div id="miniDragHandle" style="
-    height:22px;
-    background:rgba(255,255,255,0.06);
-    border-bottom:1px solid rgba(255,255,255,0.12);
-    border-radius:12px 12px 0 0;
-    cursor:grab;
-  "></div>
-
-  <div style="flex:1;display:flex;align-items:center;justify-content:center;font-size:40px;opacity:0.4;">
-    ▶
-  </div>
-
-  <div style="display:flex;justify-content:center;padding:6px;">
-    <button class="mini-btn focusable holo-edge volumetric btn-ao pulse-border" tabindex="0"
-      onclick="toggleMini()" style="
-        background:rgba(255,255,255,0.06);
-        border:1px solid rgba(255,255,255,0.12);
-        border-radius:8px;
-        padding:4px 10px;
-        font-size:12px;
-        cursor:pointer;
-    ">Close</button>
-  </div>
-
-</div>
-
-<!-- ═══════════════════════════════════════════════════
-     TOAST SYSTEM
-     ═══════════════════════════════════════════════════ -->
-<div id="toast" class="holo-edge volumetric holo-shadow" style="
-  position:fixed;
-  bottom:30px;
-  left:50%;
-  transform:translateX(-50%);
-  background:rgba(0,0,0,0.75);
-  padding:8px 16px;
-  border-radius:10px;
-  border:1px solid rgba(0,180,255,0.35);
-  font-size:13px;
-  opacity:0;
-  transition:opacity .25s;
-  z-index:9999;
-"></div>
-
-<!-- ═══════════════════════════════════════════════════
-     VIRTUAL KEYBOARD OVERLAY
-     ═══════════════════════════════════════════════════ -->
-<div id="vkOverlay" style="
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,0.92);
-  display:none;
-  flex-direction:column;
-  align-items:center;
-  justify-content:flex-start;
-  padding-top:40px;
-  z-index:9500;
-">
-
-  <div id="vkText" class="holo-edge volumetric" style="
-    font-size:20px;
-    margin-bottom:20px;
-    letter-spacing:1px;
-  "></div>
-
-  <div id="vkGrid" style="
-    display:grid;
-    grid-template-columns:repeat(10, 1fr);
-    gap:8px;
-    width:90%;
-    max-width:600px;
-  "></div>
-
-</div>
-
-<!-- ═══════════════════════════════════════════════════
-     SENSOR STATUS (IMU + GPS)
-     ═══════════════════════════════════════════════════ -->
-<div style="
-  position:fixed;
-  bottom:14px;
-  left:14px;
-  display:flex;
-  flex-direction:column;
-  gap:6px;
-  z-index:9999;
-  font-size:12px;
-">
-
-  <div style="display:flex;align-items:center;gap:6px;">
-    <div id="imuDot" class="sensor-dot off" style="
-      width:10px;height:10px;border-radius:50%;
-      background:#444;
-    "></div>
-    <span id="imuLabel">IMU</span>
-  </div>
-
-  <div style="display:flex;align-items:center;gap:6px;">
-    <div id="gpsDot" class="sensor-dot off" style="
-      width:10px;height:10px;border-radius:50%;
-      background:#444;
-    "></div>
-    <span id="gpsLabel">GPS</span>
-  </div>
-
-</div>
-<!-- ═══════════════════════════════════════════════════
-     AUTH POPUP (API KEY MODE FOR RAY‑BAN)
-     ═══════════════════════════════════════════════════ -->
-<div id="authPopup" class="holo-edge holo-shadow volumetric" style="
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,0.85);
-  display:none;
-  align-items:center;
-  justify-content:center;
-  z-index:9998;
-">
-  <div class="holo-edge holo-shadow volumetric" style="
-    width:320px;
-    background:rgba(20,20,20,0.95);
-    border:1px solid rgba(255,255,255,0.12);
-    border-radius:12px;
-    padding:20px;
-  ">
-
-    <div style="font-size:16px;font-weight:600;margin-bottom:10px;">
-      YouTube Login
-    </div>
-
-    <div style="font-size:12px;color:#aaa;margin-bottom:14px;">
-      OAuth login is not supported on Ray‑Ban Display.  
-      Use your YouTube Data API key instead.
-    </div>
-
-    <label style="font-size:12px;">API Key</label>
-    <input id="apiKeyInput" class="focusable holo-edge volumetric pulse-border" tabindex="0" style="
-      width:100%;
-      margin-top:4px;
-      margin-bottom:10px;
-      padding:6px 10px;
-      border-radius:8px;
-      border:1px solid rgba(255,255,255,0.15);
-      background:rgba(255,255,255,0.06);
-      color:#fff;
-      font-size:13px;
-    ">
-
-    <label style="font-size:12px;">YouTube Handle (e.g. @MKBHD)</label>
-    <input id="ytHandleInput" class="focusable holo-edge volumetric pulse-border" tabindex="0" style="
-      width:100%;
-      margin-top:4px;
-      margin-bottom:14px;
-      padding:6px 10px;
-      border-radius:8px;
-      border:1px solid rgba(255,255,255,0.15);
-      background:rgba(255,255,255,0.06);
-      color:#fff;
-      font-size:13px;
-    ">
-
-    <button id="apiKeyLoginBtn" class="focusable holo-edge volumetric btn-ao pulse-border" tabindex="0"
-      onclick="YTAuth.signInWithApiKey()" style="
-      width:100%;
-      padding:8px;
-      border-radius:8px;
-      background:rgba(0,150,255,0.22);
-      border:1px solid rgba(0,180,255,0.55);
-      color:#fff;
-      font-size:14px;
-      cursor:pointer;
-      margin-bottom:10px;
-    ">Load My Subscriptions</button>
-
-    <button class="focusable holo-edge volumetric btn-ao pulse-border" tabindex="0"
-      onclick="closeAuthPopup()" style="
-      width:100%;
-      padding:8px;
-      border-radius:8px;
-      background:rgba(255,255,255,0.06);
-      border:1px solid rgba(255,255,255,0.12);
-      color:#fff;
-      font-size:14px;
-      cursor:pointer;
-    ">Cancel</button>
-
-  </div>
-</div>
-
-<!-- ═══════════════════════════════════════════════════
-     RIGHT‑TAB CONTENT AREA (Subscriptions, Movies, History)
-     ═══════════════════════════════════════════════════ -->
-<div id="rtabContent" class="holo-edge volumetric" style="
-  position:absolute;
-  top:58px;
-  left:0;
-  right:0;
-  bottom:0;
-  overflow-y:auto;
-  padding:14px;
-  display:none;
-"></div>
-
-<!-- ═══════════════════════════════════════════════════
-     MOVIES TAB CONTAINER
-     ═══════════════════════════════════════════════════ -->
-<div id="moviesArea" class="holo-edge volumetric" style="
-  display:none;
-  padding:14px;
-">
-  <div style="font-size:18px;font-weight:600;margin-bottom:14px;">
-    Movies
-  </div>
-  <div id="moviesGrid" class="vgrid"></div>
-</div>
-
-<!-- ═══════════════════════════════════════════════════
-     HISTORY TAB CONTAINER
-     ═══════════════════════════════════════════════════ -->
-<div id="historyArea" class="holo-edge volumetric" style="
-  display:none;
-  padding:14px;
-">
-  <div style="font-size:18px;font-weight:600;margin-bottom:14px;">
-    Watch History
-  </div>
-  <div id="historyGrid" class="vgrid"></div>
-</div>
-
-<!-- ═══════════════════════════════════════════════════
-     CHANNEL PAGE
-     ═══════════════════════════════════════════════════ -->
-<div id="channelPage" class="holo-edge volumetric" style="
-  position:absolute;
-  top:58px;
-  left:0;
-  right:0;
-  bottom:0;
-  overflow-y:auto;
-  padding:14px;
-  display:none;
-">
-
-  <div id="chBanner" class="holo-edge holo-shadow volumetric" style="
-    width:100%;
-    height:120px;
-    background:rgba(255,255,255,0.06);
-    border-radius:12px;
-    margin-bottom:14px;
-  "></div>
-
-  <div id="chHeader" style="
-    display:flex;
-    align-items:center;
-    gap:14px;
-    margin-bottom:14px;
-  ">
-    <div id="chAvatar" class="holo-edge volumetric" style="
-      width:60px;
-      height:60px;
-      border-radius:50%;
-      background:rgba(255,255,255,0.12);
-    "></div>
-
-    <div>
-      <div id="chName" style="font-size:18px;font-weight:600;"></div>
-      <div id="chSubs" style="font-size:12px;color:#aaa;"></div>
-    </div>
-  </div>
-
-  <div id="chVideos" class="vgrid"></div>
-
-</div>
-<script>
-/* ═══════════════════════════════════════════════════
-   GLOBAL STATE
-   ═══════════════════════════════════════════════════ */
-let curTab = 'home';
-let curVid = null;
-let miniOn = false;
-
-let homeBatch = 0;
-let subsBatch = 0;
-let moviesBatch = 0;
-let historyBatch = 0;
-let searchBatch = 0;
-
-let _ytShortsPool = [];
-let shortsIdx = 0;
-let shortsLoadedCount = 0;
-const SHORTS_BATCH = 6;
-
-/* ═══════════════════════════════════════════════════
-   FOCUSABLE UTILITY
-   ═══════════════════════════════════════════════════ */
-function makeFocusable() {
-  document.querySelectorAll('.focusable').forEach(el => {
-    el.setAttribute('tabindex', '0');
-  });
-}
-
-/* ═══════════════════════════════════════════════════
-   TAB SWITCHING
-   ═══════════════════════════════════════════════════ */
-function switchTab(tab) {
-  curTab = tab;
-
-  document.querySelectorAll('.rtab').forEach(t => {
-    t.classList.toggle('active', t.dataset.tab === tab);
-  });
-
-  document.getElementById('vlistArea').style.display = 'none';
-  document.getElementById('rtabContent').style.display = 'none';
-  document.getElementById('moviesArea').style.display = 'none';
-  document.getElementById('historyArea').style.display = 'none';
-  document.getElementById('channelPage').style.display = 'none';
-
-  if (tab === 'home') {
-    document.getElementById('vlistArea').style.display = '';
-    renderHome();
-  }
-  else if (tab === 'shorts') {
-    openShortsOverlay();
-  }
-  else if (tab === 'subs') {
-    document.getElementById('rtabContent').style.display = '';
-    renderRSubs();
-  }
-  else if (tab === 'movies') {
-    document.getElementById('moviesArea').style.display = '';
-    renderMovies();
-  }
-  else if (tab === 'history') {
-    document.getElementById('historyArea').style.display = '';
-    renderHistory();
-  }
-}
-
-/* ═══════════════════════════════════════════════════
-   MAIN GRID (HOME)
-   ═══════════════════════════════════════════════════ */
-function initMainGrid() {
-  homeBatch = 0;
-  document.getElementById('mainGrid').innerHTML = '';
-  loadHomeBatch();
-}
-
-function loadHomeBatch() {
-  const batch = getNextBatch('home');
-  if (!batch.length) return;
-
-  const html = `
-    <div class="vgrid">
-      ${batch.map(renderVCardYT).join('')}
-    </div>
-  `;
-
-  document.getElementById('mainGrid').insertAdjacentHTML('beforeend', html);
-
-  applyTilt();
-  makeFocusable();
-}
-
-function renderHome() {
-  if (homeBatch === 0) initMainGrid();
-}
-
-/* ═══════════════════════════════════════════════════
-   VIDEO CARD RENDERERS
-   ═══════════════════════════════════════════════════ */
-function renderVCardYT(v) {
-  return `
-    <div class="vcard focusable holo-edge volumetric pulse-border" tabindex="0"
-         onclick="openVideo('${v.id}')">
-
-      <div style="
-        width:100%;
-        height:90px;
-        background:rgba(255,255,255,0.08);
-        border-radius:8px;
-        margin-bottom:8px;
-        display:flex;
-        align-items:center;
-        justify-content:center;
-        font-size:40px;
-        opacity:0.4;
-      ">▶</div>
-
-      <div style="font-size:14px;font-weight:600;margin-bottom:4px;">
-        ${v.title}
+      <div class="top-right">
+        <div class="channel-block">
+          <div class="channel-name" id="channel-name">Temiwo Woods</div>
+          <div class="channel-subs" id="channel-subs">12.4K subscribers</div>
+        </div>
+        <button class="subscribe-btn" id="subscribe-btn">Subscribe</button>
       </div>
+    </header>
 
-      <div style="font-size:11px;color:#aaa;">
-        ${v.channel}
+    <main class="main-layout">
+      <section class="player-card">
+        <div class="player-video">
+          <iframe
+            id="player-iframe"
+            src=""
+            title="YouTube video player"
+            frameborder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen
+          ></iframe>
+
+          <div class="player-overlay">
+            <div class="progress-row">
+              <div class="time-label">
+                <span id="current-time">0:42</span>
+                <span>/</span>
+                <span id="total-time">3:05</span>
+              </div>
+              <div class="progress-bar">
+                <div id="progress-fill"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="engagement-row">
+          <button class="engage-btn" id="like-btn">
+            👍 <span id="like-count">1.2K</span>
+          </button>
+          <button class="engage-btn">↗ Share</button>
+          <button class="engage-btn">💾 Save</button>
+        </div>
+
+        <div class="description-block" id="description-block">
+          48K views • 3 weeks ago<br />
+          Stream “Stay Golden”: https://temiwowoods.lnk.to/staygolden …more
+        </div>
+      </section>
+
+      <aside class="related-column" id="related-column">
+        <!-- Cards injected by JS -->
+      </aside>
+    </main>
+
+    <footer class="bottom-hud">
+      <div class="mini-player">
+        <div class="mini-thumb" id="mini-thumb"></div>
+        <div class="mini-info">
+          <div class="mini-title" id="mini-title">Stay Golden</div>
+          <div class="mini-channel" id="mini-channel">Temiwo Woods</div>
+        </div>
+        <div class="mini-controls">
+          <button class="mini-btn" id="emg-like">Double‑pinch: Like</button>
+          <button class="mini-btn" id="emg-volume">Rotate wrist: Volume</button>
+        </div>
       </div>
-    </div>
-  `;
-}
-
-function renderSuggCard(v) {
-  return `
-    <div class="sc focusable holo-edge volumetric pulse-border" tabindex="0"
-         onclick="openVideo('${v.id}')">
-      <div class="sthumb">▶</div>
-      <div class="sinfo">
-        <div class="stitle">${v.title}</div>
-        <div class="smeta">${v.channel}</div>
-      </div>
-    </div>
-  `;
-}
-
-/* ═══════════════════════════════════════════════════
-   AMBIENT LIGHTING FROM VIDEO COLOR (NEW)
-   ═══════════════════════════════════════════════════ */
-function setAmbientFromVideoColor(hex) {
-  const bloom = document.getElementById('holoBloom');
-  const chroma = document.getElementById('chromaLayer');
-  if (!bloom || !chroma) return;
-
-  bloom.style.background =
-    `radial-gradient(ellipse 40% 30% at 50% 50%, ${hex} 0%, transparent 70%)`;
-
-  chroma.style.background =
-    `radial-gradient(circle at 50% 50%, ${hex} 0%, transparent 70%)`;
-}
-
-/* ═══════════════════════════════════════════════════
-   AI SMART PANEL (NEW)
-   ═══════════════════════════════════════════════════ */
-function updateAIPanel(v) {
-  const body = document.getElementById('aiPanelBody');
-  const panel = document.getElementById('aiPanel');
-  if (!body || !panel) return;
-
-  body.innerHTML = `
-    <div class="ai-rec focusable holo-edge volumetric" tabindex="0">
-      More like: ${v.title}
-    </div>
-    <div class="ai-rec focusable holo-edge volumetric" tabindex="0">
-      Trending in tech right now
-    </div>
-    <div class="ai-rec focusable holo-edge volumetric" tabindex="0">
-      Deep dives from your favorite channels
-    </div>
-  `;
-
-  panel.style.display = 'flex';
-  makeFocusable();
-}
-
-/* ═══════════════════════════════════════════════════
-   OPEN VIDEO (PLAYER)
-   ═══════════════════════════════════════════════════ */
-function openVideo(id) {
-  curVid = id;
-
-  document.getElementById('playerArea').classList.add('show');
-  document.getElementById('vlistArea').style.display = 'none';
-
-  const v = findVideoById(id);
-  if (!v) return;
-
-  document.getElementById('vidBoxInner').textContent = '▶';
-  document.getElementById('ptitle').textContent = v.title;
-  document.getElementById('pmeta').textContent = v.channel;
-
-  /* NEW: Ambient lighting */
-  setAmbientFromVideoColor(v.dominantColor || 'rgba(0,180,255,0.18)');
-
-  /* NEW: AI Smart Panel */
-  updateAIPanel(v);
-
-  /* NEW: Depth fog on player open */
-  document.getElementById('depthFog').style.opacity = '0.75';
-
-  loadSuggestions(id);
-  addToHistory(v);
-
-  requestAnimationFrame(() => {
-    const first = document.querySelector('#pcontrols .pbtn');
-    if (first) first.focus();
-  });
-}
-
-/* ═══════════════════════════════════════════════════
-   SUGGESTIONS
-   ═══════════════════════════════════════════════════ */
-function loadSuggestions(id) {
-  const sugg = getSuggestions(id);
-  const html = sugg.map(renderSuggCard).join('');
-  document.getElementById('suggArea').innerHTML = html;
-
-  applyTilt();
-  makeFocusable();
-}
-
-/* ═══════════════════════════════════════════════════
-   HISTORY
-   ═══════════════════════════════════════════════════ */
-function addToHistory(v) {
-  if (!window._history) window._history = [];
-  window._history.unshift(v);
-  if (window._history.length > 200) window._history.pop();
-}
-
-function renderHistory() {
-  if (!window._history) return;
-  const html = window._history.map(renderVCardYT).join('');
-  document.getElementById('historyGrid').innerHTML = html;
-
-  applyTilt();
-  makeFocusable();
-}
-</script>
-<script>
-/* ═══════════════════════════════════════════════════
-   SHORTS ENGINE
-   ═══════════════════════════════════════════════════ */
-function openShortsOverlay() {
-  document.getElementById('shortsOverlay').style.display = 'flex';
-
-  if (_ytShortsPool.length === 0) {
-    _ytShortsPool = SHORTS.slice();
-  }
-
-  buildShortsTrackFromPool(true);
-  shortsIdx = 0;
-  goToShort(0, false);
-}
-
-function closeShortsOverlay() {
-  document.getElementById('shortsOverlay').style.display = 'none';
-  switchTab('home');
-}
-
-function buildShortsTrackFromPool(reset) {
-  const track = document.getElementById('shortsTrack');
-  if (reset) {
-    track.innerHTML = '';
-    shortsLoadedCount = 0;
-  }
-
-  const end = Math.min(shortsLoadedCount + SHORTS_BATCH, _ytShortsPool.length);
-  for (let i = shortsLoadedCount; i < end; i++) {
-    const s = _ytShortsPool[i];
-    track.insertAdjacentHTML('beforeend', `
-      <div class="short-slide focusable holo-edge volumetric pulse-border"
-           tabindex="0" id="short-${i}" style="
-        position:absolute;
-        inset:0;
-        display:flex;
-        align-items:center;
-        justify-content:center;
-        font-size:80px;
-        opacity:0.3;
-      ">▶</div>
-    `);
-  }
-
-  shortsLoadedCount = end;
-  updateShortsDots();
-  makeFocusable();
-}
-
-function updateShortsDots() {
-  const dots = document.getElementById('shortsDots');
-  dots.innerHTML = '';
-  for (let i = 0; i < shortsLoadedCount; i++) {
-    dots.insertAdjacentHTML('beforeend', `
-      <div style="
-        width:8px;height:8px;border-radius:50%;
-        background:${i === shortsIdx ? 'rgba(0,180,255,0.9)' : 'rgba(255,255,255,0.25)'};
-      "></div>
-    `);
-  }
-}
-
-function goToShort(i, animate = true) {
-  if (i < 0 || i >= shortsLoadedCount) return;
-  shortsIdx = i;
-
-  const track = document.getElementById('shortsTrack');
-  track.style.transition = animate ? 'transform .25s ease' : 'none';
-  track.style.transform = `translateY(${-i * window.innerHeight}px)`;
-
-  updateShortsDots();
-
-  requestAnimationFrame(() => {
-    const el = document.getElementById(`short-${i}`);
-    if (el) el.focus();
-  });
-}
-
-/* ═══════════════════════════════════════════════════
-   MINI‑PLAYER
-   ═══════════════════════════════════════════════════ */
-function toggleMini() {
-  miniOn = !miniOn;
-  document.getElementById('miniPlayer').style.display = miniOn ? 'flex' : 'none';
-}
-
-/* ═══════════════════════════════════════════════════
-   PLAYER CONTROLS
-   ═══════════════════════════════════════════════════ */
-function togglePlay() {
-  const icon = document.getElementById('playIcon');
-  const fsIcon = document.getElementById('fsPlayIcon');
-
-  if (!window._playing) {
-    window._playing = true;
-    icon.innerHTML = '<rect x="4" y="4" width="4" height="12"></rect><rect x="12" y="4" width="4" height="12"></rect>';
-    if (fsIcon) fsIcon.innerHTML = icon.innerHTML;
-  } else {
-    window._playing = false;
-    icon.innerHTML = '<polygon points="5,4 15,10 5,16"></polygon>';
-    if (fsIcon) fsIcon.innerHTML = icon.innerHTML;
-  }
-}
-
-function seek(sec) {
-  HoloFX.setStatus((sec > 0 ? '⏩ ' : '⏪ ') + Math.abs(sec) + 's', 1200);
-}
-
-function openFs() {
-  document.getElementById('fsPlayer').classList.add('open');
-  document.getElementById('playerArea').classList.remove('show');
-
-  requestAnimationFrame(() => {
-    const first = document.querySelector('#fsCtrl .fs-btn');
-    if (first) first.focus();
-  });
-}
-
-function closeFs() {
-  document.getElementById('fsPlayer').classList.remove('open');
-  document.getElementById('playerArea').classList.add('show');
-
-  requestAnimationFrame(() => {
-    const first = document.querySelector('#pcontrols .pbtn');
-    if (first) first.focus();
-  });
-}
-
-function toggleHideUi() {
-  const pinfo = document.getElementById('pinfo');
-  const sugg = document.getElementById('suggArea');
-  const hidden = pinfo.style.display === 'none';
-
-  pinfo.style.display = hidden ? '' : 'none';
-  sugg.style.display = hidden ? '' : 'none';
-}
-
-function toggleFsHide() {
-  const fsCtrl = document.getElementById('fsCtrl');
-  fsCtrl.style.display = fsCtrl.style.display === 'none' ? 'flex' : 'none';
-}
-
-/* ═══════════════════════════════════════════════════
-   DPAD MASTER HANDLER (Ray‑Ban EMG → Arrow Keys)
-   ═══════════════════════════════════════════════════ */
-document.addEventListener('keydown', function(e) {
-  const key = e.key;
-
-  /* SHORTS NAVIGATION */
-  if (document.getElementById('shortsOverlay').style.display === 'flex') {
-    if (key === 'ArrowDown') {
-      goToShort(shortsIdx + 1);
-      e.preventDefault();
-      return;
-    }
-    if (key === 'ArrowUp') {
-      goToShort(shortsIdx - 1);
-      e.preventDefault();
-      return;
-    }
-    if (key === 'Escape') {
-      closeShortsOverlay();
-      e.preventDefault();
-      return;
-    }
-  }
-
-  /* VIRTUAL KEYBOARD */
-  if (document.getElementById('vkOverlay').style.display === 'flex') {
-    VK.handleKey(e);
-    return;
-  }
-
-  /* FULLSCREEN EXIT */
-  if (key === 'Escape' && document.getElementById('fsPlayer').classList.contains('open')) {
-    closeFs();
-    return;
-  }
-
-  /* GLOBAL DPAD FOCUS NAVIGATION */
-  const focusables = Array.from(document.querySelectorAll('.focusable'));
-  const idx = focusables.indexOf(document.activeElement);
-
-  if (idx === -1) {
-    if (focusables[0]) focusables[0].focus();
-    return;
-  }
-
-  let next = idx;
-
-  if (key === 'ArrowDown') next = Math.min(idx + 1, focusables.length - 1);
-  if (key === 'ArrowUp') next = Math.max(idx - 1, 0);
-  if (key === 'ArrowLeft') next = Math.max(idx - 1, 0);
-  if (key === 'ArrowRight') next = Math.min(idx + 1, focusables.length - 1);
-
-  if (next !== idx) {
-    focusables[next].focus();
-    e.preventDefault();
-  }
-});
-
-/* ═══════════════════════════════════════════════════
-   INFINITE SCROLL OBSERVER
-   ═══════════════════════════════════════════════════ */
-const io = new IntersectionObserver(entries => {
-  entries.forEach(e => {
-    if (e.isIntersecting) {
-      if (curTab === 'home') loadHomeBatch();
-      if (curTab === 'subs') loadSubsBatch();
-      if (curTab === 'movies') loadMoviesBatch();
-      if (curTab === 'history') loadHistoryBatch();
-      if (curTab === 'search') loadSearchBatch();
-    }
-  });
-});
-
-function attachInfiniteScroll() {
-  const sentinel = document.createElement('div');
-  sentinel.style.height = '40px';
-  document.getElementById('vlistArea').appendChild(sentinel);
-  io.observe(sentinel);
-}
-</script>
-<script>
-/* ═══════════════════════════════════════════════════
-   VIRTUAL KEYBOARD ENGINE
-   ═══════════════════════════════════════════════════ */
-const VK = {
-  cb: null,
-  text: '',
-  keys: [
-    'Q','W','E','R','T','Y','U','I','O','P',
-    'A','S','D','F','G','H','J','K','L','⌫',
-    'Z','X','C','V','B','N','M','_','-','⏎'
-  ],
-
-  build() {
-    const grid = document.getElementById('vkGrid');
-    if (!grid) return;
-
-    grid.innerHTML = '';
-    this.keys.forEach(k => {
-      grid.insertAdjacentHTML('beforeend', `
-        <div class="vk-key focusable holo-edge volumetric pulse-border"
-             tabindex="0" data-k="${k}" style="
-          background:rgba(255,255,255,0.06);
-          border:1px solid rgba(255,255,255,0.12);
-          border-radius:8px;
-          padding:10px;
-          text-align:center;
-          cursor:pointer;
-        ">${k}</div>
-      `);
-    });
-
-    makeFocusable();
-  },
-
-  open(initial, callback) {
-    this.text = initial || '';
-    this.cb = callback;
-    document.getElementById('vkText').textContent = this.text;
-    document.getElementById('vkOverlay').style.display = 'flex';
-
-    requestAnimationFrame(() => {
-      const first = document.querySelector('.vk-key');
-      if (first) first.focus();
-    });
-  },
-
-  close() {
-    document.getElementById('vkOverlay').style.display = 'none';
-  },
-
-  press(k) {
-    if (k === '⌫') {
-      this.text = this.text.slice(0, -1);
-    } else if (k === '⏎') {
-      if (this.cb) this.cb(this.text);
-      this.close();
-      return;
-    } else {
-      this.text += k;
-    }
-    document.getElementById('vkText').textContent = this.text;
-  },
-
-  handleKey(e) {
-    if (e.key === 'Enter') {
-      const el = document.activeElement;
-      if (el && el.dataset.k) this.press(el.dataset.k);
-      return;
-    }
-    if (e.key === 'Escape') {
-      this.close();
-      return;
-    }
-  }
-};
-
-/* ═══════════════════════════════════════════════════
-   SENSOR ENGINE (IMU + GPS)
-   ═══════════════════════════════════════════════════ */
-const MRBDSensors = {
-  imu: false,
-  gps: false,
-
-  _updateSensorUI() {
-    document.getElementById('imuDot').style.background =
-      this.imu ? 'rgba(0,200,255,0.9)' : '#444';
-
-    document.getElementById('gpsDot').style.background =
-      this.gps ? 'rgba(0,200,255,0.9)' : '#444';
-  }
-};
-
-/* ═══════════════════════════════════════════════════
-   HOLOGRAPHIC FX ENGINE
-   (Parallax, Bloom, Chroma, Ambient Lighting, Particles)
-   ═══════════════════════════════════════════════════ */
-const HoloFX = {
-  statusTimer: null,
-
-  init() {
-    this.spawnParticles();
-    this.startAudioGlow();
-    this.startBloomBreath();
-    this.bindMouse();
-    this.setStatus('META RAY-BAN · HOLOGRAPHIC MODE');
-  },
-
-  setStatus(text, duration = 4000) {
-    const el = document.getElementById('fstText');
-    const wrap = document.getElementById('floatingStatus');
-    if (!el || !wrap) return;
-
-    el.textContent = text;
-    wrap.style.opacity = '0.8';
-
-    clearTimeout(this.statusTimer);
-    if (duration > 0) {
-      this.statusTimer = setTimeout(() => {
-        wrap.style.opacity = '0.35';
-        el.textContent = 'META RAY-BAN · HOLOGRAPHIC MODE';
-      }, duration);
-    }
-  },
-
-  /* PARTICLES */
-  spawnParticles() {
-    const container = document.getElementById('depthParticles');
-    if (!container) return;
-
-    const colors = [
-      'rgba(0,200,255,0.65)', 'rgba(0,160,255,0.55)',
-      'rgba(180,80,255,0.45)', 'rgba(0,255,200,0.5)',
-      'rgba(255,80,160,0.35)',
-    ];
-
-    for (let i = 0; i < 22; i++) {
-      const dp = document.createElement('div');
-      dp.className = 'dp';
-      const size = 1 + Math.random() * 2.5;
-
-      dp.style.cssText = `
-        position:absolute;
-        width:${size}px;
-        height:${size}px;
-        left:${4 + Math.random() * 92}%;
-        top:${Math.random() * 100}%;
-        background:${colors[Math.floor(Math.random()*colors.length)]};
-        box-shadow:0 0 ${size*3}px ${colors[Math.floor(Math.random()*colors.length)]};
-        border-radius:50%;
-        animation:float ${9 + Math.random() * 14}s linear infinite;
-        animation-delay:${-Math.random() * 22}s;
-      `;
-
-      container.appendChild(dp);
-    }
-  },
-
-  /* PARALLAX + DEPTH-REACTIVE BLOOM */
-  bindMouse() {
-    let rafId = null;
-
-    document.addEventListener('mousemove', e => {
-      if (rafId) return;
-      rafId = requestAnimationFrame(() => {
-        rafId = null;
-
-        const mx = e.clientX / window.innerWidth;
-        const my = e.clientY / window.innerHeight;
-
-        /* Depth-reactive bloom */
-        const depthFactor = 0.6 + (my * 0.4);
-
-        const bloom = document.getElementById('holoBloom');
-        if (bloom) {
-          bloom.style.background =
-            `radial-gradient(ellipse 38% 28% at ${mx*100}% ${my*100}%, rgba(0,180,255,${0.08*depthFactor}) 0%, transparent 70%)`;
-        }
-
-        /* Chroma parallax */
-        const chroma = document.getElementById('chromaLayer');
-        if (chroma) {
-          chroma.style.transform =
-            `translate(${(mx-0.5)*14}px, ${(my-0.5)*9}px)`;
-        }
-      });
-    });
-
-    this.applyCardTilt();
-  },
-
-  /* CARD MICRO-PARALLAX */
-  applyCardTilt() {
-    document.querySelectorAll('.vcard,.sc,.ai-rec,.short-slide,.pbtn,.fs-btn')
-      .forEach(card => {
-        if (card._holoTilt) return;
-        card._holoTilt = true;
-
-        card.addEventListener('mousemove', e => {
-          const r = card.getBoundingClientRect();
-          const cx = (e.clientX - r.left) / r.width - 0.5;
-          const cy = (e.clientY - r.top) / r.height - 0.5;
-
-          const rotY = cx * 16;
-          const rotX = -cy * 11;
-
-          card.style.transform =
-            `perspective(600px) rotateY(${rotY}deg) rotateX(${rotX}deg) translateZ(12px)`;
-        });
-
-        card.addEventListener('mouseleave', () => {
-          card.style.transform = '';
-        });
-      });
-  },
-
-  /* AUDIO GLOW */
-  startAudioGlow() {
-    const bar = document.getElementById('audioGlow');
-    if (!bar) return;
-
-    let t = 0;
-    const tick = () => {
-      t += 0.035;
-      const p = 0.45 + Math.sin(t)*0.3 + Math.sin(t*2.4)*0.15;
-      bar.style.opacity = p * 0.9;
-      requestAnimationFrame(tick);
+    </footer>
+  </div>
+
+  <script>
+    const API_KEY = "AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX";
+
+    const SEARCH_URL =
+      "https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=20";
+    const VIDEO_URL =
+      "https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,contentDetails";
+
+    let state = {
+      nextPageToken: null,
+      isLoading: false,
+      currentVideoId: null,
     };
-    requestAnimationFrame(tick);
-  },
 
-  /* BLOOM BREATHING */
-  startBloomBreath() {
-    let t = 0;
-    const tick = () => {
-      t += 0.006;
-      const intensity = 0.04 + Math.sin(t)*0.015;
-      const bloom = document.getElementById('holoBloom');
-      if (bloom) bloom.style.opacity = String(intensity * 12);
-      requestAnimationFrame(tick);
-    };
-    requestAnimationFrame(tick);
-  }
-};
+    const relatedColumn = document.getElementById("related-column");
+    const playerIframe = document.getElementById("player-iframe");
 
-/* ═══════════════════════════════════════════════════
-   STARTUP SEQUENCE
-   ═══════════════════════════════════════════════════ */
-window.addEventListener('load', () => {
-  initMainGrid();
-  VK.build();
-  makeFocusable();
-  MRBDSensors._updateSensorUI();
-  HoloFX.init();
-  attachInfiniteScroll();
+    const videoTitleEl = document.getElementById("video-title");
+    const videoViewsEl = document.getElementById("video-views");
+    const videoAgeEl = document.getElementById("video-age");
+    const channelNameEl = document.getElementById("channel-name");
+    const channelSubsEl = document.getElementById("channel-subs");
+    const likeCountEl = document.getElementById("like-count");
+    const descriptionBlockEl = document.getElementById("description-block");
+    const currentTimeEl = document.getElementById("current-time");
+    const totalTimeEl = document.getElementById("total-time");
+    const progressFillEl = document.getElementById("progress-fill");
 
-  requestAnimationFrame(() => {
-    const first = document.querySelector('.focusable');
-    if (first) first.focus();
-  });
-});
-</script>
+    const miniThumbEl = document.getElementById("mini-thumb");
+    const miniTitleEl = document.getElementById("mini-title");
+    const miniChannelEl = document.getElementById("mini-channel");
 
+    const emgLikeBtn = document.getElementById("emg-like");
+    const emgVolumeBtn = document.getElementById("emg-volume");
+
+    const INITIAL_QUERY = "Temiwo Woods Stay Golden official video";
+
+    function buildSearchUrl(query) {
+      let url = `${SEARCH_URL}&q=${encodeURIComponent(query)}&key=${API_KEY}`;
+      if (state.nextPageToken) {
+        url += `&pageToken=${state.nextPageToken}`;
+      }
+      return url;
+    }
+
+    async function loadInitialBatch() {
+      state.nextPageToken = null;
+      relatedColumn.innerHTML = "";
+      await loadNextBatch(true);
+    }
+
+    async function loadNextBatch(resetMain = false) {
+      if (state.isLoading) return;
+      state.isLoading = true;
+
+      try {
+        const url = buildSearchUrl(INITIAL_QUERY);
+        const res = await fetch(url);
+        const data = await res.json();
+
+        state.nextPageToken = data.nextPageToken || null;
+        const items = data.items || [];
+
+        if (resetMain && items.length > 0) {
+          const first = items[0];
+          await setMainVideo(first);
+          items.slice(1).forEach(addRelatedCard);
+        } else {
+          items.forEach(addRelatedCard);
+        }
+      } catch (err) {
+        console.error("YouTube search error", err);
+      } finally {
+        state.isLoading = false;
+      }
+    }
+
+    function addRelatedCard(item) {
+      const { snippet, id } = item;
+      const videoId = id.videoId;
+
+      const card = document.createElement("div");
+      card.className = "related-card";
+      card.dataset.videoId = videoId;
+
+      const thumb = document.createElement("div");
+      thumb.className = "related-thumb";
+      thumb.style.backgroundImage = `url(${snippet.thumbnails.medium.url})`;
+
+      const info = document.createElement("div");
+      info.className = "related-info";
+
+      const title = document.createElement("div");
+      title.className = "related-title";
+      title.textContent = snippet.title;
+
+      const channel = document.createElement("div");
+      channel.className = "related-channel";
+      channel.textContent = snippet.channelTitle;
+
+      const meta = document.createElement("div");
+      meta.className = "related-meta";
+      meta.textContent = formatMeta(snippet);
+
+      info.appendChild(title);
+      info.appendChild(channel);
+      info.appendChild(meta);
+
+      card.appendChild(thumb);
+      card.appendChild(info);
+
+      card.addEventListener("click", () => {
+        setMainVideo(item);
+      });
+
+      relatedColumn.appendChild(card);
+    }
+
+    function formatMeta(snippet) {
+      const published = new Date(snippet.publishedAt);
+      const age = timeAgo(published);
+      return `${age}`;
+    }
+
+    function timeAgo(date) {
+      const diff = (Date.now() - date.getTime()) / 1000;
+      const days = Math.floor(diff / 86400);
+      if (days < 1) return "Today";
+      if (days === 1) return "1 day ago";
+      if (days < 30) return `${days} days ago`;
+      const months = Math.floor(days / 30);
+      if (months < 12) return `${months} months ago`;
+      const years = Math.floor(months / 12);
+      return `${years} years ago`;
+    }
+
+    async function setMainVideo(item) {
+      const { snippet, id } = item;
+      const videoId = id.videoId;
+      state.currentVideoId = videoId;
+
+      playerIframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=0`;
+
+      videoTitleEl.textContent = snippet.title;
+      channelNameEl.textContent = snippet.channelTitle;
+
+      descriptionBlockEl.textContent = snippet.description;
+
+      miniThumbEl.style.backgroundImage = `url(${snippet.thumbnails.default.url})`;
+      miniTitleEl.textContent = snippet.title;
+      miniChannelEl.textContent = snippet.channelTitle;
+
+      try {
+        const url = `${VIDEO_URL}&id=${videoId}&key=${API_KEY}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        const video = data.items?.[0];
+        if (video) {
+          const stats = video.statistics || {};
+          const details = video.contentDetails || {};
+
+          likeCountEl.textContent = formatCount(stats.likeCount);
+          videoViewsEl.textContent = stats.viewCount
+            ? `${formatCount(stats.viewCount)} views`
+            : "Views unknown";
+
+          const durationSeconds = parseISO8601Duration(details.duration);
+          totalTimeEl.textContent = formatTime(durationSeconds);
+          const current = Math.floor(durationSeconds * 0.2);
+          currentTimeEl.textContent = formatTime(current);
+          progressFillEl.style.width = "20%";
+
+          channelSubsEl.textContent = "Channel";
+        }
+      } catch (err) {
+        console.error("Video details error", err);
+      }
+    }
+
+    function formatCount(n) {
+      if (!n) return "0";
+      const num = Number(n);
+      if (num >= 1_000_000) return (num / 1_000_000).toFixed(1) + "M";
+      if (num >= 1_000) return (num / 1_000).toFixed(1) + "K";
+      return String(num);
+    }
+
+    function parseISO8601Duration(iso) {
+      if (!iso) return 0;
+      const match = iso.match(/PT(?:(\d+)M)?(?:(\d+)S)?/);
+      if (!match) return 0;
+      const minutes = Number(match[1] || 0);
+      const seconds = Number(match[2] || 0);
+      return minutes * 60 + seconds;
+    }
+
+    function formatTime(sec) {
+      const m = Math.floor(sec / 60);
+      const s = Math.floor(sec % 60);
+      return `${m}:${s.toString().padStart(2, "0")}`;
+    }
+
+    relatedColumn.addEventListener("scroll", () => {
+      const { scrollTop, scrollHeight, clientHeight } = relatedColumn;
+      const nearBottom = scrollTop + clientHeight >= scrollHeight - 40;
+      if (nearBottom && !state.isLoading && state.nextPageToken) {
+        loadNextBatch(false);
+      }
+    });
+
+    emgLikeBtn.addEventListener("click", () => {
+      if (!state.currentVideoId) return;
+      console.log("EMG double‑pinch like for", state.currentVideoId);
+    });
+
+    emgVolumeBtn.addEventListener("click", () => {
+      console.log("EMG wrist rotation volume gesture");
+    });
+
+    loadInitialBatch();
+  </script>
 </body>
 </html>
