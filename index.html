@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ViewTube AR OS</title>
+<title>ViewTube AR OS — Holographic Edition</title>
 
 <style>
 
@@ -23,7 +23,7 @@ body {
   overflow: hidden;
 }
 
-/* Scroll container for Ray‑Ban */
+/* Scroll container */
 #vlistArea {
   position: absolute;
   top: 58px;
@@ -76,7 +76,7 @@ body {
   transition: transform .15s, box-shadow .15s, border-color .15s;
 }
 
-/* Focus ring for Ray‑Ban DPAD */
+/* Focus ring */
 .focusable:focus {
   outline: 2px solid rgba(0,180,255,0.9);
   outline-offset: 3px;
@@ -116,9 +116,7 @@ body {
   margin-bottom: 14px;
 }
 
-/* ═══════════════════════════════════════════════════
-   PLAYER CONTROLS (centered, shrink‑to‑fit)
-   ═══════════════════════════════════════════════════ */
+/* PLAYER CONTROLS */
 #pcontrols {
   display: flex;
   gap: 14px;
@@ -148,15 +146,7 @@ body {
   transform: scale(0.96);
 }
 
-/* Play icon SVG */
-#playIcon rect,
-#playIcon polygon {
-  fill: currentColor;
-}
-
-/* ═══════════════════════════════════════════════════
-   PLAYER INFO
-   ═══════════════════════════════════════════════════ */
+/* PLAYER INFO */
 #pinfo {
   width: 100%;
   max-width: 720px;
@@ -220,7 +210,7 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════
-   FULLSCREEN PLAYER CONTROLS
+   FULLSCREEN PLAYER
    ═══════════════════════════════════════════════════ */
 #fsPlayer {
   position: fixed;
@@ -256,6 +246,150 @@ body {
 .fs-btn:focus {
   background: rgba(0,150,255,0.22);
   border-color: rgba(0,180,255,0.55);
+}
+
+/* ═══════════════════════════════════════════════════
+   AI SMART RECOMMENDATIONS PANEL
+   ═══════════════════════════════════════════════════ */
+#aiPanel {
+  position: fixed;
+  top: 70px;
+  right: 14px;
+  width: 260px;
+  max-height: calc(100vh - 90px);
+  background: rgba(10,10,20,0.96);
+  border-radius: 14px;
+  border: 1px solid rgba(0,180,255,0.45);
+  box-shadow: 0 0 24px rgba(0,180,255,0.35);
+  padding: 10px;
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 40;
+}
+
+.ai-rec {
+  background: rgba(255,255,255,0.04);
+  border-radius: 10px;
+  padding: 8px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.ai-rec:hover,
+.ai-rec:focus {
+  background: rgba(0,180,255,0.18);
+}
+
+/* ═══════════════════════════════════════════════════
+   DEPTH FOG + BACKGROUND BLUR
+   ═══════════════════════════════════════════════════ */
+#depthFog {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  backdrop-filter: blur(12px);
+  background:
+    radial-gradient(circle at 50% 20%, rgba(0,0,0,0.55), rgba(0,0,0,0.9)),
+    linear-gradient(to bottom, rgba(0,0,0,0.0), rgba(0,0,0,0.85));
+  opacity: 0.0;
+  transition: opacity .35s;
+  z-index: 0;
+}
+
+/* ═══════════════════════════════════════════════════
+   CHROMATIC EDGE SHIMMER
+   ═══════════════════════════════════════════════════ */
+.holo-edge {
+  position: relative;
+}
+
+.holo-edge::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .2s;
+  background:
+    linear-gradient(90deg, rgba(0,180,255,0.6), transparent),
+    linear-gradient(270deg, rgba(255,80,160,0.6), transparent);
+  mix-blend-mode: screen;
+}
+
+.holo-edge:focus::after,
+.holo-edge:hover::after {
+  opacity: 1;
+}
+
+/* ═══════════════════════════════════════════════════
+   SOFT AR SHADOWS
+   ═══════════════════════════════════════════════════ */
+.holo-shadow {
+  box-shadow:
+    0 18px 40px rgba(0,0,0,0.65),
+    0 0 0 1px rgba(255,255,255,0.04);
+}
+
+/* ═══════════════════════════════════════════════════
+   BORDER PULSE
+   ═══════════════════════════════════════════════════ */
+@keyframes borderPulse {
+  0%   { border-color: rgba(0,180,255,0.25); }
+  50%  { border-color: rgba(0,255,200,0.85); }
+  100% { border-color: rgba(0,180,255,0.25); }
+}
+
+.pulse-border:focus {
+  animation: borderPulse 1.4s ease-in-out infinite;
+}
+
+/* ═══════════════════════════════════════════════════
+   AMBIENT OCCLUSION UNDER BUTTONS
+   ═══════════════════════════════════════════════════ */
+.btn-ao {
+  position: relative;
+}
+
+.btn-ao::before {
+  content: '';
+  position: absolute;
+  left: 10%;
+  right: 10%;
+  bottom: -6px;
+  height: 10px;
+  border-radius: 50%;
+  background: radial-gradient(circle,
+    rgba(0,0,0,0.55),
+    transparent 70%);
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+/* ═══════════════════════════════════════════════════
+   VOLUMETRIC GLOW
+   ═══════════════════════════════════════════════════ */
+.volumetric {
+  position: relative;
+}
+
+.volumetric::after {
+  content: '';
+  position: absolute;
+  inset: -12px;
+  border-radius: inherit;
+  background: radial-gradient(circle,
+    rgba(0,180,255,0.35),
+    transparent 70%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s;
+}
+
+.volumetric:focus::after,
+.volumetric:hover::after {
+  opacity: 1;
 }
 
 </style>
@@ -295,7 +429,7 @@ body {
 "></div>
 
 <!-- ═══════════════════════════════════════════════════
-     HOLOGRAPHIC BLOOM + CHROMA LAYERS
+     HOLOGRAPHIC BLOOM LAYER
      ═══════════════════════════════════════════════════ -->
 <div id="holoBloom" style="
   position:fixed;
@@ -306,6 +440,9 @@ body {
   transition:opacity .2s;
 "></div>
 
+<!-- ═══════════════════════════════════════════════════
+     CHROMA LAYER (PARALLAX COLOR)
+     ═══════════════════════════════════════════════════ -->
 <div id="chromaLayer" style="
   position:fixed;
   inset:0;
@@ -316,6 +453,11 @@ body {
     transparent 70%);
   z-index:3;
 "></div>
+
+<!-- ═══════════════════════════════════════════════════
+     DEPTH FOG + BACKGROUND BLUR (NEW)
+     ═══════════════════════════════════════════════════ -->
+<div id="depthFog"></div>
 
 <!-- ═══════════════════════════════════════════════════
      TOP NAV BAR
@@ -342,7 +484,7 @@ body {
 
   <!-- Right: Search + Dots -->
   <div class="search-wrap" style="display:flex;align-items:center;gap:10px;position:relative;">
-    <input id="searchInput" class="focusable" tabindex="0"
+    <input id="searchInput" class="focusable holo-edge volumetric" tabindex="0"
       placeholder="Search"
       style="
         width:160px;
@@ -371,7 +513,8 @@ body {
 
     <!-- Dots menu -->
     <div class="dots-wrap" style="position:relative;">
-      <button id="dotsBtn" class="focusable" tabindex="0" onclick="toggleDots()" style="
+      <button id="dotsBtn" class="focusable holo-edge volumetric btn-ao pulse-border" tabindex="0"
+        onclick="toggleDots()" style="
         background:rgba(255,255,255,0.06);
         border:1px solid rgba(255,255,255,0.12);
         border-radius:8px;
@@ -392,8 +535,8 @@ body {
         flex-direction:column;
         z-index:200;
       ">
-        <div class="di focusable" tabindex="0" style="padding:8px 12px;cursor:pointer;">Settings</div>
-        <div class="di focusable" tabindex="0" style="padding:8px 12px;cursor:pointer;">About</div>
+        <div class="di focusable holo-edge volumetric" tabindex="0" style="padding:8px 12px;cursor:pointer;">Settings</div>
+        <div class="di focusable holo-edge volumetric" tabindex="0" style="padding:8px 12px;cursor:pointer;">About</div>
       </div>
     </div>
   </div>
@@ -403,11 +546,11 @@ body {
      TABS
      ═══════════════════════════════════════════════════ -->
 <div class="tabs" style="margin-top:58px;">
-  <div class="rtab focusable" data-tab="home" tabindex="0" onclick="switchTab('home')">Home</div>
-  <div class="rtab focusable" data-tab="shorts" tabindex="0" onclick="switchTab('shorts')">Shorts</div>
-  <div class="rtab focusable" data-tab="subs" tabindex="0" onclick="switchTab('subs')">Subscriptions</div>
-  <div class="rtab focusable" data-tab="movies" tabindex="0" onclick="switchTab('movies')">Movies</div>
-  <div class="rtab focusable" data-tab="history" tabindex="0" onclick="switchTab('history')">History</div>
+  <div class="rtab focusable holo-edge volumetric" data-tab="home" tabindex="0" onclick="switchTab('home')">Home</div>
+  <div class="rtab focusable holo-edge volumetric" data-tab="shorts" tabindex="0" onclick="switchTab('shorts')">Shorts</div>
+  <div class="rtab focusable holo-edge volumetric" data-tab="subs" tabindex="0" onclick="switchTab('subs')">Subscriptions</div>
+  <div class="rtab focusable holo-edge volumetric" data-tab="movies" tabindex="0" onclick="switchTab('movies')">Movies</div>
+  <div class="rtab focusable holo-edge volumetric" data-tab="history" tabindex="0" onclick="switchTab('history')">History</div>
 </div>
 
 <!-- ═══════════════════════════════════════════════════
@@ -418,38 +561,38 @@ body {
 </div>
 
 <!-- ═══════════════════════════════════════════════════
-     PLAYER AREA (controls centered, shrink-to-fit)
+     PLAYER AREA (with all effects)
      ═══════════════════════════════════════════════════ -->
-<div id="playerArea">
+<div id="playerArea" class="holo-edge holo-shadow volumetric">
 
-  <div id="vidBoxInner">
+  <div id="vidBoxInner" class="holo-edge holo-shadow volumetric">
     <!-- Emoji / placeholder injected by JS -->
   </div>
 
   <!-- Centered, shrink-to-fit controls -->
   <div id="pcontrols">
-    <button class="pbtn focusable" tabindex="0" onclick="togglePlay()" aria-label="Play/Pause">
+    <button class="pbtn focusable holo-edge volumetric btn-ao pulse-border" tabindex="0" onclick="togglePlay()" aria-label="Play/Pause">
       <svg id="playIcon" width="20" height="20" viewBox="0 0 20 20"></svg>
     </button>
 
-    <button class="pbtn focusable" tabindex="0" onclick="seek(-10)" aria-label="Rewind 10 seconds">
+    <button class="pbtn focusable holo-edge volumetric btn-ao pulse-border" tabindex="0" onclick="seek(-10)" aria-label="Rewind 10 seconds">
       ⏪ 10s
     </button>
 
-    <button class="pbtn focusable" tabindex="0" onclick="seek(10)" aria-label="Forward 10 seconds">
+    <button class="pbtn focusable holo-edge volumetric btn-ao pulse-border" tabindex="0" onclick="seek(10)" aria-label="Forward 10 seconds">
       ⏩ 10s
     </button>
 
-    <button class="pbtn focusable" tabindex="0" onclick="openFs()" aria-label="Fullscreen">
+    <button class="pbtn focusable holo-edge volumetric btn-ao pulse-border" tabindex="0" onclick="openFs()" aria-label="Fullscreen">
       ⛶
     </button>
 
-    <button class="pbtn focusable" tabindex="0" onclick="toggleHideUi()" aria-label="Hide UI">
+    <button class="pbtn focusable holo-edge volumetric btn-ao pulse-border" tabindex="0" onclick="toggleHideUi()" aria-label="Hide UI">
       👁
     </button>
   </div>
 
-  <div id="pinfo">
+  <div id="pinfo" class="holo-edge volumetric">
     <div id="ptitle"></div>
     <div id="pmeta"></div>
   </div>
@@ -458,31 +601,13 @@ body {
 </div>
 
 <!-- ═══════════════════════════════════════════════════
-     FULLSCREEN PLAYER
+     AI SMART RECOMMENDATIONS PANEL
      ═══════════════════════════════════════════════════ -->
-<div id="fsPlayer">
-
-  <div id="fsVid" style="
-    font-size:80px;
-    opacity:0.3;
-    margin-bottom:20px;
-  ">▶</div>
-
-  <div id="fsTitle" style="font-size:20px;margin-bottom:20px;"></div>
-
-  <div id="fsCtrl">
-    <button class="fs-btn focusable" tabindex="0" onclick="togglePlay()" aria-label="Play/Pause">
-      <svg id="fsPlayIcon" width="20" height="20" viewBox="0 0 20 20"></svg>
-    </button>
-
-    <button class="fs-btn focusable" tabindex="0" onclick="seek(-10)" aria-label="Rewind 10 seconds">⏪ 10s</button>
-    <button class="fs-btn focusable" tabindex="0" onclick="seek(10)" aria-label="Forward 10 seconds">⏩ 10s</button>
-
-    <button class="fs-btn fs-back-btn focusable" tabindex="0" onclick="closeFs()" aria-label="Exit Fullscreen">← Back</button>
-
-    <button class="fs-btn focusable" tabindex="0" onclick="toggleFsHide()" aria-label="Hide UI">👁</button>
+<div id="aiPanel">
+  <div style="font-size:13px;font-weight:600;margin-bottom:6px;">
+    Smart Recommendations
   </div>
-
+  <div id="aiPanelBody"></div>
 </div>
 <!-- ═══════════════════════════════════════════════════
      SHORTS OVERLAY
@@ -522,9 +647,9 @@ body {
 </div>
 
 <!-- ═══════════════════════════════════════════════════
-     MINI‑PLAYER (DRAGGABLE)
+     MINI‑PLAYER (DRAGGABLE, HOLOGRAPHIC)
      ═══════════════════════════════════════════════════ -->
-<div id="miniPlayer" style="
+<div id="miniPlayer" class="holo-edge holo-shadow volumetric" style="
   position:fixed;
   width:200px;
   height:112px;
@@ -551,13 +676,14 @@ body {
   </div>
 
   <div style="display:flex;justify-content:center;padding:6px;">
-    <button class="mini-btn focusable" tabindex="0" onclick="toggleMini()" style="
-      background:rgba(255,255,255,0.06);
-      border:1px solid rgba(255,255,255,0.12);
-      border-radius:8px;
-      padding:4px 10px;
-      font-size:12px;
-      cursor:pointer;
+    <button class="mini-btn focusable holo-edge volumetric btn-ao pulse-border" tabindex="0"
+      onclick="toggleMini()" style="
+        background:rgba(255,255,255,0.06);
+        border:1px solid rgba(255,255,255,0.12);
+        border-radius:8px;
+        padding:4px 10px;
+        font-size:12px;
+        cursor:pointer;
     ">Close</button>
   </div>
 
@@ -566,7 +692,7 @@ body {
 <!-- ═══════════════════════════════════════════════════
      TOAST SYSTEM
      ═══════════════════════════════════════════════════ -->
-<div id="toast" style="
+<div id="toast" class="holo-edge volumetric holo-shadow" style="
   position:fixed;
   bottom:30px;
   left:50%;
@@ -596,7 +722,7 @@ body {
   z-index:9500;
 ">
 
-  <div id="vkText" style="
+  <div id="vkText" class="holo-edge volumetric" style="
     font-size:20px;
     margin-bottom:20px;
     letter-spacing:1px;
@@ -646,7 +772,7 @@ body {
 <!-- ═══════════════════════════════════════════════════
      AUTH POPUP (API KEY MODE FOR RAY‑BAN)
      ═══════════════════════════════════════════════════ -->
-<div id="authPopup" style="
+<div id="authPopup" class="holo-edge holo-shadow volumetric" style="
   position:fixed;
   inset:0;
   background:rgba(0,0,0,0.85);
@@ -655,7 +781,7 @@ body {
   justify-content:center;
   z-index:9998;
 ">
-  <div style="
+  <div class="holo-edge holo-shadow volumetric" style="
     width:320px;
     background:rgba(20,20,20,0.95);
     border:1px solid rgba(255,255,255,0.12);
@@ -673,7 +799,7 @@ body {
     </div>
 
     <label style="font-size:12px;">API Key</label>
-    <input id="apiKeyInput" class="focusable" tabindex="0" style="
+    <input id="apiKeyInput" class="focusable holo-edge volumetric pulse-border" tabindex="0" style="
       width:100%;
       margin-top:4px;
       margin-bottom:10px;
@@ -686,7 +812,7 @@ body {
     ">
 
     <label style="font-size:12px;">YouTube Handle (e.g. @MKBHD)</label>
-    <input id="ytHandleInput" class="focusable" tabindex="0" style="
+    <input id="ytHandleInput" class="focusable holo-edge volumetric pulse-border" tabindex="0" style="
       width:100%;
       margin-top:4px;
       margin-bottom:14px;
@@ -698,7 +824,8 @@ body {
       font-size:13px;
     ">
 
-    <button id="apiKeyLoginBtn" class="focusable" tabindex="0" onclick="YTAuth.signInWithApiKey()" style="
+    <button id="apiKeyLoginBtn" class="focusable holo-edge volumetric btn-ao pulse-border" tabindex="0"
+      onclick="YTAuth.signInWithApiKey()" style="
       width:100%;
       padding:8px;
       border-radius:8px;
@@ -710,7 +837,8 @@ body {
       margin-bottom:10px;
     ">Load My Subscriptions</button>
 
-    <button class="focusable" tabindex="0" onclick="closeAuthPopup()" style="
+    <button class="focusable holo-edge volumetric btn-ao pulse-border" tabindex="0"
+      onclick="closeAuthPopup()" style="
       width:100%;
       padding:8px;
       border-radius:8px;
@@ -727,7 +855,7 @@ body {
 <!-- ═══════════════════════════════════════════════════
      RIGHT‑TAB CONTENT AREA (Subscriptions, Movies, History)
      ═══════════════════════════════════════════════════ -->
-<div id="rtabContent" style="
+<div id="rtabContent" class="holo-edge volumetric" style="
   position:absolute;
   top:58px;
   left:0;
@@ -741,7 +869,7 @@ body {
 <!-- ═══════════════════════════════════════════════════
      MOVIES TAB CONTAINER
      ═══════════════════════════════════════════════════ -->
-<div id="moviesArea" style="
+<div id="moviesArea" class="holo-edge volumetric" style="
   display:none;
   padding:14px;
 ">
@@ -754,7 +882,7 @@ body {
 <!-- ═══════════════════════════════════════════════════
      HISTORY TAB CONTAINER
      ═══════════════════════════════════════════════════ -->
-<div id="historyArea" style="
+<div id="historyArea" class="holo-edge volumetric" style="
   display:none;
   padding:14px;
 ">
@@ -767,7 +895,7 @@ body {
 <!-- ═══════════════════════════════════════════════════
      CHANNEL PAGE
      ═══════════════════════════════════════════════════ -->
-<div id="channelPage" style="
+<div id="channelPage" class="holo-edge volumetric" style="
   position:absolute;
   top:58px;
   left:0;
@@ -778,7 +906,7 @@ body {
   display:none;
 ">
 
-  <div id="chBanner" style="
+  <div id="chBanner" class="holo-edge holo-shadow volumetric" style="
     width:100%;
     height:120px;
     background:rgba(255,255,255,0.06);
@@ -792,7 +920,7 @@ body {
     gap:14px;
     margin-bottom:14px;
   ">
-    <div id="chAvatar" style="
+    <div id="chAvatar" class="holo-edge volumetric" style="
       width:60px;
       height:60px;
       border-radius:50%;
@@ -815,18 +943,26 @@ body {
 let curTab = 'home';
 let curVid = null;
 let miniOn = false;
-let progTimer = null;
 
 let homeBatch = 0;
-let searchBatch = 0;
 let subsBatch = 0;
 let moviesBatch = 0;
 let historyBatch = 0;
+let searchBatch = 0;
 
 let _ytShortsPool = [];
 let shortsIdx = 0;
 let shortsLoadedCount = 0;
 const SHORTS_BATCH = 6;
+
+/* ═══════════════════════════════════════════════════
+   FOCUSABLE UTILITY
+   ═══════════════════════════════════════════════════ */
+function makeFocusable() {
+  document.querySelectorAll('.focusable').forEach(el => {
+    el.setAttribute('tabindex', '0');
+  });
+}
 
 /* ═══════════════════════════════════════════════════
    TAB SWITCHING
@@ -899,7 +1035,9 @@ function renderHome() {
    ═══════════════════════════════════════════════════ */
 function renderVCardYT(v) {
   return `
-    <div class="vcard focusable" tabindex="0" onclick="openVideo('${v.id}')">
+    <div class="vcard focusable holo-edge volumetric pulse-border" tabindex="0"
+         onclick="openVideo('${v.id}')">
+
       <div style="
         width:100%;
         height:90px;
@@ -926,7 +1064,8 @@ function renderVCardYT(v) {
 
 function renderSuggCard(v) {
   return `
-    <div class="sc focusable" tabindex="0" onclick="openVideo('${v.id}')">
+    <div class="sc focusable holo-edge volumetric pulse-border" tabindex="0"
+         onclick="openVideo('${v.id}')">
       <div class="sthumb">▶</div>
       <div class="sinfo">
         <div class="stitle">${v.title}</div>
@@ -934,6 +1073,45 @@ function renderSuggCard(v) {
       </div>
     </div>
   `;
+}
+
+/* ═══════════════════════════════════════════════════
+   AMBIENT LIGHTING FROM VIDEO COLOR (NEW)
+   ═══════════════════════════════════════════════════ */
+function setAmbientFromVideoColor(hex) {
+  const bloom = document.getElementById('holoBloom');
+  const chroma = document.getElementById('chromaLayer');
+  if (!bloom || !chroma) return;
+
+  bloom.style.background =
+    `radial-gradient(ellipse 40% 30% at 50% 50%, ${hex} 0%, transparent 70%)`;
+
+  chroma.style.background =
+    `radial-gradient(circle at 50% 50%, ${hex} 0%, transparent 70%)`;
+}
+
+/* ═══════════════════════════════════════════════════
+   AI SMART PANEL (NEW)
+   ═══════════════════════════════════════════════════ */
+function updateAIPanel(v) {
+  const body = document.getElementById('aiPanelBody');
+  const panel = document.getElementById('aiPanel');
+  if (!body || !panel) return;
+
+  body.innerHTML = `
+    <div class="ai-rec focusable holo-edge volumetric" tabindex="0">
+      More like: ${v.title}
+    </div>
+    <div class="ai-rec focusable holo-edge volumetric" tabindex="0">
+      Trending in tech right now
+    </div>
+    <div class="ai-rec focusable holo-edge volumetric" tabindex="0">
+      Deep dives from your favorite channels
+    </div>
+  `;
+
+  panel.style.display = 'flex';
+  makeFocusable();
 }
 
 /* ═══════════════════════════════════════════════════
@@ -951,6 +1129,15 @@ function openVideo(id) {
   document.getElementById('vidBoxInner').textContent = '▶';
   document.getElementById('ptitle').textContent = v.title;
   document.getElementById('pmeta').textContent = v.channel;
+
+  /* NEW: Ambient lighting */
+  setAmbientFromVideoColor(v.dominantColor || 'rgba(0,180,255,0.18)');
+
+  /* NEW: AI Smart Panel */
+  updateAIPanel(v);
+
+  /* NEW: Depth fog on player open */
+  document.getElementById('depthFog').style.opacity = '0.75';
 
   loadSuggestions(id);
   addToHistory(v);
@@ -990,6 +1177,7 @@ function renderHistory() {
   applyTilt();
   makeFocusable();
 }
+</script>
 <script>
 /* ═══════════════════════════════════════════════════
    SHORTS ENGINE
@@ -1022,7 +1210,8 @@ function buildShortsTrackFromPool(reset) {
   for (let i = shortsLoadedCount; i < end; i++) {
     const s = _ytShortsPool[i];
     track.insertAdjacentHTML('beforeend', `
-      <div class="short-slide focusable" tabindex="0" id="short-${i}" style="
+      <div class="short-slide focusable holo-edge volumetric pulse-border"
+           tabindex="0" id="short-${i}" style="
         position:absolute;
         inset:0;
         display:flex;
@@ -1086,11 +1275,11 @@ function togglePlay() {
   if (!window._playing) {
     window._playing = true;
     icon.innerHTML = '<rect x="4" y="4" width="4" height="12"></rect><rect x="12" y="4" width="4" height="12"></rect>';
-    fsIcon.innerHTML = icon.innerHTML;
+    if (fsIcon) fsIcon.innerHTML = icon.innerHTML;
   } else {
     window._playing = false;
     icon.innerHTML = '<polygon points="5,4 15,10 5,16"></polygon>';
-    fsIcon.innerHTML = icon.innerHTML;
+    if (fsIcon) fsIcon.innerHTML = icon.innerHTML;
   }
 }
 
@@ -1138,7 +1327,7 @@ function toggleFsHide() {
 document.addEventListener('keydown', function(e) {
   const key = e.key;
 
-  // Shorts navigation
+  /* SHORTS NAVIGATION */
   if (document.getElementById('shortsOverlay').style.display === 'flex') {
     if (key === 'ArrowDown') {
       goToShort(shortsIdx + 1);
@@ -1157,19 +1346,19 @@ document.addEventListener('keydown', function(e) {
     }
   }
 
-  // Virtual keyboard
+  /* VIRTUAL KEYBOARD */
   if (document.getElementById('vkOverlay').style.display === 'flex') {
     VK.handleKey(e);
     return;
   }
 
-  // Player fullscreen exit
+  /* FULLSCREEN EXIT */
   if (key === 'Escape' && document.getElementById('fsPlayer').classList.contains('open')) {
     closeFs();
     return;
   }
 
-  // Global DPAD focus navigation
+  /* GLOBAL DPAD FOCUS NAVIGATION */
   const focusables = Array.from(document.querySelectorAll('.focusable'));
   const idx = focusables.indexOf(document.activeElement);
 
@@ -1233,7 +1422,8 @@ const VK = {
     grid.innerHTML = '';
     this.keys.forEach(k => {
       grid.insertAdjacentHTML('beforeend', `
-        <div class="vk-key focusable" tabindex="0" data-k="${k}" style="
+        <div class="vk-key focusable holo-edge volumetric pulse-border"
+             tabindex="0" data-k="${k}" style="
           background:rgba(255,255,255,0.06);
           border:1px solid rgba(255,255,255,0.12);
           border-radius:8px;
@@ -1307,7 +1497,7 @@ const MRBDSensors = {
 
 /* ═══════════════════════════════════════════════════
    HOLOGRAPHIC FX ENGINE
-   (Parallax, Bloom, Chroma, Audio Glow, Particles)
+   (Parallax, Bloom, Chroma, Ambient Lighting, Particles)
    ═══════════════════════════════════════════════════ */
 const HoloFX = {
   statusTimer: null,
@@ -1337,6 +1527,7 @@ const HoloFX = {
     }
   },
 
+  /* PARTICLES */
   spawnParticles() {
     const container = document.getElementById('depthParticles');
     if (!container) return;
@@ -1369,6 +1560,7 @@ const HoloFX = {
     }
   },
 
+  /* PARALLAX + DEPTH-REACTIVE BLOOM */
   bindMouse() {
     let rafId = null;
 
@@ -1380,12 +1572,16 @@ const HoloFX = {
         const mx = e.clientX / window.innerWidth;
         const my = e.clientY / window.innerHeight;
 
+        /* Depth-reactive bloom */
+        const depthFactor = 0.6 + (my * 0.4);
+
         const bloom = document.getElementById('holoBloom');
         if (bloom) {
           bloom.style.background =
-            `radial-gradient(ellipse 38% 28% at ${mx*100}% ${my*100}%, rgba(0,180,255,0.08) 0%, transparent 70%)`;
+            `radial-gradient(ellipse 38% 28% at ${mx*100}% ${my*100}%, rgba(0,180,255,${0.08*depthFactor}) 0%, transparent 70%)`;
         }
 
+        /* Chroma parallax */
         const chroma = document.getElementById('chromaLayer');
         if (chroma) {
           chroma.style.transform =
@@ -1397,8 +1593,9 @@ const HoloFX = {
     this.applyCardTilt();
   },
 
+  /* CARD MICRO-PARALLAX */
   applyCardTilt() {
-    document.querySelectorAll('.vcard,.rcard,.movie-r,.pl-item,.sub-ch-item,.short-r,.sc')
+    document.querySelectorAll('.vcard,.sc,.ai-rec,.short-slide,.pbtn,.fs-btn')
       .forEach(card => {
         if (card._holoTilt) return;
         card._holoTilt = true;
@@ -1421,6 +1618,7 @@ const HoloFX = {
       });
   },
 
+  /* AUDIO GLOW */
   startAudioGlow() {
     const bar = document.getElementById('audioGlow');
     if (!bar) return;
@@ -1435,6 +1633,7 @@ const HoloFX = {
     requestAnimationFrame(tick);
   },
 
+  /* BLOOM BREATHING */
   startBloomBreath() {
     let t = 0;
     const tick = () => {
@@ -1453,12 +1652,10 @@ const HoloFX = {
    ═══════════════════════════════════════════════════ */
 window.addEventListener('load', () => {
   initMainGrid();
-  renderTab();
   VK.build();
   makeFocusable();
   MRBDSensors._updateSensorUI();
   HoloFX.init();
-
   attachInfiniteScroll();
 
   requestAnimationFrame(() => {
