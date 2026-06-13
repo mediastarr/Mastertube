@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>ViewTube AR – 20/80 Split</title>
+  <title>ViewTube AR – Personalized 20/80</title>
   <meta name="viewport" content="width=600, initial-scale=1.0" />
   <style>
     :root {
@@ -137,6 +137,16 @@
       outline: none;
     }
 
+    .login-btn {
+      padding: 5px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--border-soft);
+      background: rgba(0, 0, 0, 0.8);
+      color: var(--text-sub);
+      font-size: 10px;
+      cursor: pointer;
+    }
+
     .feed-scroll {
       flex: 1;
       border-radius: var(--radius-md);
@@ -225,13 +235,16 @@
       background: rgba(0, 0, 0, 0.95);
       border: 1px solid var(--border-soft);
       padding: 6px;
+      position: relative;
     }
 
     .player-video {
-      position: relative;
+      position: sticky;
+      top: 0;
       border-radius: var(--radius-md);
       overflow: hidden;
       background: #000 !important;
+      z-index: 2;
     }
 
     .player-video iframe {
@@ -310,6 +323,7 @@
       display: flex;
       gap: 8px;
       margin-top: 6px;
+      flex-wrap: wrap;
     }
 
     .engage-btn {
@@ -334,6 +348,7 @@
       display: flex;
       flex-direction: column;
       gap: 6px;
+      margin-top: 8px;
     }
 
     .suggest-card {
@@ -457,6 +472,7 @@
             <button class="vtab-btn" data-tab="history">History</button>
             <button class="vtab-btn" data-tab="subscriptions">Subscriptions</button>
             <button class="vtab-btn" data-tab="channel">Channel</button>
+            <button class="vtab-btn" data-tab="playlist">Playlist</button>
           </div>
         </div>
       </section>
@@ -470,10 +486,11 @@
             placeholder="Search"
             autocomplete="off"
           />
+          <button class="login-btn" id="login-btn">Login</button>
         </div>
 
         <div class="feed-scroll" id="feed-scroll">
-          <!-- grid or player+suggestions injected here -->
+          <!-- grid or player+suggestions or shorts injected here -->
         </div>
       </section>
     </main>
@@ -494,11 +511,17 @@
   </div>
 
   <script>
-    const API_KEY = "AIzaSyBABTlx52ZqeMKRg_MbNdSkqTXgZ0NnA-g";
-                    "AIzaSyA77fmqMpaQNVC_pu3yS1EWt-Yt47tDizk";
-                    "AIzaSyCMGT7QsoI26qOmNG1MkHY9EwieETucy3k";
-                    "AIzaSyB_k_m3vIPOrBXh-_BLYSqRX90BvsKNCbI";
-                    "AIzaSyAwaWxHaXQPK9tHV5DNbypYffONEZy_YmY"
+    const API_KEY = "AIzaSyCAsV7vK_lzvjYtJj5mPtz1l1WXIVhG9zc";
+                    "AIzaSyAUKic3SobVT3S60-H9fWmdHZJVgdOzRPg";
+                    "AIzaSyBwjcpX9eyHEDtJ5JwgEUb8EOF3YCePCMw";
+                    "AIzaSyBt-fK0zc_H3I_lP2dKhU-Ti0vp__XiBj8";
+                    "AIzaSyCv_FArQ3AD1J7-KwOX47f7BRuKO4OsveY";
+                    "AIzaSyD-fAvJEBTJYcKmkl03G-JXTps8js9uMrE";
+                    "AIzaSyDs2jIad2HCfY0o3j4kLFvducChpgv9qmU"
+
+    const CLIENT_ID =
+      "433136699735-guoa9ppvn132n8qecaukvoh336id7eg4.apps.googleusercontent.com";
+    const CLIENT_SECRET = "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"; // you can insert your secret here
 
     const SEARCH_URL =
       "https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=20";
@@ -508,6 +531,7 @@
     const tabs = document.querySelectorAll(".vtab-btn");
     const feedScroll = document.getElementById("feed-scroll");
     const searchInput = document.getElementById("search-input");
+    const loginBtn = document.getElementById("login-btn");
 
     const miniThumbEl = document.getElementById("mini-thumb");
     const miniTitleEl = document.getElementById("mini-title");
@@ -526,35 +550,66 @@
         history: null,
         subscriptions: null,
         channel: null,
+        playlist: null,
         search: null,
       },
       isLoading: false,
-      mode: "grid", // "grid" or "player"
+      mode: "grid", // "grid" | "player" | "shorts" | "fullscreen" | "mini"
       items: [],
       currentVideoId: null,
       currentVideoItem: null,
+      shortsIndex: 0,
+      controlsHidden: false,
+      resolution: "1080p",
+      accessToken: null,
+      refreshToken: null,
     };
+
+    const watchedIds = new Set();
+    const watchedChannels = new Set();
+
+    function loadTokens() {
+      state.accessToken = localStorage.getItem("yt_access_token");
+      state.refreshToken = localStorage.getItem("yt_refresh_token");
+    }
+
+    function saveTokens(accessToken, refreshToken) {
+      localStorage.setItem("yt_access_token", accessToken);
+      localStorage.setItem("yt_refresh_token", refreshToken);
+    }
+
+    loadTokens();
+
+    function personalizedQuery() {
+      if (watchedChannels.size) {
+        const topChannel = [...watchedChannels][0];
+        return `${topChannel} latest uploads`;
+      }
+      return "YouTube home feed trending music tech vlog";
+    }
 
     function defaultQueryForTab(tab) {
       switch (tab) {
         case "all":
-          return "Temiwo Woods Stay Golden official video";
+          return personalizedQuery();
         case "shorts":
-          return "shorts funny vertical";
+          return "shorts funny vertical viral";
         case "movies":
-          return "full movie trailer";
+          return "full movie trailer official";
         case "trending":
-          return "trending music videos";
+          return "trending worldwide today";
         case "history":
-          return "recent watched videos";
+          return "recent videos";
         case "subscriptions":
           return "latest uploads";
         case "channel":
           return "Truthunedited channel";
+        case "playlist":
+          return "my playlists";
         case "search":
           return searchInput.value.trim() || "music videos";
         default:
-          return "music videos";
+          return "YouTube home feed";
       }
     }
 
@@ -571,9 +626,9 @@
     async function loadInitialForTab(tab) {
       state.pageTokens[tab] = null;
       state.items = [];
-      state.mode = "grid";
       state.currentVideoId = null;
       state.currentVideoItem = null;
+      state.mode = tab === "shorts" ? "shorts" : "grid";
       feedScroll.innerHTML = "";
       await loadNextBatch(tab, true);
     }
@@ -598,8 +653,10 @@
 
         if (state.mode === "grid") {
           renderGrid(state.items);
-        } else if (state.currentVideoItem) {
+        } else if (state.mode === "player" && state.currentVideoItem) {
           renderPlayer(state.currentVideoItem, state.items);
+        } else if (state.mode === "shorts") {
+          renderShorts(state.items);
         }
       } catch (err) {
         console.error("YouTube search error", err);
@@ -659,12 +716,83 @@
       feedScroll.appendChild(grid);
     }
 
+    function renderShorts(items) {
+      state.mode = "shorts";
+      feedScroll.innerHTML = "";
+
+      if (!items.length) return;
+
+      const idx = state.shortsIndex;
+      const item = items[idx];
+      const { snippet, id } = item;
+      const videoId = id.videoId;
+
+      const wrapper = document.createElement("div");
+      wrapper.className = "player-wrapper";
+
+      const playerCard = document.createElement("div");
+      playerCard.className = "player-card";
+
+      const playerVideo = document.createElement("div");
+      playerVideo.className = "player-video";
+
+      const iframe = document.createElement("iframe");
+      iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&playsinline=1`;
+      iframe.title = "YouTube Shorts";
+      iframe.allow =
+        "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
+      iframe.allowFullscreen = true;
+
+      playerVideo.appendChild(iframe);
+      playerCard.appendChild(playerVideo);
+
+      const headerRow = document.createElement("div");
+      headerRow.className = "player-header-row";
+
+      const titleBlock = document.createElement("div");
+      titleBlock.className = "player-title-block";
+
+      const videoTitleEl = document.createElement("div");
+      videoTitleEl.className = "video-title";
+      videoTitleEl.textContent = snippet.title;
+
+      const videoMetaEl = document.createElement("div");
+      videoMetaEl.className = "video-meta";
+      videoMetaEl.textContent = snippet.channelTitle;
+
+      titleBlock.appendChild(videoTitleEl);
+      titleBlock.appendChild(videoMetaEl);
+
+      const channelBlock = document.createElement("div");
+      channelBlock.className = "channel-block";
+
+      const backBtn = document.createElement("button");
+      backBtn.className = "close-player-btn";
+      backBtn.textContent = "← Home";
+      backBtn.addEventListener("click", () => {
+        state.mode = "grid";
+        loadInitialForTab("all");
+      });
+
+      channelBlock.appendChild(backBtn);
+
+      headerRow.appendChild(titleBlock);
+      headerRow.appendChild(channelBlock);
+
+      playerCard.appendChild(headerRow);
+      wrapper.appendChild(playerCard);
+      feedScroll.appendChild(wrapper);
+    }
+
     function renderPlayer(selectedItem, items) {
       state.mode = "player";
       state.currentVideoItem = selectedItem;
       const { snippet, id } = selectedItem;
       const videoId = id.videoId;
       state.currentVideoId = videoId;
+
+      watchedIds.add(videoId);
+      watchedChannels.add(snippet.channelTitle);
 
       feedScroll.innerHTML = "";
 
@@ -729,7 +857,7 @@
 
       const closeBtn = document.createElement("button");
       closeBtn.className = "close-player-btn";
-      closeBtn.textContent = "✕";
+      closeBtn.textContent = "✕ Home";
       closeBtn.addEventListener("click", () => {
         closePlayer();
       });
@@ -764,6 +892,47 @@
       engagementRow.appendChild(saveBtn);
 
       playerCard.appendChild(engagementRow);
+
+      const controlsRow = document.createElement("div");
+      controlsRow.className = "engagement-row";
+
+      const playPauseBtn = document.createElement("button");
+      playPauseBtn.className = "engage-btn";
+      playPauseBtn.textContent = "Play/Pause";
+
+      const ffBtn = document.createElement("button");
+      ffBtn.className = "engage-btn";
+      ffBtn.textContent = ">> 10s";
+
+      const rwBtn = document.createElement("button");
+      rwBtn.className = "engage-btn";
+      rwBtn.textContent = "<< 10s";
+
+      const fullBtn = document.createElement("button");
+      fullBtn.className = "engage-btn";
+      fullBtn.textContent = "Full";
+
+      const hideUiBtn = document.createElement("button");
+      hideUiBtn.className = "engage-btn";
+      hideUiBtn.textContent = "Hide UI";
+
+      const resBtn = document.createElement("button");
+      resBtn.className = "engage-btn";
+      resBtn.textContent = state.resolution;
+
+      const miniBtn = document.createElement("button");
+      miniBtn.className = "engage-btn";
+      miniBtn.textContent = "Mini";
+
+      controlsRow.appendChild(playPauseBtn);
+      controlsRow.appendChild(ffBtn);
+      controlsRow.appendChild(rwBtn);
+      controlsRow.appendChild(fullBtn);
+      controlsRow.appendChild(hideUiBtn);
+      controlsRow.appendChild(resBtn);
+      controlsRow.appendChild(miniBtn);
+
+      playerCard.appendChild(controlsRow);
 
       const descBlock = document.createElement("div");
       descBlock.className = "description-block";
@@ -822,6 +991,55 @@
       miniChannelEl.textContent = snippet.channelTitle;
 
       loadVideoDetails(videoId, viewsSpan, likeBtn);
+
+      playPauseBtn.addEventListener("click", () => {
+        console.log("Play/Pause clicked (stub)");
+      });
+
+      ffBtn.addEventListener("click", () => {
+        console.log("Fast forward 10s (stub)");
+      });
+
+      rwBtn.addEventListener("click", () => {
+        console.log("Rewind 10s (stub)");
+      });
+
+      fullBtn.addEventListener("click", () => {
+        state.mode = "fullscreen";
+        document.documentElement.requestFullscreen?.();
+      });
+
+      document.addEventListener("fullscreenchange", () => {
+        if (!document.fullscreenElement && state.mode === "fullscreen") {
+          state.mode = "player";
+        }
+      });
+
+      hideUiBtn.addEventListener("click", () => {
+        state.controlsHidden = !state.controlsHidden;
+        const shouldHide = state.controlsHidden;
+
+        [controlsRow, engagementRow, closeBtn, resBtn, miniBtn].forEach((el) => {
+          if (!el) return;
+          el.style.display = shouldHide ? "none" : "";
+        });
+
+        hideUiBtn.textContent = shouldHide ? "Show UI" : "Hide UI";
+      });
+
+      resBtn.addEventListener("click", () => {
+        state.resolution = state.resolution === "1080p" ? "720p" : "1080p";
+        resBtn.textContent = state.resolution;
+        console.log("Resolution toggle (UI only):", state.resolution);
+      });
+
+      miniBtn.addEventListener("click", () => {
+        state.mode = "mini";
+        miniThumbEl.style.backgroundImage = `url(${snippet.thumbnails.default.url})`;
+        miniTitleEl.textContent = snippet.title;
+        miniChannelEl.textContent = snippet.channelTitle;
+        loadInitialForTab("all");
+      });
     }
 
     async function loadVideoDetails(videoId, viewsSpan, likeBtn) {
@@ -889,7 +1107,11 @@
         tab.classList.add("active");
 
         state.currentTab = tabId;
-        loadInitialForTab(tabId);
+        if (tabId === "history") {
+          loadInitialForTab("all");
+        } else {
+          loadInitialForTab(tabId);
+        }
       });
     });
 
@@ -911,6 +1133,44 @@
       }
     });
 
+    // Shorts swipe up/down
+    let touchStartY = null;
+
+    feedScroll.addEventListener("touchstart", (e) => {
+      if (state.mode !== "shorts") return;
+      touchStartY = e.touches[0].clientY;
+    });
+
+    feedScroll.addEventListener("touchend", (e) => {
+      if (state.mode !== "shorts" || touchStartY === null) return;
+      const endY = e.changedTouches[0].clientY;
+      const delta = endY - touchStartY;
+
+      if (Math.abs(delta) < 40) {
+        touchStartY = null;
+        return;
+      }
+
+      if (delta < 0) {
+        if (state.shortsIndex < state.items.length - 1) {
+          state.shortsIndex++;
+          renderShorts(state.items);
+        } else if (state.pageTokens.shorts && !state.isLoading) {
+          loadNextBatch("shorts").then(() => {
+            state.shortsIndex++;
+            renderShorts(state.items);
+          });
+        }
+      } else {
+        if (state.shortsIndex > 0) {
+          state.shortsIndex--;
+          renderShorts(state.items);
+        }
+      }
+
+      touchStartY = null;
+    });
+
     // EMG pseudo integration
     emgLikeBtn.addEventListener("click", () => {
       if (!state.currentVideoId) return;
@@ -919,6 +1179,21 @@
 
     emgVolumeBtn.addEventListener("click", () => {
       console.log("EMG wrist rotation volume gesture");
+    });
+
+    // Login (front-end OAuth start)
+    loginBtn.addEventListener("click", () => {
+      const redirectUri = window.location.origin + "/callback";
+      const params = new URLSearchParams({
+        client_id: CLIENT_ID,
+        redirect_uri: redirectUri,
+        response_type: "code",
+        scope: "https://www.googleapis.com/auth/youtube.readonly",
+        access_type: "offline",
+        prompt: "consent",
+      });
+      window.location.href =
+        "https://accounts.google.com/o/oauth2/v2/auth?" + params.toString();
     });
 
     // Init: load All tab
