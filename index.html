@@ -50,6 +50,7 @@
       flex-direction: column;
     }
 
+    /* Top bar: title + channel + views (player header) */
     .top-bar {
       display: flex;
       justify-content: space-between;
@@ -107,16 +108,24 @@
       cursor: pointer;
     }
 
+    /* Main layout: left suggestions/player, right tabs + feed */
     .main-layout {
       flex: 1;
       display: grid;
-      grid-template-columns: 1.4fr 1fr;
+      grid-template-columns: 1.3fr 1.1fr;
       gap: 10px;
       padding: 6px 14px 8px;
     }
 
-    .player-card {
+    /* LEFT PANEL */
+    .left-panel {
       display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .player-card {
+      display: none; /* hidden until a video is opened */
       flex-direction: column;
       gap: 8px;
       border-radius: var(--radius-md);
@@ -198,7 +207,9 @@
       overflow: hidden;
     }
 
-    .related-column {
+    /* Suggestions list under/without player */
+    .suggestions-column {
+      flex: 1;
       border-radius: var(--radius-md);
       background: rgba(0, 0, 0, 0.5);
       border: 1px solid var(--border-soft);
@@ -206,18 +217,18 @@
       overflow-y: auto;
     }
 
-    .related-column::-webkit-scrollbar {
+    .suggestions-column::-webkit-scrollbar {
       width: 4px;
     }
-    .related-column::-webkit-scrollbar-track {
+    .suggestions-column::-webkit-scrollbar-track {
       background: transparent;
     }
-    .related-column::-webkit-scrollbar-thumb {
+    .suggestions-column::-webkit-scrollbar-thumb {
       background: rgba(255, 255, 255, 0.25);
       border-radius: 999px;
     }
 
-    .related-card {
+    .suggest-card {
       display: grid;
       grid-template-columns: 0.9fr 1.1fr;
       gap: 6px;
@@ -231,13 +242,13 @@
         background var(--transition-fast);
     }
 
-    .related-card:hover {
+    .suggest-card:hover {
       transform: translateY(-2px);
       background: rgba(0, 0, 0, 0.95);
       box-shadow: 0 12px 30px rgba(0, 0, 0, 0.7);
     }
 
-    .related-thumb {
+    .suggest-thumb {
       width: 100%;
       padding-top: 56.25%;
       border-radius: var(--radius-sm);
@@ -245,28 +256,154 @@
       background-position: center;
     }
 
-    .related-info {
+    .suggest-info {
       display: flex;
       flex-direction: column;
       justify-content: center;
       gap: 2px;
     }
 
-    .related-title {
+    .suggest-title {
       font-size: 11px;
       font-weight: 600;
     }
 
-    .related-channel {
+    .suggest-channel {
       font-size: 10px;
       color: var(--text-sub);
     }
 
-    .related-meta {
+    .suggest-meta {
       font-size: 10px;
       color: var(--text-sub);
     }
 
+    /* RIGHT PANEL: tabs + feed */
+    .right-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .tabs-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+    }
+
+    .tabs-left {
+      display: flex;
+      gap: 6px;
+    }
+
+    .tab-btn {
+      padding: 5px 9px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      background: rgba(0, 0, 0, 0.6);
+      color: var(--text-sub);
+      font-size: 11px;
+      cursor: pointer;
+      transition: background var(--transition-fast), color var(--transition-fast),
+        border-color var(--transition-fast), transform var(--transition-fast);
+    }
+
+    .tab-btn.active {
+      color: var(--text-main);
+      border-color: var(--accent);
+      background: rgba(0, 0, 0, 0.9);
+      transform: translateY(-1px);
+    }
+
+    .tabs-right {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    #search-input {
+      width: 120px;
+      padding: 5px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--border-soft);
+      background: rgba(0, 0, 0, 0.7);
+      color: var(--text-main);
+      font-size: 11px;
+      outline: none;
+    }
+
+    .feed-column {
+      flex: 1;
+      border-radius: var(--radius-md);
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid var(--border-soft);
+      padding: 6px;
+      overflow-y: auto;
+    }
+
+    .feed-column::-webkit-scrollbar {
+      width: 4px;
+    }
+    .feed-column::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .feed-column::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.25);
+      border-radius: 999px;
+    }
+
+    .feed-card {
+      display: grid;
+      grid-template-columns: 0.9fr 1.1fr;
+      gap: 6px;
+      padding: 6px;
+      margin-bottom: 6px;
+      border-radius: var(--radius-md);
+      background: rgba(0, 0, 0, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      cursor: pointer;
+      transition: transform var(--transition-fast), box-shadow var(--transition-fast),
+        background var(--transition-fast);
+    }
+
+    .feed-card:hover {
+      transform: translateY(-2px);
+      background: rgba(0, 0, 0, 0.95);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.7);
+    }
+
+    .feed-thumb {
+      width: 100%;
+      padding-top: 56.25%;
+      border-radius: var(--radius-sm);
+      background-size: cover;
+      background-position: center;
+    }
+
+    .feed-info {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 2px;
+    }
+
+    .feed-title {
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .feed-channel {
+      font-size: 10px;
+      color: var(--text-sub);
+    }
+
+    .feed-meta {
+      font-size: 10px;
+      color: var(--text-sub);
+    }
+
+    /* Bottom HUD / mini-player */
     .bottom-hud {
       padding: 6px 14px 10px;
       display: flex;
@@ -326,77 +463,104 @@
 </head>
 <body>
   <div id="ar-panel">
+    <!-- Player header (only meaningful when a video is open) -->
     <header class="top-bar">
       <div class="top-left">
         <div class="video-title" id="video-title">
-          Temiwo Woods – Stay Golden (Official Video)
+          <!-- Filled when video opens -->
         </div>
         <div class="video-meta">
-          <span id="video-views">48K views</span>
-          <span>•</span>
-          <span id="video-age">3 weeks ago</span>
+          <span id="video-views"></span>
+          <span id="video-dot" style="display:none;">•</span>
+          <span id="video-age"></span>
         </div>
       </div>
       <div class="top-right">
         <div class="channel-block">
-          <div class="channel-name" id="channel-name">Temiwo Woods</div>
-          <div class="channel-subs" id="channel-subs">12.4K subscribers</div>
+          <div class="channel-name" id="channel-name"></div>
+          <div class="channel-subs" id="channel-subs"></div>
         </div>
         <button class="subscribe-btn" id="subscribe-btn">Subscribe</button>
       </div>
     </header>
 
     <main class="main-layout">
-      <section class="player-card">
-        <div class="player-video">
-          <iframe
-            id="player-iframe"
-            src=""
-            title="YouTube video player"
-            frameborder="0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowfullscreen
-          ></iframe>
+      <!-- LEFT: suggestions + player -->
+      <section class="left-panel">
+        <div class="player-card" id="player-card">
+          <div class="player-video">
+            <iframe
+              id="player-iframe"
+              src=""
+              title="YouTube video player"
+              frameborder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowfullscreen
+            ></iframe>
 
-          <div class="player-overlay">
-            <div class="progress-row">
-              <div class="time-label">
-                <span id="current-time">0:42</span>
-                <span>/</span>
-                <span id="total-time">3:05</span>
-              </div>
-              <div class="progress-bar">
-                <div id="progress-fill"></div>
+            <div class="player-overlay">
+              <div class="progress-row">
+                <div class="time-label">
+                  <span id="current-time">0:00</span>
+                  <span>/</span>
+                  <span id="total-time">0:00</span>
+                </div>
+                <div class="progress-bar">
+                  <div id="progress-fill"></div>
+                </div>
               </div>
             </div>
           </div>
+
+          <div class="engagement-row">
+            <button class="engage-btn" id="like-btn">
+              👍 <span id="like-count">0</span>
+            </button>
+            <button class="engage-btn">↗ Share</button>
+            <button class="engage-btn">💾 Save</button>
+          </div>
+
+          <div class="description-block" id="description-block"></div>
         </div>
 
-        <div class="engagement-row">
-          <button class="engage-btn" id="like-btn">
-            👍 <span id="like-count">1.2K</span>
-          </button>
-          <button class="engage-btn">↗ Share</button>
-          <button class="engage-btn">💾 Save</button>
-        </div>
-
-        <div class="description-block" id="description-block">
-          48K views • 3 weeks ago<br />
-          Stream “Stay Golden”: https://temiwowoods.lnk.to/staygolden …more
+        <div class="suggestions-column" id="suggestions-column">
+          <!-- suggestion cards injected here -->
         </div>
       </section>
 
-      <aside class="related-column" id="related-column">
-        <!-- Cards injected by JS -->
-      </aside>
+      <!-- RIGHT: tabs + feed -->
+      <section class="right-panel">
+        <div class="tabs-row">
+          <div class="tabs-left">
+            <button class="tab-btn active" data-tab="home">Home</button>
+            <button class="tab-btn" data-tab="shorts">Shorts</button>
+            <button class="tab-btn" data-tab="movies">Movies</button>
+            <button class="tab-btn" data-tab="trending">Trending</button>
+            <button class="tab-btn" data-tab="search">🔍</button>
+            <button class="tab-btn" data-tab="more">⋮</button>
+          </div>
+          <div class="tabs-right">
+            <input
+              id="search-input"
+              type="text"
+              placeholder="Search..."
+              autocomplete="off"
+            />
+          </div>
+        </div>
+
+        <div class="feed-column" id="feed-column">
+          <!-- feed cards injected here -->
+        </div>
+      </section>
     </main>
 
     <footer class="bottom-hud">
       <div class="mini-player">
         <div class="mini-thumb" id="mini-thumb"></div>
         <div class="mini-info">
-          <div class="mini-title" id="mini-title">Stay Golden</div>
-          <div class="mini-channel" id="mini-channel">Temiwo Woods</div>
+          <div class="mini-title" id="mini-title"></div>
+          <div class="mini-channel" id="mini-channel"></div>
         </div>
         <div class="mini-controls">
           <button class="mini-btn" id="emg-like">Double‑pinch: Like</button>
@@ -414,17 +578,17 @@
     const VIDEO_URL =
       "https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,contentDetails";
 
-    let state = {
-      nextPageToken: null,
-      isLoading: false,
-      currentVideoId: null,
-    };
+    const tabs = document.querySelectorAll(".tab-btn");
+    const feedColumn = document.getElementById("feed-column");
+    const searchInput = document.getElementById("search-input");
 
-    const relatedColumn = document.getElementById("related-column");
+    const suggestionsColumn = document.getElementById("suggestions-column");
+    const playerCard = document.getElementById("player-card");
     const playerIframe = document.getElementById("player-iframe");
 
     const videoTitleEl = document.getElementById("video-title");
     const videoViewsEl = document.getElementById("video-views");
+    const videoDotEl = document.getElementById("video-dot");
     const videoAgeEl = document.getElementById("video-age");
     const channelNameEl = document.getElementById("channel-name");
     const channelSubsEl = document.getElementById("channel-subs");
@@ -441,41 +605,73 @@
     const emgLikeBtn = document.getElementById("emg-like");
     const emgVolumeBtn = document.getElementById("emg-volume");
 
-    const INITIAL_QUERY = "Temiwo Woods Stay Golden official video";
+    const state = {
+      currentTab: "home",
+      pageTokens: {
+        home: null,
+        shorts: null,
+        movies: null,
+        trending: null,
+        search: null,
+        more: null,
+      },
+      isLoading: false,
+      currentVideoId: null,
+    };
 
-    function buildSearchUrl(query) {
+    function defaultQueryForTab(tab) {
+      switch (tab) {
+        case "home":
+          return "Temiwo Woods Stay Golden official video";
+        case "shorts":
+          return "shorts funny vertical";
+        case "movies":
+          return "full movie trailer";
+        case "trending":
+          return "trending music videos";
+        case "more":
+          return "recommended videos";
+        case "search":
+          return searchInput.value.trim() || "music videos";
+        default:
+          return "music videos";
+      }
+    }
+
+    function buildSearchUrl(tab) {
+      const query = defaultQueryForTab(tab);
       let url = `${SEARCH_URL}&q=${encodeURIComponent(query)}&key=${API_KEY}`;
-      if (state.nextPageToken) {
-        url += `&pageToken=${state.nextPageToken}`;
+      const token = state.pageTokens[tab];
+      if (token) {
+        url += `&pageToken=${token}`;
       }
       return url;
     }
 
-    async function loadInitialBatch() {
-      state.nextPageToken = null;
-      relatedColumn.innerHTML = "";
-      await loadNextBatch(true);
+    async function loadInitialForTab(tab) {
+      state.pageTokens[tab] = null;
+      feedColumn.innerHTML = "";
+      await loadNextBatch(tab, true);
     }
 
-    async function loadNextBatch(resetMain = false) {
+    async function loadNextBatch(tab, resetSuggestions = false) {
       if (state.isLoading) return;
       state.isLoading = true;
 
       try {
-        const url = buildSearchUrl(INITIAL_QUERY);
+        const url = buildSearchUrl(tab);
         const res = await fetch(url);
         const data = await res.json();
 
-        state.nextPageToken = data.nextPageToken || null;
+        state.pageTokens[tab] = data.nextPageToken || null;
         const items = data.items || [];
 
-        if (resetMain && items.length > 0) {
-          const first = items[0];
-          await setMainVideo(first);
-          items.slice(1).forEach(addRelatedCard);
-        } else {
-          items.forEach(addRelatedCard);
+        if (resetSuggestions) {
+          suggestionsColumn.innerHTML = "";
+          items.forEach((item) => addSuggestionCard(item));
         }
+
+        items.forEach((item) => addFeedCard(item));
       } catch (err) {
         console.error("YouTube search error", err);
       } finally {
@@ -483,31 +679,31 @@
       }
     }
 
-    function addRelatedCard(item) {
+    function addFeedCard(item) {
       const { snippet, id } = item;
       const videoId = id.videoId;
 
       const card = document.createElement("div");
-      card.className = "related-card";
+      card.className = "feed-card";
       card.dataset.videoId = videoId;
 
       const thumb = document.createElement("div");
-      thumb.className = "related-thumb";
+      thumb.className = "feed-thumb";
       thumb.style.backgroundImage = `url(${snippet.thumbnails.medium.url})`;
 
       const info = document.createElement("div");
-      info.className = "related-info";
+      info.className = "feed-info";
 
       const title = document.createElement("div");
-      title.className = "related-title";
+      title.className = "feed-title";
       title.textContent = snippet.title;
 
       const channel = document.createElement("div");
-      channel.className = "related-channel";
+      channel.className = "feed-channel";
       channel.textContent = snippet.channelTitle;
 
       const meta = document.createElement("div");
-      meta.className = "related-meta";
+      meta.className = "feed-meta";
       meta.textContent = formatMeta(snippet);
 
       info.appendChild(title);
@@ -521,7 +717,48 @@
         setMainVideo(item);
       });
 
-      relatedColumn.appendChild(card);
+      feedColumn.appendChild(card);
+    }
+
+    function addSuggestionCard(item) {
+      const { snippet, id } = item;
+      const videoId = id.videoId;
+
+      const card = document.createElement("div");
+      card.className = "suggest-card";
+      card.dataset.videoId = videoId;
+
+      const thumb = document.createElement("div");
+      thumb.className = "suggest-thumb";
+      thumb.style.backgroundImage = `url(${snippet.thumbnails.medium.url})`;
+
+      const info = document.createElement("div");
+      info.className = "suggest-info";
+
+      const title = document.createElement("div");
+      title.className = "suggest-title";
+      title.textContent = snippet.title;
+
+      const channel = document.createElement("div");
+      channel.className = "suggest-channel";
+      channel.textContent = snippet.channelTitle;
+
+      const meta = document.createElement("div");
+      meta.className = "suggest-meta";
+      meta.textContent = formatMeta(snippet);
+
+      info.appendChild(title);
+      info.appendChild(channel);
+      info.appendChild(meta);
+
+      card.appendChild(thumb);
+      card.appendChild(info);
+
+      card.addEventListener("click", () => {
+        setMainVideo(item);
+      });
+
+      suggestionsColumn.appendChild(card);
     }
 
     function formatMeta(snippet) {
@@ -547,16 +784,18 @@
       const videoId = id.videoId;
       state.currentVideoId = videoId;
 
+      playerCard.style.display = "flex";
       playerIframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=0`;
 
       videoTitleEl.textContent = snippet.title;
       channelNameEl.textContent = snippet.channelTitle;
-
       descriptionBlockEl.textContent = snippet.description;
 
       miniThumbEl.style.backgroundImage = `url(${snippet.thumbnails.default.url})`;
       miniTitleEl.textContent = snippet.title;
       miniChannelEl.textContent = snippet.channelTitle;
+
+      videoDotEl.style.display = "inline";
 
       try {
         const url = `${VIDEO_URL}&id=${videoId}&key=${API_KEY}`;
@@ -579,6 +818,7 @@
           progressFillEl.style.width = "20%";
 
           channelSubsEl.textContent = "Channel";
+          videoAgeEl.textContent = ""; // could be filled via snippet if desired
         }
       } catch (err) {
         console.error("Video details error", err);
@@ -608,14 +848,41 @@
       return `${m}:${s.toString().padStart(2, "0")}`;
     }
 
-    relatedColumn.addEventListener("scroll", () => {
-      const { scrollTop, scrollHeight, clientHeight } = relatedColumn;
-      const nearBottom = scrollTop + clientHeight >= scrollHeight - 40;
-      if (nearBottom && !state.isLoading && state.nextPageToken) {
-        loadNextBatch(false);
+    // Tabs behavior
+    tabs.forEach((tab) => {
+      tab.addEventListener("click", () => {
+        const tabId = tab.dataset.tab;
+        if (tabId === state.currentTab) return;
+
+        tabs.forEach((t) => t.classList.remove("active"));
+        tab.classList.add("active");
+
+        state.currentTab = tabId;
+        loadInitialForTab(tabId);
+      });
+    });
+
+    // Search input: pressing Enter triggers search tab
+    searchInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        state.currentTab = "search";
+        tabs.forEach((t) => {
+          t.classList.toggle("active", t.dataset.tab === "search");
+        });
+        loadInitialForTab("search");
       }
     });
 
+    // Infinite scroll on right feed
+    feedColumn.addEventListener("scroll", () => {
+      const { scrollTop, scrollHeight, clientHeight } = feedColumn;
+      const nearBottom = scrollTop + clientHeight >= scrollHeight - 40;
+      if (nearBottom && !state.isLoading && state.pageTokens[state.currentTab]) {
+        loadNextBatch(state.currentTab, false);
+      }
+    });
+
+    // EMG pseudo integration
     emgLikeBtn.addEventListener("click", () => {
       if (!state.currentVideoId) return;
       console.log("EMG double‑pinch like for", state.currentVideoId);
@@ -625,7 +892,8 @@
       console.log("EMG wrist rotation volume gesture");
     });
 
-    loadInitialBatch();
+    // Init: load Home tab and suggestions
+    loadInitialForTab("home");
   </script>
 </body>
 </html>
