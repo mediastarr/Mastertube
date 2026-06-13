@@ -23,7 +23,7 @@
 }
 body { font-family:var(--fn); background:#000; color:var(--tp); overflow:hidden; height:100vh; width:100vw; }
 
-.world-bg { position:fixed; inset:0; background:linear-gradient(135deg,rgba(5,10,25,0.88),rgba(10,18,35,0.82) 40%,rgba(8,15,30,0.85)); z-index:0; }
+.world-bg { position:fixed; inset:0; background:linear-gradient(135deg,rgba(5,10,25,0.88),rgba(10,18,35,0.82) 40%,rgba(8,15,30,0.85)); z-index:0; pointer-events:none; }
 .lens-frame { position:fixed; inset:0; background:radial-gradient(ellipse 90% 75% at 50% 50%,transparent 55%,rgba(0,30,80,0.4) 80%,rgba(0,10,40,0.8) 100%); z-index:1; pointer-events:none; }
 .scanlines { position:fixed; inset:0; background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,150,255,0.018) 3px,rgba(0,150,255,0.018) 4px); z-index:2; pointer-events:none; animation:scanMove 8s linear infinite; }
 @keyframes scanMove { to { background-position:0 100px; } }
@@ -69,7 +69,7 @@ body { font-family:var(--fn); background:#000; color:var(--tp); overflow:hidden;
 .tb-btn svg { width:13px; height:13px; }
 
 .dots-wrap { position:relative; flex-shrink:0; }
-.dots-menu { position:absolute; top:calc(100% + 7px); right:0; background:rgba(8,14,30,0.97); border:0.5px solid var(--gb); border-radius:var(--br); backdrop-filter:blur(20px); min-width:160px; z-index:300; display:none; overflow:hidden; }
+.dots-menu { position:absolute; top:calc(100% + 7px); right:0; background:rgba(8,14,30,0.97); border:0.5px solid var(--gb); border-radius:var(--br); backdrop-filter:blur(20px); min-width:160px; z-index:1000; display:none; overflow:hidden; }
 .dots-menu.open { display:block; }
 .di { display:flex; align-items:center; gap:9px; padding:10px 14px; font-size:12px; color:var(--tp); cursor:pointer; transition:background .15s; }
 .di:hover { background:var(--gh); }
@@ -89,6 +89,8 @@ body { font-family:var(--fn); background:#000; color:var(--tp); overflow:hidden;
 .vlist-area {
   flex:1; overflow-y:auto; padding:14px;
   scrollbar-width:thin; scrollbar-color:rgba(0,150,255,0.3) transparent;
+  -webkit-overflow-scrolling:touch; touch-action:pan-y;
+  position:relative; z-index:5;
 }
 .vlist-area::-webkit-scrollbar { width:3px; }
 .vlist-area::-webkit-scrollbar-thumb { background:rgba(0,150,255,0.3); border-radius:3px; }
@@ -189,7 +191,7 @@ body { font-family:var(--fn); background:#000; color:var(--tp); overflow:hidden;
 .rtab.active { color:var(--nc); border-color:rgba(0,220,255,.3); background:rgba(0,220,255,.08); text-shadow:0 0 8px rgba(0,220,255,.5); }
 
 /* right tab content */
-.rtab-content { flex:1; overflow-y:auto; padding:12px 10px; scrollbar-width:thin; scrollbar-color:rgba(0,150,255,.2) transparent; }
+.rtab-content { flex:1; overflow-y:auto; padding:12px 10px; scrollbar-width:thin; scrollbar-color:rgba(0,150,255,.2) transparent; -webkit-overflow-scrolling:touch; touch-action:pan-y; position:relative; z-index:5; }
 .rtab-content::-webkit-scrollbar { width:3px; }
 .rtab-content::-webkit-scrollbar-thumb { background:rgba(0,150,255,.25); border-radius:3px; }
 
@@ -490,7 +492,9 @@ body { font-family:var(--fn); background:#000; color:var(--tp); overflow:hidden;
 
     <div class="search-wrap" id="searchWrap">
       <div class="si"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="9" r="6"/><path d="m15 15 3 3"/></svg></div>
-      <input type="text" placeholder="Search ViewTube…" id="searchInput" autocomplete="off"
+      <input type="search" placeholder="Search ViewTube…" id="searchInput" autocomplete="off"
+        autocorrect="off" autocapitalize="off" spellcheck="false"
+        inputmode="search" enterkeyhint="search"
         oninput="handleSearch(this.value)" onfocus="openSearch()" onblur="closeSearchDelay()">
       <div id="sdd"></div>
     </div>
@@ -621,17 +625,16 @@ body { font-family:var(--fn); background:#000; color:var(--tp); overflow:hidden;
 
     <div class="ytauth-divider">
       <div class="ytauth-divider-line"></div>
-      <span>or enter API key</span>
+      <span>or enter your handle</span>
       <div class="ytauth-divider-line"></div>
     </div>
 
     <div class="ytauth-manual">
-      <input class="ytauth-input" id="ytApiKeyInput" type="password"
-        placeholder="YouTube Data API v3 key"
-        oninput="validateApiKeyInput(this.value)">
+      <input class="ytauth-input" id="ytApiKeyInput" type="hidden" value="">
       <input class="ytauth-input" id="ytHandleInput" type="text"
         placeholder="Your YouTube handle (e.g. @username)"
-        oninput="validateApiKeyInput()">
+        oninput="validateApiKeyInput()"
+        autocomplete="off" autocorrect="off" autocapitalize="off">
       <button class="ytauth-submit" id="ytApiSubmit" onclick="signInWithApiKey()" disabled
         style="opacity:.45">Load My Subscriptions</button>
     </div>
@@ -757,27 +760,89 @@ const ALL_VIDS = [
 ];
 
 const SHORTS = [
-  {id:'s1', title:'Sunset timelapse 30s',    channel:'NatureVibes',   views:'2.1M', emoji:'🌅', likes:'48K'},
-  {id:'s2', title:'Quick pasta hack',         channel:'FoodShorts',    views:'890K', emoji:'🍝', likes:'22K'},
-  {id:'s3', title:'Cat does backflip',        channel:'PetMoments',    views:'4.5M', emoji:'🐱', likes:'310K'},
-  {id:'s4', title:'Neon art tutorial',        channel:'ArtByte',       views:'1.2M', emoji:'✨', likes:'87K'},
-  {id:'s5', title:'5 min workout',            channel:'FitFlash',      views:'3.3M', emoji:'💪', likes:'140K'},
-  {id:'s6', title:'Space fact #42',           channel:'CosmosClips',   views:'600K', emoji:'🚀', likes:'55K'},
-  {id:'s7', title:'Rain sounds 60s',          channel:'SleepWave',     views:'5M',   emoji:'🌧️', likes:'200K'},
-  {id:'s8', title:'Baby penguin walks',       channel:'ZooClips',      views:'8M',   emoji:'🐧', likes:'420K'},
-  {id:'s9', title:'Holographic nails DIY',    channel:'GlowCraft',     views:'1.8M', emoji:'💅', likes:'95K'},
-  {id:'s10',title:'Guitar riff in 10s',       channel:'RiffRocket',    views:'2.4M', emoji:'🎸', likes:'180K'},
-  {id:'s11',title:'Fastest rubik\'s cube',    channel:'SpeedCube',     views:'9M',   emoji:'🎯', likes:'500K'},
-  {id:'s12',title:'Tokyo at night 30s',       channel:'CityLens',      views:'3.1M', emoji:'🗼', likes:'160K'},
+  {id:'s1', title:'Sunset timelapse 30s',      channel:'NatureVibes',   views:'2.1M', emoji:'🌅', likes:'48K'},
+  {id:'s2', title:'Quick pasta hack',           channel:'FoodShorts',    views:'890K', emoji:'🍝', likes:'22K'},
+  {id:'s3', title:'Cat does backflip',          channel:'PetMoments',    views:'4.5M', emoji:'🐱', likes:'310K'},
+  {id:'s4', title:'Neon art tutorial',          channel:'ArtByte',       views:'1.2M', emoji:'✨', likes:'87K'},
+  {id:'s5', title:'5 min workout',              channel:'FitFlash',      views:'3.3M', emoji:'💪', likes:'140K'},
+  {id:'s6', title:'Space fact #42',             channel:'CosmosClips',   views:'600K', emoji:'🚀', likes:'55K'},
+  {id:'s7', title:'Rain sounds 60s',            channel:'SleepWave',     views:'5M',   emoji:'🌧️', likes:'200K'},
+  {id:'s8', title:'Baby penguin walks',         channel:'ZooClips',      views:'8M',   emoji:'🐧', likes:'420K'},
+  {id:'s9', title:'Holographic nails DIY',      channel:'GlowCraft',     views:'1.8M', emoji:'💅', likes:'95K'},
+  {id:'s10',title:'Guitar riff in 10s',         channel:'RiffRocket',    views:'2.4M', emoji:'🎸', likes:'180K'},
+  {id:'s11',title:'Fastest rubik\'s cube',      channel:'SpeedCube',     views:'9M',   emoji:'🎯', likes:'500K'},
+  {id:'s12',title:'Tokyo at night 30s',         channel:'CityLens',      views:'3.1M', emoji:'🗼', likes:'160K'},
+  {id:'s13',title:'Perfect pancake flip',       channel:'FoodShorts',    views:'1.6M', emoji:'🥞', likes:'72K'},
+  {id:'s14',title:'Bioluminescent waves',       channel:'NatureVibes',   views:'7.2M', emoji:'🌊', likes:'380K'},
+  {id:'s15',title:'Speedrun world record',      channel:'SpeedCube',     views:'12M',  emoji:'⏱️', likes:'610K'},
+  {id:'s16',title:'Tiny origami crane',         channel:'ArtByte',       views:'900K', emoji:'🦢', likes:'44K'},
+  {id:'s17',title:'Dog catches 10 treats',      channel:'PetMoments',    views:'6.1M', emoji:'🐶', likes:'290K'},
+  {id:'s18',title:'Aurora borealis 45s',        channel:'CityLens',      views:'4.8M', emoji:'🌌', likes:'230K'},
+  {id:'s19',title:'30s meditation reset',       channel:'SleepWave',     views:'2.9M', emoji:'🧘', likes:'130K'},
+  {id:'s20',title:'One-hand pushup tutorial',   channel:'FitFlash',      views:'1.1M', emoji:'🤸', likes:'58K'},
+  {id:'s21',title:'Rubik\'s cube blindfolded',  channel:'SpeedCube',     views:'15M',  emoji:'😎', likes:'720K'},
+  {id:'s22',title:'Satisfying slime ASMR',      channel:'GlowCraft',     views:'3.4M', emoji:'🎨', likes:'155K'},
+  {id:'s23',title:'Street piano surprise',      channel:'RiffRocket',    views:'8.8M', emoji:'🎹', likes:'440K'},
+  {id:'s24',title:'Deep sea fish glow',         channel:'NatureVibes',   views:'5.5M', emoji:'🐠', likes:'270K'},
+  {id:'s25',title:'Latte art in 30s',           channel:'FoodShorts',    views:'2.2M', emoji:'☕', likes:'98K'},
+  {id:'s26',title:'Drone sunset spiral',        channel:'CityLens',      views:'4.0M', emoji:'🌇', likes:'188K'},
+  {id:'s27',title:'Baby owl blinking',          channel:'ZooClips',      views:'11M',  emoji:'🦉', likes:'560K'},
+  {id:'s28',title:'Freestyle rap 60s',          channel:'RiffRocket',    views:'3.7M', emoji:'🎤', likes:'175K'},
+  {id:'s29',title:'Ice sculpture time-lapse',   channel:'ArtByte',       views:'1.4M', emoji:'🧊', likes:'66K'},
+  {id:'s30',title:'Morning yoga 60s',           channel:'FitFlash',      views:'2.0M', emoji:'🌅', likes:'92K'},
+  {id:'s31',title:'Thunderstorm from above',    channel:'NatureVibes',   views:'6.3M', emoji:'⛈️', likes:'310K'},
+  {id:'s32',title:'Perfect knife sharpening',   channel:'FoodShorts',    views:'780K', emoji:'🔪', likes:'35K'},
+  {id:'s33',title:'Parrot sings pop song',      channel:'ZooClips',      views:'14M',  emoji:'🦜', likes:'680K'},
+  {id:'s34',title:'Neon calligraphy 30s',       channel:'ArtByte',       views:'1.0M', emoji:'✒️', likes:'50K'},
+  {id:'s35',title:'Skate trick slow-mo',        channel:'FitFlash',      views:'3.1M', emoji:'🛹', likes:'148K'},
+  {id:'s36',title:'Sand mandala 60s',           channel:'GlowCraft',     views:'2.6M', emoji:'🔮', likes:'112K'},
+  {id:'s37',title:'Black hole explained 45s',   channel:'CosmosClips',   views:'4.4M', emoji:'🕳️', likes:'208K'},
+  {id:'s38',title:'Cherry blossom rain',        channel:'CityLens',      views:'7.0M', emoji:'🌸', likes:'350K'},
+  {id:'s39',title:'Jazz improv 45s',            channel:'RiffRocket',    views:'1.9M', emoji:'🎷', likes:'88K'},
+  {id:'s40',title:'Cloud timelapse 60s',        channel:'NatureVibes',   views:'5.1M', emoji:'☁️', likes:'242K'},
 ];
 
 const MOVIES = [
-  {id:'m1',title:'Interstellar',       year:'2014',genre:'Sci-Fi',  rating:'8.7',emoji:'🌌'},
-  {id:'m2',title:'Arrival',            year:'2016',genre:'Sci-Fi',  rating:'7.9',emoji:'🛸'},
-  {id:'m3',title:'Dune: Part One',     year:'2021',genre:'Epic',    rating:'8.0',emoji:'🏜️'},
-  {id:'m4',title:'The Matrix',         year:'1999',genre:'Action',  rating:'8.7',emoji:'💊'},
-  {id:'m5',title:'Blade Runner 2049',  year:'2017',genre:'Sci-Fi',  rating:'8.0',emoji:'🤖'},
-  {id:'m6',title:'Her',                year:'2013',genre:'Drama',   rating:'8.0',emoji:'🌸'},
+  {id:'m1', title:'Interstellar',          year:'2014',genre:'Sci-Fi',   rating:'8.7',emoji:'🌌'},
+  {id:'m2', title:'Arrival',               year:'2016',genre:'Sci-Fi',   rating:'7.9',emoji:'🛸'},
+  {id:'m3', title:'Dune: Part One',        year:'2021',genre:'Epic',     rating:'8.0',emoji:'🏜️'},
+  {id:'m4', title:'The Matrix',            year:'1999',genre:'Action',   rating:'8.7',emoji:'💊'},
+  {id:'m5', title:'Blade Runner 2049',     year:'2017',genre:'Sci-Fi',   rating:'8.0',emoji:'🤖'},
+  {id:'m6', title:'Her',                   year:'2013',genre:'Drama',    rating:'8.0',emoji:'🌸'},
+  {id:'m7', title:'Inception',             year:'2010',genre:'Thriller', rating:'8.8',emoji:'🌀'},
+  {id:'m8', title:'The Social Network',    year:'2010',genre:'Drama',    rating:'7.7',emoji:'💻'},
+  {id:'m9', title:'Parasite',              year:'2019',genre:'Thriller', rating:'8.5',emoji:'🪜'},
+  {id:'m10',title:'Everything Everywhere', year:'2022',genre:'Sci-Fi',   rating:'7.8',emoji:'🥯'},
+  {id:'m11',title:'Tenet',                 year:'2020',genre:'Action',   rating:'7.3',emoji:'⏪'},
+  {id:'m12',title:'1917',                  year:'2019',genre:'War',      rating:'8.3',emoji:'⚔️'},
+  {id:'m13',title:'Oppenheimer',           year:'2023',genre:'Drama',    rating:'8.9',emoji:'☢️'},
+  {id:'m14',title:'Barbie',                year:'2023',genre:'Comedy',   rating:'6.9',emoji:'💗'},
+  {id:'m15',title:'Poor Things',           year:'2023',genre:'Drama',    rating:'8.0',emoji:'⚗️'},
+  {id:'m16',title:'Past Lives',            year:'2023',genre:'Drama',    rating:'7.8',emoji:'🌃'},
+  {id:'m17',title:'The Holdovers',         year:'2023',genre:'Drama',    rating:'7.9',emoji:'❄️'},
+  {id:'m18',title:'Saltburn',              year:'2023',genre:'Thriller', rating:'7.1',emoji:'🛁'},
+  {id:'m19',title:'Priscilla',             year:'2023',genre:'Drama',    rating:'7.0',emoji:'👑'},
+  {id:'m20',title:'May December',          year:'2023',genre:'Drama',    rating:'7.1',emoji:'🎭'},
+  {id:'m21',title:'Dune: Part Two',        year:'2024',genre:'Epic',     rating:'8.5',emoji:'🌊'},
+  {id:'m22',title:'Civil War',             year:'2024',genre:'Action',   rating:'7.3',emoji:'📷'},
+  {id:'m23',title:'Alien: Romulus',        year:'2024',genre:'Sci-Fi',   rating:'7.3',emoji:'👾'},
+  {id:'m24',title:'Longlegs',              year:'2024',genre:'Thriller', rating:'6.1',emoji:'🔢'},
+  {id:'m25',title:'Nosferatu',             year:'2024',genre:'Horror',   rating:'7.7',emoji:'🧛'},
+  {id:'m26',title:'The Brutalist',         year:'2024',genre:'Drama',    rating:'7.9',emoji:'🏛️'},
+  {id:'m27',title:'Conclave',              year:'2024',genre:'Thriller', rating:'7.5',emoji:'🕍'},
+  {id:'m28',title:'Anora',                 year:'2024',genre:'Drama',    rating:'7.7',emoji:'💃'},
+  {id:'m29',title:'A Real Pain',           year:'2024',genre:'Drama',    rating:'7.8',emoji:'🕯️'},
+  {id:'m30',title:'Nickel Boys',           year:'2024',genre:'Drama',    rating:'7.6',emoji:'📚'},
+  {id:'m31',title:'Flow',                  year:'2024',genre:'Animation',rating:'8.3',emoji:'🐱'},
+  {id:'m32',title:'Inside Out 2',          year:'2024',genre:'Animation',rating:'7.8',emoji:'🧠'},
+  {id:'m33',title:'Deadpool & Wolverine',  year:'2024',genre:'Action',   rating:'7.7',emoji:'🩸'},
+  {id:'m34',title:'Gladiator II',          year:'2024',genre:'Epic',     rating:'6.9',emoji:'🦁'},
+  {id:'m35',title:'Furiosa',               year:'2024',genre:'Action',   rating:'7.8',emoji:'🔥'},
+  {id:'m36',title:'Kingdom of the Planet', year:'2024',genre:'Sci-Fi',   rating:'6.7',emoji:'🦍'},
+  {id:'m37',title:'Trap',                  year:'2024',genre:'Thriller', rating:'6.4',emoji:'🎸'},
+  {id:'m38',title:'Borderlands',           year:'2024',genre:'Action',   rating:'3.3',emoji:'💣'},
+  {id:'m39',title:'Twisters',              year:'2024',genre:'Action',   rating:'7.0',emoji:'🌪️'},
+  {id:'m40',title:'Hit Man',               year:'2024',genre:'Comedy',   rating:'7.5',emoji:'🔫'},
 ];
 
 const PLAYLISTS = [
@@ -877,31 +942,59 @@ let curVid = null, playing = false, uiHid = false, fsUiHid = false;
 let miniOn = false, pct = 0, progTimer = null;
 let curTab = 'home';
 
-// Infinite scroll state per section
-const scrollState = {
-  home:  { page:0, batchSize:20, pool:[], loading:false, done:false },
-  right: { page:0, batchSize:20, pool:[], loading:false, done:false },
-  movies:{ page:0, batchSize:6,  pool:[], loading:false, done:false },
-};
+// ═══════════════════════════════════════════════════
+// UNIFIED INFINITE SCROLL ENGINE
+// ═══════════════════════════════════════════════════
+const scrollState = {};
 
-// ═══════════════════════════════════════════════════
-// INFINITE SCROLL — LEFT MAIN GRID
-// ═══════════════════════════════════════════════════
-function initScrollState() {
-  // Build personalized pool once
-  scrollState.home.pool = Persona.getFeed();
-  scrollState.right.pool = Persona.getFeed();
-  scrollState.movies.pool = MOVIES;
+function initScrollKey(key, pool, batchSize=20) {
+  scrollState[key] = { page:0, batchSize, pool:[...pool], loading:false, done:false };
 }
 
 function getNextBatch(key) {
   const s = scrollState[key];
-  if (s.done || s.loading) return [];
+  if (!s || s.done || s.loading) return [];
   const start = s.page * s.batchSize;
   const batch = s.pool.slice(start, start + s.batchSize);
-  if (batch.length === 0 || batch.length < s.batchSize) s.done = true;
+  if (batch.length < s.batchSize) s.done = true;
+  if (batch.length === 0) return [];
   s.page++;
   return batch;
+}
+
+// Generic helper: renders first batch into `container`, attaches IntersectionObserver for next batches
+// cardFn(item) → HTML string, sentinelId must be unique per tab
+function setupInfiniteScroll(key, container, cardFn, sentinelId, prependHtml='') {
+  initScrollKey(key, scrollState[key]?.pool || [], scrollState[key]?.batchSize || 20);
+  const first = getNextBatch(key);
+  container.innerHTML = prependHtml + first.map(cardFn).join('') +
+    `<div id="${sentinelId}" style="height:36px;display:flex;align-items:center;justify-content:center"></div>`;
+
+  const sentinel = document.getElementById(sentinelId);
+  if (!sentinel) return;
+
+  const obs = new IntersectionObserver(entries => {
+    if (!entries[0].isIntersecting || scrollState[key].loading) return;
+    if (scrollState[key].done) {
+      sentinel.innerHTML = `<span style="font-size:10px;color:var(--tm);padding:8px">✓ All loaded</span>`;
+      obs.disconnect(); return;
+    }
+    scrollState[key].loading = true;
+    sentinel.innerHTML = `<div style="width:18px;height:18px;border:2px solid rgba(0,180,255,.2);border-top-color:var(--ac);border-radius:50%;animation:spin .7s linear infinite"></div>`;
+    setTimeout(() => {
+      const more = getNextBatch(key);
+      scrollState[key].loading = false;
+      if (more.length === 0) {
+        sentinel.innerHTML = `<span style="font-size:10px;color:var(--tm);padding:8px">✓ All loaded</span>`;
+        obs.disconnect(); return;
+      }
+      sentinel.insertAdjacentHTML('beforebegin', more.map(cardFn).join(''));
+      sentinel.innerHTML = '';
+      applyTilt();
+    }, 350);
+  }, { root: container.closest('.rtab-content, .vlist-area'), threshold: 0.05 });
+  obs.observe(sentinel);
+  applyTilt();
 }
 
 function renderVCard(v) {
@@ -917,62 +1010,6 @@ function renderVCard(v) {
   </div>`;
 }
 
-function initMainGrid() {
-  initScrollState();
-  const grid = document.getElementById('mainGrid');
-  grid.innerHTML = '';
-  const batch = getNextBatch('home');
-  grid.innerHTML = batch.map(renderVCard).join('') + '<div id="homeLoadMore" style="height:40px"></div>';
-  applyTilt();
-
-  // Intersection Observer for infinite scroll
-  const sentinel = document.getElementById('homeLoadMore');
-  const obs = new IntersectionObserver(entries => {
-    if (!entries[0].isIntersecting) return;
-    if (scrollState.home.done) { sentinel.innerHTML='<div style="text-align:center;padding:12px;font-size:11px;color:var(--tm)">All caught up ✓</div>'; obs.disconnect(); return; }
-    scrollState.home.loading = true;
-    sentinel.innerHTML = '<div style="text-align:center;padding:10px;font-size:11px;color:var(--tm);animation:pulse 1.5s infinite">Loading more…</div>';
-    setTimeout(()=>{
-      const more = getNextBatch('home');
-      scrollState.home.loading = false;
-      if (more.length===0) { sentinel.innerHTML='<div style="text-align:center;padding:12px;font-size:11px;color:var(--tm)">All caught up ✓</div>'; obs.disconnect(); return; }
-      sentinel.insertAdjacentHTML('beforebegin', more.map(renderVCard).join(''));
-      sentinel.innerHTML = '<div style="height:40px"></div>';
-      applyTilt();
-    }, 400);
-  }, {threshold:0.1});
-  obs.observe(sentinel);
-}
-
-// ═══════════════════════════════════════════════════
-// RIGHT TABS
-// ═══════════════════════════════════════════════════
-function setTab(tab) {
-  curTab = tab;
-  document.querySelectorAll('.rtab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
-  if (['history','subscriptions','channel'].includes(tab)) {
-    const el = document.querySelector(`.rtab[data-tab="${tab}"]`);
-    if (el) el.style.display = '';
-  }
-  // Open Shorts overlay instead of rendering in sidebar
-  if (tab === 'shorts') { openShortsOverlay(0); return; }
-  renderTab();
-}
-
-function renderTab() {
-  const el = document.getElementById('rtabContent');
-  switch(curTab) {
-    case 'home':          el.innerHTML = renderRHome(); setupRightInfiniteScroll(); break;
-    case 'movies':        el.innerHTML = renderRMovies(); break;
-    case 'playlist':      el.innerHTML = renderRPlaylist(); break;
-    case 'history':       el.innerHTML = renderRHistory(); break;
-    case 'subscriptions': el.innerHTML = renderRSubs(); break;
-    case 'channel':       el.innerHTML = renderRChannel(); break;
-    default:              el.innerHTML = renderRHome(); setupRightInfiniteScroll();
-  }
-  applyTilt();
-}
-
 function renderRCard(v) {
   return `<div class="rcard" onclick="playVideo('${v.id}')">
     <div class="rthumb" style="background:${v.bg||'#1a2a4a'}">${v.emoji}<div class="rdur">${v.dur||''}</div></div>
@@ -980,46 +1017,190 @@ function renderRCard(v) {
   </div>`;
 }
 
-function renderRHome() {
-  // Reset right scroll state each time
-  scrollState.right.page = 0;
-  scrollState.right.done = false;
-  scrollState.right.loading = false;
-  scrollState.right.pool = Persona.getFeed();
-  const batch = getNextBatch('right');
-  return '<div class="sec-label">For You</div>' +
-    batch.map(renderRCard).join('') +
-    '<div id="rightLoadMore" style="height:30px"></div>';
+function renderMovieCard(m) {
+  return `<div class="movie-r" onclick="playVideo('${m.id}')">
+    <div class="movie-r-poster">${m.emoji}</div>
+    <div class="movie-r-info"><div class="movie-r-title">${m.title}</div><div class="movie-r-meta">${m.year} · ⭐ ${m.rating}<br>${m.genre}</div></div>
+  </div>`;
 }
 
-function setupRightInfiniteScroll() {
-  const sentinel = document.getElementById('rightLoadMore');
-  if (!sentinel) return;
-  const content = document.getElementById('rtabContent');
+function renderShortCard(s) {
+  return `<div class="sub-ch-item" onclick="openShortsOverlay(${SHORTS.findIndex(x=>x.id===s.id)})" style="gap:10px">
+    <div style="width:48px;height:72px;background:rgba(20,30,55,.8);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">${s.emoji}</div>
+    <div style="flex:1;min-width:0">
+      <div class="sub-ch-name">${s.title}</div>
+      <div class="sub-ch-meta">${s.channel} · ${s.views} views · ❤️ ${s.likes}</div>
+    </div>
+    <div style="font-size:11px;color:var(--ac);flex-shrink:0">▶</div>
+  </div>`;
+}
+
+// ── LEFT HOME GRID ──────────────────────────────────
+function initMainGrid() {
+  // Remove any search result header
+  document.getElementById('vlistArea').querySelectorAll('div[style*="align-items:center"]').forEach(el => el.remove());
+  const pool = Persona.getFeed();
+  initScrollKey('home', pool, 20);
+  const grid = document.getElementById('mainGrid');
+  grid.innerHTML = '';
+  const vlistArea = document.getElementById('vlistArea');
+  // Create a wrapper so the sentinel is inside the scrollable area
+  const wrapper = document.createElement('div');
+  wrapper.id = 'homeScrollWrap';
+  grid.appendChild(wrapper);
+  const sentinel = document.createElement('div');
+  sentinel.id = 'homeLoadMore';
+  sentinel.style.cssText = 'height:36px;display:flex;align-items:center;justify-content:center';
+  grid.appendChild(sentinel);
+
+  function loadBatch() {
+    const batch = getNextBatch('home');
+    if (batch.length === 0) {
+      sentinel.innerHTML = `<span style="font-size:10px;color:var(--tm);padding:8px">✓ All loaded</span>`;
+      obs.disconnect(); return;
+    }
+    wrapper.insertAdjacentHTML('beforeend', `<div class="vgrid">${batch.map(renderVCard).join('')}</div>`);
+    applyTilt();
+  }
+
+  loadBatch(); // first batch
+
   const obs = new IntersectionObserver(entries => {
-    if (!entries[0].isIntersecting) return;
-    if (scrollState.right.done) { sentinel.innerHTML='<div style="text-align:center;padding:10px;font-size:10px;color:var(--tm)">All caught up ✓</div>'; obs.disconnect(); return; }
-    scrollState.right.loading = true;
-    sentinel.innerHTML = '<div style="text-align:center;padding:8px;font-size:10px;color:var(--tm);animation:pulse 1.5s infinite">Loading…</div>';
-    setTimeout(()=>{
-      const more = getNextBatch('right');
-      scrollState.right.loading = false;
-      if (more.length===0) { sentinel.innerHTML='<div style="text-align:center;padding:10px;font-size:10px;color:var(--tm)">All caught up ✓</div>'; obs.disconnect(); return; }
-      sentinel.insertAdjacentHTML('beforebegin', more.map(renderRCard).join(''));
-      sentinel.innerHTML = '<div style="height:30px"></div>';
-      applyTilt();
+    if (!entries[0].isIntersecting || scrollState.home.loading) return;
+    if (scrollState.home.done) {
+      sentinel.innerHTML = `<span style="font-size:10px;color:var(--tm);padding:8px">✓ All loaded</span>`;
+      obs.disconnect(); return;
+    }
+    scrollState.home.loading = true;
+    sentinel.innerHTML = `<div style="width:18px;height:18px;border:2px solid rgba(0,180,255,.2);border-top-color:var(--ac);border-radius:50%;animation:spin .7s linear infinite"></div>`;
+    setTimeout(() => {
+      scrollState.home.loading = false;
+      sentinel.innerHTML = '';
+      loadBatch();
     }, 350);
-  }, {root:content, threshold:0.1});
+  }, { root: vlistArea, threshold: 0.05 });
   obs.observe(sentinel);
 }
 
-function renderRMovies() {
-  return '<div class="sec-label">Movies</div>' +
-    MOVIES.map(m=>`<div class="movie-r" onclick="playVideo('${m.id}')">
-      <div class="movie-r-poster">${m.emoji}</div>
-      <div class="movie-r-info"><div class="movie-r-title">${m.title}</div><div class="movie-r-meta">${m.year} · ⭐ ${m.rating}<br>${m.genre}</div></div>
-    </div>`).join('');
+// ═══════════════════════════════════════════════════
+// RIGHT TABS
+// ═══════════════════════════════════════════════════
+function goHome() {
+  setTab('home');
+  ['history','subscriptions','channel'].forEach(t => {
+    const el = document.querySelector(`.rtab[data-tab="${t}"]`);
+    if (el) el.style.display = 'none';
+  });
 }
+
+function setTab(tab) {
+  curTab = tab;
+  const targetEl = document.querySelector(`.rtab[data-tab="${tab}"]`);
+  if (targetEl) targetEl.style.display = '';
+  document.querySelectorAll('.rtab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+  if (tab === 'shorts') { openShortsOverlay(0); return; }
+  renderTab();
+}
+
+function renderTab() {
+  const el = document.getElementById('rtabContent');
+  el.innerHTML = '';
+  switch(curTab) {
+    case 'home':          renderRHomeInfinite(el); break;
+    case 'movies':        renderRMoviesInfinite(el); break;
+    case 'playlist':      el.innerHTML = renderRPlaylist(); break;
+    case 'history':       renderRHistoryInfinite(el); break;
+    case 'subscriptions': el.innerHTML = renderRSubs(); setTimeout(()=>setupSubsInfinite(),50); break;
+    case 'channel':       renderRChannelInfinite(el); break;
+    default:              renderRHomeInfinite(el);
+  }
+  applyTilt();
+}
+
+// ── RIGHT HOME (For You) ────────────────────────────
+function renderRHomeInfinite(container) {
+  const pool = Persona.getFeed();
+  initScrollKey('rHome', pool, 20);
+  container.innerHTML = `<div class="sec-label">For You</div>`;
+  setupInfiniteScroll('rHome', container, renderRCard, 'rHomeMore');
+}
+
+// ── RIGHT MOVIES ────────────────────────────────────
+function renderRMoviesInfinite(container) {
+  initScrollKey('rMovies', MOVIES, 20);
+  container.innerHTML = `<div class="sec-label">Movies</div>`;
+  setupInfiniteScroll('rMovies', container, renderMovieCard, 'rMoviesMore');
+}
+
+// ── RIGHT HISTORY ────────────────────────────────────
+function renderRHistoryInfinite(container) {
+  const backBtn = `<button onclick="goHome()" style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.06);border:0.5px solid var(--gb);border-radius:7px;color:var(--ts);font-size:11px;padding:5px 10px;cursor:pointer;font-family:var(--fn);margin-bottom:12px" onmouseover="this.style.background='rgba(0,150,255,.15)'" onmouseout="this.style.background='rgba(255,255,255,.06)'"><svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 4l-7 6 7 6"/></svg> Home</button>`;
+  // Build history pool: watched first (reversed), then rest
+  const watched = Persona.watchHistory.slice().reverse().map(id=>ALL_VIDS.find(x=>x.id===id)).filter(Boolean);
+  const rest = ALL_VIDS.filter(v=>!Persona.watchHistory.includes(v.id));
+  const pool = [...watched, ...rest];
+  initScrollKey('rHistory', pool, 20);
+  container.innerHTML = backBtn + `<div class="sec-label">Watch History</div>`;
+  setupInfiniteScroll('rHistory', container, renderRCard, 'rHistoryMore');
+}
+
+// ── RIGHT CHANNEL ────────────────────────────────────
+function renderRChannelInfinite(container) {
+  const backBtn = `<button onclick="goHome()" style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.06);border:0.5px solid var(--gb);border-radius:7px;color:var(--ts);font-size:11px;padding:5px 10px;cursor:pointer;font-family:var(--fn);margin-bottom:12px" onmouseover="this.style.background='rgba(0,150,255,.15)'" onmouseout="this.style.background='rgba(255,255,255,.06)'"><svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 4l-7 6 7 6"/></svg> Home</button>`;
+  const header = backBtn + `<div style="text-align:center;padding:14px 0 10px">
+    <div style="width:52px;height:52px;border-radius:50%;background:rgba(0,100,220,.25);display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 8px">🎵</div>
+    <div style="font-size:14px;font-weight:700;color:var(--tp)">Temiwo Woods</div>
+    <div style="font-size:11px;color:var(--tm);margin:3px 0 10px">12.4K subscribers</div>
+    <button onclick="toast('Subscribed!')" style="background:rgba(255,50,50,.2);border:0.5px solid rgba(255,80,80,.4);border-radius:6px;color:rgba(255,160,160,.9);font-size:11px;padding:5px 16px;cursor:pointer;font-family:var(--fn)">Subscribe</button>
+  </div><div class="sec-label" style="margin-top:6px">Videos</div>`;
+  initScrollKey('rChannel', ALL_VIDS, 20);
+  container.innerHTML = header;
+  setupInfiniteScroll('rChannel', container, renderRCard, 'rChannelMore');
+}
+
+// ── SUBSCRIPTIONS (infinite on logged-in list) ───────
+function setupSubsInfinite() {
+  if (!YTAuth.isLoggedIn || YTAuth.subscriptions.length === 0) return;
+  const container = document.getElementById('rtabContent');
+  if (!container) return;
+  const sentinel = document.getElementById('subsLoadMore');
+  if (sentinel) return; // already set up
+
+  const pool = YTAuth.subscriptions;
+  initScrollKey('rSubs', pool, 20);
+  // Render first batch inline (already rendered in renderRSubs), just add sentinel + observer
+  const existing = container.querySelectorAll('.sub-ch-item');
+  const insertAfter = existing[existing.length-1] || container.lastElementChild;
+  if (insertAfter) {
+    const s = document.createElement('div');
+    s.id = 'subsLoadMore';
+    s.style.cssText = 'height:36px;display:flex;align-items:center;justify-content:center';
+    insertAfter.after(s);
+    // Advance page past already-rendered items
+    scrollState.rSubs.page = Math.ceil(existing.length / 20);
+
+    const obs = new IntersectionObserver(entries => {
+      if (!entries[0].isIntersecting || scrollState.rSubs.loading) return;
+      if (scrollState.rSubs.done) { s.innerHTML=`<span style="font-size:10px;color:var(--tm);padding:8px">✓ All loaded</span>`; obs.disconnect(); return; }
+      scrollState.rSubs.loading = true;
+      s.innerHTML = `<div style="width:18px;height:18px;border:2px solid rgba(0,180,255,.2);border-top-color:var(--ac);border-radius:50%;animation:spin .7s linear infinite"></div>`;
+      setTimeout(() => {
+        const more = getNextBatch('rSubs');
+        scrollState.rSubs.loading = false;
+        if (more.length === 0) { s.innerHTML=`<span style="font-size:10px;color:var(--tm);padding:8px">✓ All loaded</span>`; obs.disconnect(); return; }
+        const html = more.map((ch,i)=>`
+          <div class="sub-ch-item" onclick="toast('Opening ${ch.name}')">
+            <div class="sub-ch-avatar">${ch.thumb?`<img src="${ch.thumb}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:`<span class="sub-ch-initial">${ch.name[0]}</span>`}</div>
+            <div style="flex:1;min-width:0"><div class="sub-ch-name">${ch.name}</div><div class="sub-ch-meta">${ch.description?ch.description.slice(0,40)+'…':'Subscribed'}</div></div>
+          </div>`).join('');
+        s.insertAdjacentHTML('beforebegin', html);
+        s.innerHTML = '';
+      }, 350);
+    }, { root: container, threshold: 0.05 });
+    obs.observe(s);
+  }
+}
+
 function renderRPlaylist() {
   return '<div class="sec-label">Your Playlists</div>' +
     PLAYLISTS.map(p=>`<div class="pl-item" onclick="toast('Playing ${p.name}')">
@@ -1027,32 +1208,48 @@ function renderRPlaylist() {
       <div><div class="pl-name">${p.name}</div><div class="pl-cnt">${p.count} videos</div></div>
     </div>`).join('');
 }
-function renderRHistory() {
-  return '<div class="sec-label">Watch History</div>' +
-    Persona.watchHistory.slice().reverse().map(id=>{
-      const v=ALL_VIDS.find(x=>x.id===id); return v?renderRCard(v):'';
-    }).join('') +
-    '<div class="sec-label" style="margin-top:10px">Recently Discovered</div>' +
-    ALL_VIDS.filter(v=>!Persona.watchHistory.includes(v.id)).slice(0,6).map(renderRCard).join('');
-}
 // ═══════════════════════════════════════════════════
 // YOUTUBE AUTH STATE
 // ═══════════════════════════════════════════════════
 const YTAuth = {
-  // OAuth 2.0 config — replace CLIENT_ID with your own from Google Cloud Console
-  // https://console.cloud.google.com/apis/credentials
-  CLIENT_ID: 'YOUR_GOOGLE_OAUTH_CLIENT_ID.apps.googleusercontent.com',
+  CLIENT_ID: '1078935099938-bhc84vd1kae2gn0qasjr0mevo9dmobrs.apps.googleusercontent.com',
   SCOPES: 'https://www.googleapis.com/auth/youtube.readonly',
   REDIRECT_URI: window.location.href.split('?')[0].split('#')[0],
 
-  // Runtime state (never persisted — stays in memory only)
+  // Rotating API key pool — tries each key in sequence, skips quota-exceeded keys
+  _apiKeys: [
+    'AIzaSyAQUxDKTdrQyCEXHBirQrEZ5pb9JaWibus',
+    'AIzaSyCK-FLtaBwhWcBiTWvUv7HhS34Z3O9LLvA',
+    'AIzaSyDkmFEOre2r1rcpUKvLkm3Siw5FDORXbNY',
+    'AIzaSyBwjcpX9eyHEDtJ5JwgEUb8EOF3YCePCMw',
+    'AIzaSyCfZpn1YBNdEXopAM-lOv5hoEvHoCKNo30',
+    'AIzaSyCLydlFt2Hl3qDD0DFkAaALLEcn-5JjTqQ',
+    'AIzaSyDUcS13prh73HQB8Cl8GKvhbRi0AGofMDQ',
+    'AIzaSyCHp3NvAXwjRRtYkw0t6Kj3TvIn3Izfx0o',
+    'AIzaSyASan345SwgI0lcXKNK-DSW9-lhm4NqqGs',
+    'AIzaSyArTrelF7wIG3RYDWLP7BzUkoN2qxcM-HY',
+  ],
+  _keyIdx: 0,
+  _exhaustedKeys: new Set(),
+
+  get _currentKey() {
+    // Find the next non-exhausted key
+    for (let i = 0; i < this._apiKeys.length; i++) {
+      const idx = (this._keyIdx + i) % this._apiKeys.length;
+      if (!this._exhaustedKeys.has(idx)) return { key: this._apiKeys[idx], idx };
+    }
+    return null; // all keys exhausted
+  },
+  _rotateKey(idx) { this._exhaustedKeys.add(idx); this._keyIdx = (idx + 1) % this._apiKeys.length; },
+
+  // Runtime state
   accessToken: null,
   apiKey: null,
-  profile: null,          // { name, email, avatarUrl, initials }
-  subscriptions: [],      // fetched from YouTube API
+  profile: null,
+  subscriptions: [],
   loading: false,
   error: null,
-  method: null,           // 'oauth' | 'apikey'
+  method: null,
 
   get isLoggedIn() { return !!(this.accessToken || this.apiKey); },
 
@@ -1094,37 +1291,41 @@ const YTAuth = {
     return false;
   },
 
-  // ── API key flow ─────────────────────────────────
-  async signInWithApiKey(key, handle) {
+  // ── API key flow (uses pool — no manual key entry needed) ──
+  async signInWithApiKey(manualKey, handle) {
     this.loading = true;
     this.error = null;
-    this.apiKey = key.trim();
+    // Use manually entered key if provided, otherwise use pool
+    if (manualKey && manualKey.trim().length > 10) {
+      this._apiKeys.unshift(manualKey.trim());
+      this._keyIdx = 0;
+      this._exhaustedKeys.clear();
+    }
     this.method = 'apikey';
+    this.apiKey = 'pool';
 
     try {
-      // Resolve handle → channel ID
       const searchRes = await this._ytFetch(
-        `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(handle)}&type=channel&maxResults=1&key=${this.apiKey}`
+        `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(handle)}&type=channel&maxResults=1&key={KEY}`
       );
-      if (!searchRes.items?.length) throw new Error('Channel not found for that handle.');
+      if (!searchRes.items?.length) throw new Error('Channel not found for that handle. Try with or without @.');
       const ch = searchRes.items[0].snippet;
-      const channelId = searchRes.items[0].id.channelId || searchRes.items[0].snippet.channelId;
+      const channelId = searchRes.items[0].id?.channelId || ch.channelId;
 
-      // Set profile from channel info
       this.profile = {
         name: ch.channelTitle || ch.title || handle,
         email: handle,
         avatarUrl: ch.thumbnails?.default?.url || null,
-        initials: (ch.channelTitle||handle).slice(0,1).toUpperCase(),
+        initials: (ch.channelTitle||handle).replace('@','').slice(0,1).toUpperCase(),
       };
 
-      // Fetch subscriptions for this channel
       await this._fetchSubs(channelId);
       this.loading = false;
       return true;
     } catch(e) {
       this.loading = false;
-      this.error = e.message || 'API error. Check your key and handle.';
+      this.apiKey = null;
+      this.error = e.message || 'API error. Check your handle and try again.';
       return false;
     }
   },
@@ -1134,7 +1335,7 @@ const YTAuth = {
     do {
       const pt = pageToken ? `&pageToken=${pageToken}` : '';
       const res = await this._ytFetch(
-        `https://www.googleapis.com/youtube/v3/subscriptions?part=snippet&channelId=${channelId}&maxResults=50&order=alphabetical${pt}&key=${this.apiKey}`
+        `https://www.googleapis.com/youtube/v3/subscriptions?part=snippet&channelId=${channelId}&maxResults=50&order=alphabetical${pt}&key={KEY}`
       );
       if (!res.items) break;
       subs.push(...res.items.map(i=>({
@@ -1148,13 +1349,32 @@ const YTAuth = {
     this.subscriptions = subs;
   },
 
-  async _ytFetch(url) {
-    const res = await fetch(url);
-    if (!res.ok) {
-      const err = await res.json().catch(()=>({error:{message:res.statusText}}));
-      throw new Error(err?.error?.message || `HTTP ${res.status}`);
+  async _ytFetch(urlTemplate) {
+    // urlTemplate uses {KEY} as placeholder; try each key in pool
+    let lastErr = null;
+    for (let attempt = 0; attempt < this._apiKeys.length; attempt++) {
+      const entry = this._currentKey;
+      if (!entry) throw new Error('All API keys exhausted (quota exceeded). Try again tomorrow.');
+      const url = urlTemplate.replace('{KEY}', entry.key);
+      const res = await fetch(url);
+      if (res.status === 403 || res.status === 429) {
+        // Quota exceeded — rotate to next key
+        const errBody = await res.json().catch(()=>({error:{message:'Quota exceeded'}}));
+        const msg = errBody?.error?.message || '';
+        if (msg.includes('quota') || msg.includes('exceeded') || res.status === 429) {
+          this._rotateKey(entry.idx);
+          lastErr = new Error(`Key ${entry.idx+1} quota exceeded, trying next…`);
+          continue;
+        }
+        throw new Error(errBody?.error?.message || `HTTP ${res.status}`);
+      }
+      if (!res.ok) {
+        const errBody = await res.json().catch(()=>({error:{message:res.statusText}}));
+        throw new Error(errBody?.error?.message || `HTTP ${res.status}`);
+      }
+      return res.json();
     }
-    return res.json();
+    throw lastErr || new Error('All API keys failed.');
   },
 
   signOut() {
@@ -1246,28 +1466,26 @@ function resetAuthBox() {
 }
 
 function validateApiKeyInput() {
-  const key = document.getElementById('ytApiKeyInput')?.value?.trim();
   const handle = document.getElementById('ytHandleInput')?.value?.trim();
   const btn = document.getElementById('ytApiSubmit');
   if (!btn) return;
-  const ok = key && key.length > 10 && handle && handle.length > 1;
+  const ok = handle && handle.length > 1;
   btn.disabled = !ok;
   btn.style.opacity = ok ? '1' : '.45';
 }
 
 async function signInWithApiKey() {
-  const key = document.getElementById('ytApiKeyInput')?.value?.trim();
+  const key = document.getElementById('ytApiKeyInput')?.value?.trim() || '';
   const handle = document.getElementById('ytHandleInput')?.value?.trim();
-  if (!key || !handle) return;
+  if (!handle) return;
 
   // Show loading state inside popup
   const box = document.querySelector('.ytauth-box');
-  const originalContent = box.innerHTML;
   box.innerHTML = `
     <div class="yt-loading" style="padding:40px 0">
       <div class="yt-spinner"></div>
       <div>Fetching your subscriptions…</div>
-      <div style="font-size:10px;color:var(--tm);margin-top:4px">Connecting to YouTube API</div>
+      <div style="font-size:10px;color:var(--tm);margin-top:4px">Connecting to YouTube API · rotating keys if needed</div>
     </div>`;
 
   const ok = await YTAuth.signInWithApiKey(key, handle);
@@ -1302,14 +1520,15 @@ function ytSignOut() {
 
 // ── Render subscriptions (auth-aware) ────────────
 function renderRSubs() {
+  const backBtn = `<button onclick="goHome()" style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.06);border:0.5px solid var(--gb);border-radius:7px;color:var(--ts);font-size:11px;padding:5px 10px;cursor:pointer;font-family:var(--fn);margin-bottom:12px;transition:background .15s" onmouseover="this.style.background='rgba(0,150,255,.15)'" onmouseout="this.style.background='rgba(255,255,255,.06)'"><svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 4l-7 6 7 6"/></svg> Home</button>`;
+
   if (YTAuth.loading) {
-    return `<div class="yt-loading"><div class="yt-spinner"></div><div>Loading subscriptions…</div></div>`;
+    return backBtn + `<div class="yt-loading"><div class="yt-spinner"></div><div>Loading subscriptions…</div></div>`;
   }
 
   if (!YTAuth.isLoggedIn) {
-    // Not logged in — show sign-in prompt
-    return `
-      <div style="text-align:center;padding:24px 10px 16px">
+    return backBtn + `
+      <div style="text-align:center;padding:16px 10px 16px">
         <div style="font-size:36px;margin-bottom:12px;filter:drop-shadow(0 0 10px rgba(0,180,255,.3))">📺</div>
         <div style="font-size:14px;font-weight:700;color:var(--tp);margin-bottom:6px">Your Subscriptions</div>
         <div style="font-size:11px;color:var(--tm);margin-bottom:20px;line-height:1.6">Sign in with your YouTube account to see your real subscriptions, get notified about new uploads, and power your personalized feed.</div>
@@ -1317,7 +1536,7 @@ function renderRSubs() {
           <svg width="16" height="16" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
           Sign in with Google
         </button>
-        <div style="font-size:10px;color:var(--tm)">or use YouTube Data API key mode</div>
+        <div style="font-size:10px;color:var(--tm)">or enter your YouTube handle below</div>
       </div>
       <div class="sec-label" style="margin-top:6px">Sample channels</div>
       ${[...new Set(ALL_VIDS.map(v=>v.channel))].slice(0,6).map(c=>{
@@ -1349,9 +1568,9 @@ function renderRSubs() {
           </div>
           ${i < 3 ? '<div class="sub-badge sub-new-badge">NEW</div>' : ''}
         </div>`).join('')
-    : `<div style="text-align:center;padding:20px;font-size:12px;color:var(--tm)">No public subscriptions found for this channel.<br><br>Note: YouTube API only returns subscriptions set to public.</div>`;
+    : `<div style="text-align:center;padding:20px;font-size:12px;color:var(--tm)">No public subscriptions found.<br><br>YouTube API only returns subscriptions set to public in your account settings.</div>`;
 
-  return `
+  return backBtn + `
     <div class="yt-profile-card">
       <div class="yt-avatar">${avatarHtml}</div>
       <div class="yt-profile-info">
@@ -1363,16 +1582,6 @@ function renderRSubs() {
     <div class="sec-label">${YTAuth.subscriptions.length} Subscriptions</div>
     ${subsHtml}`;
 }
-function renderRChannel() {
-  return `<div style="text-align:center;padding:16px 0 12px">
-    <div style="width:52px;height:52px;border-radius:50%;background:rgba(0,100,220,.25);display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 8px">🎵</div>
-    <div style="font-size:14px;font-weight:700;color:var(--tp)">Temiwo Woods</div>
-    <div style="font-size:11px;color:var(--tm);margin:3px 0 10px">12.4K subscribers</div>
-    <button onclick="toast('Subscribed!')" style="background:rgba(255,50,50,.2);border:0.5px solid rgba(255,80,80,.4);border-radius:6px;color:rgba(255,160,160,.9);font-size:11px;padding:5px 16px;cursor:pointer;font-family:var(--fn)">Subscribe</button>
-  </div><div class="sec-label">Videos</div>` +
-  ALL_VIDS.slice(0,4).map(renderRCard).join('');
-}
-
 // ═══════════════════════════════════════════════════
 // PLAY VIDEO
 // ═══════════════════════════════════════════════════
@@ -1426,75 +1635,92 @@ function renderSuggestions(cid) {
 }
 
 // ═══════════════════════════════════════════════════
-// SHORTS OVERLAY — YouTube-style vertical swipe viewer
+// SHORTS OVERLAY — YouTube-style vertical swipe viewer with infinite load
 // ═══════════════════════════════════════════════════
 let shortsIdx = 0;
 let shortsPlaying = true;
 let shortsTouchStartY = 0;
 let shortsDragY = 0;
 let shortsDragging = false;
+let shortsLoadedCount = 0;
+const SHORTS_BATCH = 10;
 
 function openShortsOverlay(startIdx) {
   shortsIdx = startIdx || 0;
+  shortsLoadedCount = 0;
   document.getElementById('shortsOverlay').classList.add('open');
-  buildShortsTrack();
-  updateShortsDots();
-  // Show hint briefly
+  buildShortsTrack(true);
   const hint = document.getElementById('shortsHint');
-  hint.style.animation = 'none'; hint.style.opacity='1';
-  setTimeout(()=>{ hint.style.animation='fadeHint 3s ease forwards'; }, 50);
+  hint.style.animation = 'none'; hint.style.opacity = '1';
+  setTimeout(() => { hint.style.animation = 'fadeHint 3s ease forwards'; }, 50);
 }
 
 function closeShortsOverlay() {
   document.getElementById('shortsOverlay').classList.remove('open');
-  // Restore Shorts tab active state so clicking it again works
   document.querySelectorAll('.rtab').forEach(t => t.classList.toggle('active', t.dataset.tab === curTab));
 }
 
-function buildShortsTrack() {
-  const track = document.getElementById('shortsTrack');
-  track.innerHTML = SHORTS.map((s,i)=>`
-    <div class="short-slide" id="ss${i}">
-      <div class="short-slide-bg">${s.emoji}</div>
-      <div class="short-slide-content">
-        <div class="short-slide-emoji">${s.emoji}</div>
-        <div class="short-play-overlay" id="spo${i}" onclick="toggleShortPlay(${i})">
-          <svg viewBox="0 0 20 20" fill="currentColor" id="spIcon${i}"><rect x="4" y="3" width="4" height="14"/><rect x="12" y="3" width="4" height="14"/></svg>
-        </div>
+function shortSlideHTML(s, i) {
+  return `<div class="short-slide" id="ss${i}">
+    <div class="short-slide-bg">${s.emoji}</div>
+    <div class="short-slide-content">
+      <div class="short-slide-emoji">${s.emoji}</div>
+      <div class="short-play-overlay" id="spo${i}" onclick="toggleShortPlay(${i})">
+        <svg viewBox="0 0 20 20" fill="currentColor" id="spIcon${i}"><rect x="4" y="3" width="4" height="14"/><rect x="12" y="3" width="4" height="14"/></svg>
       </div>
-      <div class="short-slide-info">
-        <div class="short-slide-title">${s.title}</div>
-        <div class="short-slide-channel">@${s.channel} · ${s.views} views</div>
+    </div>
+    <div class="short-slide-info">
+      <div class="short-slide-title">${s.title}</div>
+      <div class="short-slide-channel">@${s.channel} · ${s.views} views</div>
+    </div>
+    <div class="short-slide-actions">
+      <div class="short-action-btn" onclick="toast('❤️ ${s.likes}')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        <span>${s.likes}</span>
       </div>
-      <div class="short-slide-actions">
-        <div class="short-action-btn" onclick="toast('❤️ ${s.likes}')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-          <span>${s.likes}</span>
-        </div>
-        <div class="short-action-btn" onclick="toast('💬 Comment')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-          <span>Reply</span>
-        </div>
-        <div class="short-action-btn" onclick="toast('↗ Share')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
-          <span>Share</span>
-        </div>
+      <div class="short-action-btn" onclick="toast('💬 Comment')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <span>Reply</span>
       </div>
-    </div>`).join('');
+      <div class="short-action-btn" onclick="toast('↗ Share')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+        <span>Share</span>
+      </div>
+    </div>
+  </div>`;
+}
 
+function buildShortsTrack(reset) {
+  const track = document.getElementById('shortsTrack');
+  if (reset) { track.innerHTML = ''; shortsLoadedCount = 0; }
+  const end = Math.min(shortsLoadedCount + SHORTS_BATCH, SHORTS.length);
+  for (let i = shortsLoadedCount; i < end; i++) {
+    track.insertAdjacentHTML('beforeend', shortSlideHTML(SHORTS[i], i));
+  }
+  shortsLoadedCount = end;
+  updateShortsDots();
   goToShort(shortsIdx, false);
 }
 
-function goToShort(idx, animate=true) {
-  shortsIdx = Math.max(0, Math.min(SHORTS.length-1, idx));
+function maybeLoadMoreShorts() {
+  // Load next batch when within 3 slides of the loaded end
+  if (shortsIdx >= shortsLoadedCount - 3 && shortsLoadedCount < SHORTS.length) {
+    buildShortsTrack(false);
+  }
+}
+
+function goToShort(idx, animate = true) {
+  const max = shortsLoadedCount - 1;
+  shortsIdx = Math.max(0, Math.min(max, idx));
   const track = document.getElementById('shortsTrack');
+  if (!track) return;
   track.style.transition = animate ? 'transform .35s cubic-bezier(.4,0,.2,1)' : 'none';
   track.style.transform = `translateY(${-shortsIdx * 100}vh)`;
   updateShortsDots();
-  // Show play icon overlay briefly
   const po = document.getElementById(`spo${shortsIdx}`);
-  if (po) { po.classList.remove('hidden'); setTimeout(()=>po.classList.add('hidden'),1200); }
-  toast(`${shortsIdx+1} / ${SHORTS.length}`);
+  if (po) { po.classList.remove('hidden'); setTimeout(() => po.classList.add('hidden'), 1200); }
+  toast(`${shortsIdx + 1} / ${SHORTS.length}`);
+  maybeLoadMoreShorts();
 }
 
 function toggleShortPlay(i) {
@@ -1509,7 +1735,7 @@ function toggleShortPlay(i) {
 
 function updateShortsDots() {
   document.getElementById('shortsDots').innerHTML =
-    SHORTS.map((_,i)=>`<div class="spd ${i===shortsIdx?'act':''}"></div>`).join('');
+    SHORTS.map((_,i) => `<div class="spd ${i===shortsIdx?'act':''}" style="${i>=shortsLoadedCount?'opacity:.3':''}"></div>`).join('');
 }
 
 // Touch / wheel swipe for shorts
@@ -1672,23 +1898,91 @@ function closeFs() {
 }
 
 // ═══════════════════════════════════════════════════
-// SEARCH
+// SEARCH — dropdown + full results with infinite scroll
 // ═══════════════════════════════════════════════════
 const SUGGS = ['Temiwo Woods','Arlo Parks','Sabrina Carpenter','The Weeknd','chill music','lo-fi beats','coding music','ambient sound','travel vlog','indie r&b','neo-soul'];
+let lastQuery = '';
+
 function handleSearch(q) {
-  const dd=document.getElementById('sdd');
-  if (!q.trim()) { dd.classList.remove('open'); dd.innerHTML=''; return; }
-  const hits=[...ALL_VIDS,...SHORTS,...MOVIES].filter(v=>(v.title||'').toLowerCase().includes(q.toLowerCase())||(v.channel||'').toLowerCase().includes(q.toLowerCase())).slice(0,4);
-  const sg=SUGGS.filter(s=>s.toLowerCase().includes(q.toLowerCase())).slice(0,3);
-  dd.innerHTML=[
-    ...hits.map(v=>`<div class="sri" onclick="searchSel('${v.id}')"><svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5,4 17,10 5,16"/></svg>${v.title||v.name}</div>`),
-    ...sg.map(s=>`<div class="sri" onclick="toast('Searching: ${s}')"><svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="9" r="6"/><path d="m15 15 3 3"/></svg>${s}</div>`)
+  lastQuery = q;
+  const dd = document.getElementById('sdd');
+  if (!q.trim()) { dd.classList.remove('open'); dd.innerHTML = ''; return; }
+  const hits = [...ALL_VIDS,...SHORTS,...MOVIES].filter(v => (v.title||'').toLowerCase().includes(q.toLowerCase()) || (v.channel||'').toLowerCase().includes(q.toLowerCase())).slice(0, 5);
+  const sg = SUGGS.filter(s => s.toLowerCase().includes(q.toLowerCase())).slice(0, 3);
+  dd.innerHTML = [
+    ...hits.map(v => `<div class="sri" onclick="searchSel('${v.id}')"><svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5,4 17,10 5,16"/></svg>${v.title||v.name||''}</div>`),
+    ...sg.map(s => `<div class="sri" onclick="openSearchResults('${s}')"><svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="9" r="6"/><path d="m15 15 3 3"/></svg>${s}</div>`),
+    `<div class="sri" onclick="openSearchResults('${q.replace(/'/g,"\\'")}')"><svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="9" r="6"/><path d="m15 15 3 3"/></svg>Search all results for "<b>${q}</b>"</div>`
   ].join('');
   dd.classList.add('open');
 }
-function searchSel(id) { document.getElementById('sdd').classList.remove('open'); playVideo(id); }
-function openSearch() { const q=document.getElementById('searchInput').value; if(q) handleSearch(q); }
-function closeSearchDelay() { setTimeout(()=>document.getElementById('sdd').classList.remove('open'),200); }
+
+function openSearchResults(q) {
+  document.getElementById('sdd').classList.remove('open');
+  document.getElementById('searchInput').value = q;
+  // Build results pool — all matching videos ranked by score
+  const pool = [...ALL_VIDS,...MOVIES].filter(v =>
+    (v.title||'').toLowerCase().includes(q.toLowerCase()) ||
+    (v.channel||'').toLowerCase().includes(q.toLowerCase()) ||
+    (v.tags||[]).some(t => t.toLowerCase().includes(q.toLowerCase()))
+  );
+  // Show results in left panel, replacing the grid
+  const vlistArea = document.getElementById('vlistArea');
+  // Make sure list area is visible (not player)
+  if (!miniOn && curVid) {
+    document.getElementById('playerArea').classList.remove('show');
+    document.getElementById('vlistArea').style.display = '';
+    curVid = null;
+  }
+  initScrollKey('search', pool, 20);
+  const grid = document.getElementById('mainGrid');
+  grid.innerHTML = '';
+  const wrapper = document.createElement('div');
+  wrapper.id = 'searchScrollWrap';
+  grid.appendChild(wrapper);
+  const sentinel = document.createElement('div');
+  sentinel.id = 'searchLoadMore';
+  sentinel.style.cssText = 'height:36px;display:flex;align-items:center;justify-content:center';
+  grid.appendChild(sentinel);
+
+  // header above results
+  const header = document.createElement('div');
+  header.style.cssText = 'display:flex;align-items:center;gap:10px;margin-bottom:12px';
+  header.innerHTML = `<button onclick="initMainGrid()" style="display:flex;align-items:center;gap:5px;background:rgba(255,255,255,.06);border:0.5px solid var(--gb);border-radius:7px;color:var(--ts);font-size:11px;padding:5px 10px;cursor:pointer;font-family:var(--fn)" onmouseover="this.style.background='rgba(0,150,255,.15)'" onmouseout="this.style.background='rgba(255,255,255,.06)'"><svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 4l-7 6 7 6"/></svg> Home</button><span style="font-size:11px;color:var(--tm)">Results for "<span style="color:var(--tp)">${q}</span>" · ${pool.length} found</span>`;
+  document.getElementById('vlistArea').insertBefore(header, grid);
+
+  function loadBatch() {
+    const batch = getNextBatch('search');
+    if (batch.length === 0) { sentinel.innerHTML = `<span style="font-size:10px;color:var(--tm);padding:8px">✓ ${pool.length} results shown</span>`; obs.disconnect(); return; }
+    wrapper.insertAdjacentHTML('beforeend', `<div class="vgrid">${batch.map(renderVCard).join('')}</div>`);
+    applyTilt();
+  }
+  loadBatch();
+
+  const obs = new IntersectionObserver(entries => {
+    if (!entries[0].isIntersecting || scrollState.search.loading) return;
+    if (scrollState.search.done) { sentinel.innerHTML = `<span style="font-size:10px;color:var(--tm);padding:8px">✓ All results shown</span>`; obs.disconnect(); return; }
+    scrollState.search.loading = true;
+    sentinel.innerHTML = `<div style="width:18px;height:18px;border:2px solid rgba(0,180,255,.2);border-top-color:var(--ac);border-radius:50%;animation:spin .7s linear infinite"></div>`;
+    setTimeout(() => { scrollState.search.loading = false; sentinel.innerHTML = ''; loadBatch(); }, 350);
+  }, { root: vlistArea, threshold: 0.05 });
+  obs.observe(sentinel);
+}
+
+function searchSel(id) {
+  document.getElementById('sdd').classList.remove('open');
+  // Remove any search header before playing
+  const old = document.getElementById('searchScrollWrap')?.closest('.vlist-area')?.querySelector('div[style*="align-items:center"]');
+  if (old) old.remove();
+  playVideo(id);
+}
+function openSearch() { const q = document.getElementById('searchInput').value; if (q) handleSearch(q); }
+function closeSearchDelay() { setTimeout(() => document.getElementById('sdd').classList.remove('open'), 200); }
+
+// Enter key submits search
+document.getElementById('searchInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { openSearchResults(e.target.value.trim() || lastQuery); e.target.blur(); }
+});
 
 // ═══════════════════════════════════════════════════
 // DOTS
