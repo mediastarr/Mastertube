@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>AR ViewTube Panel</title>
+  <title>ViewTube AR – Picture Clone</title>
   <meta name="viewport" content="width=600, initial-scale=1.0" />
   <style>
     :root {
@@ -29,9 +29,11 @@
     body {
       margin: 0;
       padding: 0;
-      width: 100%;
-      height: 100%;
-      background: transparent;
+      width: 600px;
+      height: 600px;
+      overflow: hidden;
+      background: transparent !important;
+      background-color: transparent !important;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
         "Segoe UI", sans-serif;
       color: var(--text-main);
@@ -44,22 +46,50 @@
       border-radius: var(--radius-lg);
       border: 1px solid rgba(255, 255, 255, 0.08);
       backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
       box-shadow: var(--shadow-soft);
-      background: rgba(0, 0, 0, 0.1);
+      background: transparent !important;
       display: flex;
       flex-direction: column;
+      overflow: hidden;
     }
 
-    /* Top bar: title + channel + views (player header) */
-    .top-bar {
+    /* Layout: left player, right 1-column grid */
+    .main-layout {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      gap: 8px;
+      padding: 8px 10px 6px;
+    }
+
+    /* LEFT SIDE: player + info */
+    .left-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      overflow: hidden;
+    }
+
+    .player-card {
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      border-radius: var(--radius-md);
+      background: var(--glass-bg);
+      border: 1px solid var(--border-soft);
+      padding: 8px;
+    }
+
+    .player-header-row {
       display: flex;
       justify-content: space-between;
-      align-items: flex-start;
-      padding: 10px 14px 6px;
+      align-items: center;
+      gap: 8px;
     }
 
-    .top-left {
-      max-width: 60%;
+    .player-title-block {
+      flex: 1;
     }
 
     .video-title {
@@ -76,16 +106,11 @@
       align-items: center;
     }
 
-    .top-right {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
     .channel-block {
       display: flex;
       flex-direction: column;
       align-items: flex-end;
+      gap: 2px;
     }
 
     .channel-name {
@@ -99,7 +124,7 @@
     }
 
     .subscribe-btn {
-      padding: 6px 12px;
+      padding: 5px 10px;
       border-radius: 999px;
       border: none;
       background: var(--accent);
@@ -108,43 +133,30 @@
       cursor: pointer;
     }
 
-    /* Main layout: left suggestions/player, right tabs + feed */
-    .main-layout {
-      flex: 1;
-      display: grid;
-      grid-template-columns: 1.3fr 1.1fr;
-      gap: 10px;
-      padding: 6px 14px 8px;
-    }
-
-    /* LEFT PANEL */
-    .left-panel {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .player-card {
-      display: none; /* hidden until a video is opened */
-      flex-direction: column;
-      gap: 8px;
-      border-radius: var(--radius-md);
-      background: var(--glass-bg);
+    .close-player-btn {
+      margin-left: 6px;
+      padding: 4px 8px;
+      border-radius: 999px;
       border: 1px solid var(--border-soft);
-      padding: 8px;
+      background: rgba(0, 0, 0, 0.7);
+      color: var(--text-sub);
+      font-size: 10px;
+      cursor: pointer;
     }
 
     .player-video {
       position: relative;
       border-radius: var(--radius-md);
       overflow: hidden;
-      background: #111;
+      background: #000 !important;
     }
 
     .player-video iframe {
       width: 100%;
-      height: 220px;
+      height: 230px;
       border: none;
+      background: transparent !important;
+      color-scheme: dark;
     }
 
     .player-overlay {
@@ -188,6 +200,7 @@
     .engagement-row {
       display: flex;
       gap: 8px;
+      margin-top: 6px;
     }
 
     .engage-btn {
@@ -203,128 +216,70 @@
     .description-block {
       font-size: 11px;
       color: var(--text-sub);
-      max-height: 70px;
+      max-height: 80px;
       overflow: hidden;
+      margin-top: 4px;
     }
 
-    /* Suggestions list under/without player */
-    .suggestions-column {
-      flex: 1;
+    /* LEFT: vertical tabs + suggestions placeholder (like picture’s sidebar feel) */
+    .left-sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
       border-radius: var(--radius-md);
-      background: rgba(0, 0, 0, 0.5);
+      background: var(--glass-bg);
       border: 1px solid var(--border-soft);
       padding: 6px;
-      overflow-y: auto;
     }
 
-    .suggestions-column::-webkit-scrollbar {
-      width: 4px;
-    }
-    .suggestions-column::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    .suggestions-column::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.25);
-      border-radius: 999px;
+    .vertical-tabs {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
     }
 
-    .suggest-card {
-      display: grid;
-      grid-template-columns: 0.9fr 1.1fr;
-      gap: 6px;
-      padding: 6px;
-      margin-bottom: 6px;
-      border-radius: var(--radius-md);
-      background: rgba(0, 0, 0, 0.8);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      cursor: pointer;
-      transition: transform var(--transition-fast), box-shadow var(--transition-fast),
-        background var(--transition-fast);
-    }
-
-    .suggest-card:hover {
-      transform: translateY(-2px);
-      background: rgba(0, 0, 0, 0.95);
-      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.7);
-    }
-
-    .suggest-thumb {
+    .vtab-btn {
       width: 100%;
-      padding-top: 56.25%;
-      border-radius: var(--radius-sm);
-      background-size: cover;
-      background-position: center;
-    }
-
-    .suggest-info {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      gap: 2px;
-    }
-
-    .suggest-title {
-      font-size: 11px;
-      font-weight: 600;
-    }
-
-    .suggest-channel {
-      font-size: 10px;
-      color: var(--text-sub);
-    }
-
-    .suggest-meta {
-      font-size: 10px;
-      color: var(--text-sub);
-    }
-
-    /* RIGHT PANEL: tabs + feed */
-    .right-panel {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .tabs-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 6px;
-    }
-
-    .tabs-left {
-      display: flex;
-      gap: 6px;
-    }
-
-    .tab-btn {
-      padding: 5px 9px;
-      border-radius: 999px;
+      padding: 6px 8px;
+      border-radius: 10px;
       border: 1px solid transparent;
-      background: rgba(0, 0, 0, 0.6);
+      background: rgba(0, 0, 0, 0.55);
       color: var(--text-sub);
       font-size: 11px;
+      text-align: left;
       cursor: pointer;
       transition: background var(--transition-fast), color var(--transition-fast),
         border-color var(--transition-fast), transform var(--transition-fast);
     }
 
-    .tab-btn.active {
-      color: var(--text-main);
-      border-color: var(--accent);
+    .vtab-btn.active {
       background: rgba(0, 0, 0, 0.9);
-      transform: translateY(-1px);
+      border-color: var(--accent);
+      color: var(--text-main);
+      transform: translateX(2px);
     }
 
-    .tabs-right {
+    /* RIGHT SIDE: search bar + 1-column video list */
+    .right-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      overflow: hidden;
+    }
+
+    .search-row {
       display: flex;
       align-items: center;
       gap: 6px;
+      border-radius: var(--radius-md);
+      background: var(--glass-bg);
+      border: 1px solid var(--border-soft);
+      padding: 6px 8px;
     }
 
     #search-input {
-      width: 120px;
-      padding: 5px 8px;
+      flex: 1;
+      padding: 6px 8px;
       border-radius: 999px;
       border: 1px solid var(--border-soft);
       background: rgba(0, 0, 0, 0.7);
@@ -336,7 +291,7 @@
     .feed-column {
       flex: 1;
       border-radius: var(--radius-md);
-      background: rgba(0, 0, 0, 0.5);
+      background: var(--glass-bg);
       border: 1px solid var(--border-soft);
       padding: 6px;
       overflow-y: auto;
@@ -405,7 +360,7 @@
 
     /* Bottom HUD / mini-player */
     .bottom-hud {
-      padding: 6px 14px 10px;
+      padding: 6px 10px 8px;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -463,31 +418,41 @@
 </head>
 <body>
   <div id="ar-panel">
-    <!-- Player header (only meaningful when a video is open) -->
-    <header class="top-bar">
-      <div class="top-left">
-        <div class="video-title" id="video-title">
-          <!-- Filled when video opens -->
-        </div>
-        <div class="video-meta">
-          <span id="video-views"></span>
-          <span id="video-dot" style="display:none;">•</span>
-          <span id="video-age"></span>
-        </div>
-      </div>
-      <div class="top-right">
-        <div class="channel-block">
-          <div class="channel-name" id="channel-name"></div>
-          <div class="channel-subs" id="channel-subs"></div>
-        </div>
-        <button class="subscribe-btn" id="subscribe-btn">Subscribe</button>
-      </div>
-    </header>
-
     <main class="main-layout">
-      <!-- LEFT: suggestions + player -->
+      <!-- LEFT: sidebar + player (like picture) -->
       <section class="left-panel">
+        <div class="left-sidebar">
+          <div class="vertical-tabs">
+            <button class="vtab-btn active" data-tab="all">All</button>
+            <button class="vtab-btn" data-tab="shorts">Shorts</button>
+            <button class="vtab-btn" data-tab="movies">Movies</button>
+            <button class="vtab-btn" data-tab="trending">Trending</button>
+            <button class="vtab-btn" data-tab="history">History</button>
+            <button class="vtab-btn" data-tab="subscriptions">Subscriptions</button>
+            <button class="vtab-btn" data-tab="channel">Channel</button>
+          </div>
+        </div>
+
         <div class="player-card" id="player-card">
+          <div class="player-header-row">
+            <div class="player-title-block">
+              <div class="video-title" id="video-title"></div>
+              <div class="video-meta">
+                <span id="video-views"></span>
+                <span id="video-dot" style="display:none;">•</span>
+                <span id="video-age"></span>
+              </div>
+            </div>
+            <div class="channel-block">
+              <div class="channel-name" id="channel-name"></div>
+              <div class="channel-subs" id="channel-subs"></div>
+              <div style="display:flex;gap:4px;margin-top:4px;">
+                <button class="subscribe-btn" id="subscribe-btn">Subscribe</button>
+                <button class="close-player-btn" id="close-player-btn">✕</button>
+              </div>
+            </div>
+          </div>
+
           <div class="player-video">
             <iframe
               id="player-iframe"
@@ -522,35 +487,21 @@
 
           <div class="description-block" id="description-block"></div>
         </div>
-
-        <div class="suggestions-column" id="suggestions-column">
-          <!-- suggestion cards injected here -->
-        </div>
       </section>
 
-      <!-- RIGHT: tabs + feed -->
+      <!-- RIGHT: search bar + 1-column video list -->
       <section class="right-panel">
-        <div class="tabs-row">
-          <div class="tabs-left">
-            <button class="tab-btn active" data-tab="home">Home</button>
-            <button class="tab-btn" data-tab="shorts">Shorts</button>
-            <button class="tab-btn" data-tab="movies">Movies</button>
-            <button class="tab-btn" data-tab="trending">Trending</button>
-            <button class="tab-btn" data-tab="search">🔍</button>
-            <button class="tab-btn" data-tab="more">⋮</button>
-          </div>
-          <div class="tabs-right">
-            <input
-              id="search-input"
-              type="text"
-              placeholder="Search..."
-              autocomplete="off"
-            />
-          </div>
+        <div class="search-row">
+          <input
+            id="search-input"
+            type="text"
+            placeholder="Search"
+            autocomplete="off"
+          />
         </div>
 
         <div class="feed-column" id="feed-column">
-          <!-- feed cards injected here -->
+          <!-- video cards injected here -->
         </div>
       </section>
     </main>
@@ -571,20 +522,30 @@
   </div>
 
   <script>
+    // Active key
     const API_KEY = "AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX";
+
+    // Other keys (swap if needed)
+    /*
+    AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    */
 
     const SEARCH_URL =
       "https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=20";
     const VIDEO_URL =
       "https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,contentDetails";
 
-    const tabs = document.querySelectorAll(".tab-btn");
+    const tabs = document.querySelectorAll(".vtab-btn");
     const feedColumn = document.getElementById("feed-column");
     const searchInput = document.getElementById("search-input");
 
-    const suggestionsColumn = document.getElementById("suggestions-column");
     const playerCard = document.getElementById("player-card");
     const playerIframe = document.getElementById("player-iframe");
+    const closePlayerBtn = document.getElementById("close-player-btn");
 
     const videoTitleEl = document.getElementById("video-title");
     const videoViewsEl = document.getElementById("video-views");
@@ -606,14 +567,16 @@
     const emgVolumeBtn = document.getElementById("emg-volume");
 
     const state = {
-      currentTab: "home",
+      currentTab: "all",
       pageTokens: {
-        home: null,
+        all: null,
         shorts: null,
         movies: null,
         trending: null,
+        history: null,
+        subscriptions: null,
+        channel: null,
         search: null,
-        more: null,
       },
       isLoading: false,
       currentVideoId: null,
@@ -621,7 +584,7 @@
 
     function defaultQueryForTab(tab) {
       switch (tab) {
-        case "home":
+        case "all":
           return "Temiwo Woods Stay Golden official video";
         case "shorts":
           return "shorts funny vertical";
@@ -629,8 +592,12 @@
           return "full movie trailer";
         case "trending":
           return "trending music videos";
-        case "more":
-          return "recommended videos";
+        case "history":
+          return "recent watched videos";
+        case "subscriptions":
+          return "latest uploads";
+        case "channel":
+          return "Truthunedited channel";
         case "search":
           return searchInput.value.trim() || "music videos";
         default:
@@ -651,10 +618,10 @@
     async function loadInitialForTab(tab) {
       state.pageTokens[tab] = null;
       feedColumn.innerHTML = "";
-      await loadNextBatch(tab, true);
+      await loadNextBatch(tab);
     }
 
-    async function loadNextBatch(tab, resetSuggestions = false) {
+    async function loadNextBatch(tab) {
       if (state.isLoading) return;
       state.isLoading = true;
 
@@ -665,11 +632,6 @@
 
         state.pageTokens[tab] = data.nextPageToken || null;
         const items = data.items || [];
-
-        if (resetSuggestions) {
-          suggestionsColumn.innerHTML = "";
-          items.forEach((item) => addSuggestionCard(item));
-        }
 
         items.forEach((item) => addFeedCard(item));
       } catch (err) {
@@ -718,47 +680,6 @@
       });
 
       feedColumn.appendChild(card);
-    }
-
-    function addSuggestionCard(item) {
-      const { snippet, id } = item;
-      const videoId = id.videoId;
-
-      const card = document.createElement("div");
-      card.className = "suggest-card";
-      card.dataset.videoId = videoId;
-
-      const thumb = document.createElement("div");
-      thumb.className = "suggest-thumb";
-      thumb.style.backgroundImage = `url(${snippet.thumbnails.medium.url})`;
-
-      const info = document.createElement("div");
-      info.className = "suggest-info";
-
-      const title = document.createElement("div");
-      title.className = "suggest-title";
-      title.textContent = snippet.title;
-
-      const channel = document.createElement("div");
-      channel.className = "suggest-channel";
-      channel.textContent = snippet.channelTitle;
-
-      const meta = document.createElement("div");
-      meta.className = "suggest-meta";
-      meta.textContent = formatMeta(snippet);
-
-      info.appendChild(title);
-      info.appendChild(channel);
-      info.appendChild(meta);
-
-      card.appendChild(thumb);
-      card.appendChild(info);
-
-      card.addEventListener("click", () => {
-        setMainVideo(item);
-      });
-
-      suggestionsColumn.appendChild(card);
     }
 
     function formatMeta(snippet) {
@@ -825,6 +746,12 @@
       }
     }
 
+    function closePlayer() {
+      state.currentVideoId = null;
+      playerCard.style.display = "none";
+      playerIframe.src = "";
+    }
+
     function formatCount(n) {
       if (!n) return "0";
       const num = Number(n);
@@ -866,9 +793,7 @@
     searchInput.addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
         state.currentTab = "search";
-        tabs.forEach((t) => {
-          t.classList.toggle("active", t.dataset.tab === "search");
-        });
+        tabs.forEach((t) => t.classList.remove("active"));
         loadInitialForTab("search");
       }
     });
@@ -878,8 +803,13 @@
       const { scrollTop, scrollHeight, clientHeight } = feedColumn;
       const nearBottom = scrollTop + clientHeight >= scrollHeight - 40;
       if (nearBottom && !state.isLoading && state.pageTokens[state.currentTab]) {
-        loadNextBatch(state.currentTab, false);
+        loadNextBatch(state.currentTab);
       }
+    });
+
+    // Close player
+    closePlayerBtn.addEventListener("click", () => {
+      closePlayer();
     });
 
     // EMG pseudo integration
@@ -892,8 +822,8 @@
       console.log("EMG wrist rotation volume gesture");
     });
 
-    // Init: load Home tab and suggestions
-    loadInitialForTab("home");
+    // Init: load All tab
+    loadInitialForTab("all");
   </script>
 </body>
 </html>
