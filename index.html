@@ -54,16 +54,15 @@
       overflow: hidden;
     }
 
-    /* Layout: left player, right 1-column grid */
     .main-layout {
       flex: 1;
       display: grid;
-      grid-template-columns: 1.4fr 1fr;
+      grid-template-columns: 0.3fr 0.7fr; /* 30 / 70 split */
       gap: 8px;
       padding: 8px 10px 6px;
     }
 
-    /* LEFT SIDE: player + info */
+    /* LEFT: sidebar tabs only */
     .left-panel {
       display: flex;
       flex-direction: column;
@@ -71,21 +70,184 @@
       overflow: hidden;
     }
 
-    .player-card {
-      display: none;
-      flex-direction: column;
-      gap: 8px;
+    .left-sidebar {
+      flex: 1;
       border-radius: var(--radius-md);
       background: var(--glass-bg);
       border: 1px solid var(--border-soft);
-      padding: 8px;
+      padding: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .vertical-tabs {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .vtab-btn {
+      width: 100%;
+      padding: 6px 8px;
+      border-radius: 10px;
+      border: 1px solid transparent;
+      background: rgba(0, 0, 0, 0.55);
+      color: var(--text-sub);
+      font-size: 11px;
+      text-align: left;
+      cursor: pointer;
+      transition: background var(--transition-fast), color var(--transition-fast),
+        border-color var(--transition-fast), transform var(--transition-fast);
+    }
+
+    .vtab-btn.active {
+      background: rgba(0, 0, 0, 0.9);
+      border-color: var(--accent);
+      color: var(--text-main);
+      transform: translateX(2px);
+    }
+
+    /* RIGHT: search + dynamic content (grid or player+suggestions) */
+    .right-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      overflow: hidden;
+    }
+
+    .search-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: var(--radius-md);
+      background: var(--glass-bg);
+      border: 1px solid var(--border-soft);
+      padding: 6px 8px;
+    }
+
+    #search-input {
+      flex: 1;
+      padding: 6px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--border-soft);
+      background: rgba(0, 0, 0, 0.7);
+      color: var(--text-main);
+      font-size: 11px;
+      outline: none;
+    }
+
+    .feed-scroll {
+      flex: 1;
+      border-radius: var(--radius-md);
+      background: var(--glass-bg);
+      border: 1px solid var(--border-soft);
+      padding: 6px;
+      overflow-y: auto;
+    }
+
+    .feed-scroll::-webkit-scrollbar {
+      width: 4px;
+    }
+    .feed-scroll::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .feed-scroll::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.25);
+      border-radius: 999px;
+    }
+
+    /* GRID MODE: 2-column medium thumbnails */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .grid-card {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      border-radius: var(--radius-md);
+      background: rgba(0, 0, 0, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      cursor: pointer;
+      transition: transform var(--transition-fast), box-shadow var(--transition-fast),
+        background var(--transition-fast);
+      padding: 4px;
+    }
+
+    .grid-card:hover {
+      transform: translateY(-2px);
+      background: rgba(0, 0, 0, 0.95);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.7);
+    }
+
+    .grid-thumb {
+      width: 100%;
+      padding-top: 56.25%; /* 16:9 */
+      border-radius: var(--radius-sm);
+      background-size: cover;
+      background-position: center;
+    }
+
+    .grid-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      padding: 2px 2px 4px;
+    }
+
+    .grid-title {
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .grid-channel {
+      font-size: 10px;
+      color: var(--text-sub);
+    }
+
+    .grid-meta {
+      font-size: 10px;
+      color: var(--text-sub);
+    }
+
+    /* PLAYER MODE: player + 1-column suggestions */
+    .player-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .player-card {
+      border-radius: var(--radius-md);
+      background: rgba(0, 0, 0, 0.95);
+      border: 1px solid var(--border-soft);
+      padding: 6px;
+    }
+
+    .player-video {
+      position: relative;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      background: #000 !important;
+    }
+
+    .player-video iframe {
+      width: 100%;
+      height: 230px;
+      border: none;
+      background: transparent !important;
+      color-scheme: dark;
     }
 
     .player-header-row {
       display: flex;
       justify-content: space-between;
-      align-items: center;
+      align-items: flex-start;
       gap: 8px;
+      margin-top: 6px;
     }
 
     .player-title-block {
@@ -134,7 +296,7 @@
     }
 
     .close-player-btn {
-      margin-left: 6px;
+      margin-top: 4px;
       padding: 4px 8px;
       border-radius: 999px;
       border: 1px solid var(--border-soft);
@@ -142,59 +304,6 @@
       color: var(--text-sub);
       font-size: 10px;
       cursor: pointer;
-    }
-
-    .player-video {
-      position: relative;
-      border-radius: var(--radius-md);
-      overflow: hidden;
-      background: #000 !important;
-    }
-
-    .player-video iframe {
-      width: 100%;
-      height: 230px;
-      border: none;
-      background: transparent !important;
-      color-scheme: dark;
-    }
-
-    .player-overlay {
-      position: absolute;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      padding: 6px 8px;
-      background: linear-gradient(
-        to top,
-        rgba(0, 0, 0, 0.7),
-        rgba(0, 0, 0, 0.0)
-      );
-    }
-
-    .progress-row {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .time-label {
-      font-size: 11px;
-      color: var(--text-sub);
-    }
-
-    .progress-bar {
-      width: 100%;
-      height: 3px;
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.25);
-      overflow: hidden;
-    }
-
-    #progress-fill {
-      width: 20%;
-      height: 100%;
-      background: var(--accent);
     }
 
     .engagement-row {
@@ -221,114 +330,32 @@
       margin-top: 4px;
     }
 
-    /* LEFT: vertical tabs + suggestions placeholder (like picture’s sidebar feel) */
-    .left-sidebar {
+    .suggestions-list {
       display: flex;
       flex-direction: column;
       gap: 6px;
-      border-radius: var(--radius-md);
-      background: var(--glass-bg);
-      border: 1px solid var(--border-soft);
-      padding: 6px;
     }
 
-    .vertical-tabs {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .vtab-btn {
-      width: 100%;
-      padding: 6px 8px;
-      border-radius: 10px;
-      border: 1px solid transparent;
-      background: rgba(0, 0, 0, 0.55);
-      color: var(--text-sub);
-      font-size: 11px;
-      text-align: left;
-      cursor: pointer;
-      transition: background var(--transition-fast), color var(--transition-fast),
-        border-color var(--transition-fast), transform var(--transition-fast);
-    }
-
-    .vtab-btn.active {
-      background: rgba(0, 0, 0, 0.9);
-      border-color: var(--accent);
-      color: var(--text-main);
-      transform: translateX(2px);
-    }
-
-    /* RIGHT SIDE: search bar + 1-column video list */
-    .right-panel {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      overflow: hidden;
-    }
-
-    .search-row {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      border-radius: var(--radius-md);
-      background: var(--glass-bg);
-      border: 1px solid var(--border-soft);
-      padding: 6px 8px;
-    }
-
-    #search-input {
-      flex: 1;
-      padding: 6px 8px;
-      border-radius: 999px;
-      border: 1px solid var(--border-soft);
-      background: rgba(0, 0, 0, 0.7);
-      color: var(--text-main);
-      font-size: 11px;
-      outline: none;
-    }
-
-    .feed-column {
-      flex: 1;
-      border-radius: var(--radius-md);
-      background: var(--glass-bg);
-      border: 1px solid var(--border-soft);
-      padding: 6px;
-      overflow-y: auto;
-    }
-
-    .feed-column::-webkit-scrollbar {
-      width: 4px;
-    }
-    .feed-column::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    .feed-column::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.25);
-      border-radius: 999px;
-    }
-
-    .feed-card {
+    .suggest-card {
       display: grid;
       grid-template-columns: 0.9fr 1.1fr;
       gap: 6px;
       padding: 6px;
-      margin-bottom: 6px;
       border-radius: var(--radius-md);
-      background: rgba(0, 0, 0, 0.8);
+      background: rgba(0, 0, 0, 0.9);
       border: 1px solid rgba(255, 255, 255, 0.12);
       cursor: pointer;
       transition: transform var(--transition-fast), box-shadow var(--transition-fast),
         background var(--transition-fast);
     }
 
-    .feed-card:hover {
+    .suggest-card:hover {
       transform: translateY(-2px);
-      background: rgba(0, 0, 0, 0.95);
+      background: rgba(0, 0, 0, 0.98);
       box-shadow: 0 12px 30px rgba(0, 0, 0, 0.7);
     }
 
-    .feed-thumb {
+    .suggest-thumb {
       width: 100%;
       padding-top: 56.25%;
       border-radius: var(--radius-sm);
@@ -336,29 +363,29 @@
       background-position: center;
     }
 
-    .feed-info {
+    .suggest-info {
       display: flex;
       flex-direction: column;
       justify-content: center;
       gap: 2px;
     }
 
-    .feed-title {
+    .suggest-title {
       font-size: 11px;
       font-weight: 600;
     }
 
-    .feed-channel {
+    .suggest-channel {
       font-size: 10px;
       color: var(--text-sub);
     }
 
-    .feed-meta {
+    .suggest-meta {
       font-size: 10px;
       color: var(--text-sub);
     }
 
-    /* Bottom HUD / mini-player */
+    /* Bottom HUD */
     .bottom-hud {
       padding: 6px 10px 8px;
       display: flex;
@@ -419,7 +446,7 @@
 <body>
   <div id="ar-panel">
     <main class="main-layout">
-      <!-- LEFT: sidebar + player (like picture) -->
+      <!-- LEFT: sidebar tabs only -->
       <section class="left-panel">
         <div class="left-sidebar">
           <div class="vertical-tabs">
@@ -432,64 +459,9 @@
             <button class="vtab-btn" data-tab="channel">Channel</button>
           </div>
         </div>
-
-        <div class="player-card" id="player-card">
-          <div class="player-header-row">
-            <div class="player-title-block">
-              <div class="video-title" id="video-title"></div>
-              <div class="video-meta">
-                <span id="video-views"></span>
-                <span id="video-dot" style="display:none;">•</span>
-                <span id="video-age"></span>
-              </div>
-            </div>
-            <div class="channel-block">
-              <div class="channel-name" id="channel-name"></div>
-              <div class="channel-subs" id="channel-subs"></div>
-              <div style="display:flex;gap:4px;margin-top:4px;">
-                <button class="subscribe-btn" id="subscribe-btn">Subscribe</button>
-                <button class="close-player-btn" id="close-player-btn">✕</button>
-              </div>
-            </div>
-          </div>
-
-          <div class="player-video">
-            <iframe
-              id="player-iframe"
-              src=""
-              title="YouTube video player"
-              frameborder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowfullscreen
-            ></iframe>
-
-            <div class="player-overlay">
-              <div class="progress-row">
-                <div class="time-label">
-                  <span id="current-time">0:00</span>
-                  <span>/</span>
-                  <span id="total-time">0:00</span>
-                </div>
-                <div class="progress-bar">
-                  <div id="progress-fill"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="engagement-row">
-            <button class="engage-btn" id="like-btn">
-              👍 <span id="like-count">0</span>
-            </button>
-            <button class="engage-btn">↗ Share</button>
-            <button class="engage-btn">💾 Save</button>
-          </div>
-
-          <div class="description-block" id="description-block"></div>
-        </div>
       </section>
 
-      <!-- RIGHT: search bar + 1-column video list -->
+      <!-- RIGHT: search + dynamic content -->
       <section class="right-panel">
         <div class="search-row">
           <input
@@ -500,8 +472,8 @@
           />
         </div>
 
-        <div class="feed-column" id="feed-column">
-          <!-- video cards injected here -->
+        <div class="feed-scroll" id="feed-scroll">
+          <!-- grid or player+suggestions injected here -->
         </div>
       </section>
     </main>
@@ -540,24 +512,8 @@
       "https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,contentDetails";
 
     const tabs = document.querySelectorAll(".vtab-btn");
-    const feedColumn = document.getElementById("feed-column");
+    const feedScroll = document.getElementById("feed-scroll");
     const searchInput = document.getElementById("search-input");
-
-    const playerCard = document.getElementById("player-card");
-    const playerIframe = document.getElementById("player-iframe");
-    const closePlayerBtn = document.getElementById("close-player-btn");
-
-    const videoTitleEl = document.getElementById("video-title");
-    const videoViewsEl = document.getElementById("video-views");
-    const videoDotEl = document.getElementById("video-dot");
-    const videoAgeEl = document.getElementById("video-age");
-    const channelNameEl = document.getElementById("channel-name");
-    const channelSubsEl = document.getElementById("channel-subs");
-    const likeCountEl = document.getElementById("like-count");
-    const descriptionBlockEl = document.getElementById("description-block");
-    const currentTimeEl = document.getElementById("current-time");
-    const totalTimeEl = document.getElementById("total-time");
-    const progressFillEl = document.getElementById("progress-fill");
 
     const miniThumbEl = document.getElementById("mini-thumb");
     const miniTitleEl = document.getElementById("mini-title");
@@ -579,6 +535,8 @@
         search: null,
       },
       isLoading: false,
+      mode: "grid", // "grid" or "player"
+      items: [],
       currentVideoId: null,
     };
 
@@ -617,11 +575,13 @@
 
     async function loadInitialForTab(tab) {
       state.pageTokens[tab] = null;
-      feedColumn.innerHTML = "";
-      await loadNextBatch(tab);
+      state.items = [];
+      state.mode = "grid";
+      feedScroll.innerHTML = "";
+      await loadNextBatch(tab, true);
     }
 
-    async function loadNextBatch(tab) {
+    async function loadNextBatch(tab, reset = false) {
       if (state.isLoading) return;
       state.isLoading = true;
 
@@ -633,7 +593,18 @@
         state.pageTokens[tab] = data.nextPageToken || null;
         const items = data.items || [];
 
-        items.forEach((item) => addFeedCard(item));
+        if (reset) {
+          state.items = items.slice();
+        } else {
+          state.items = state.items.concat(items);
+        }
+
+        if (state.mode === "grid") {
+          renderGrid(state.items);
+        } else {
+          // in player mode, append new suggestions
+          renderPlayer(state.currentVideoIdItem, state.items);
+        }
       } catch (err) {
         console.error("YouTube search error", err);
       } finally {
@@ -641,45 +612,250 @@
       }
     }
 
-    function addFeedCard(item) {
-      const { snippet, id } = item;
-      const videoId = id.videoId;
+    function renderGrid(items) {
+      state.mode = "grid";
+      feedScroll.innerHTML = "";
 
-      const card = document.createElement("div");
-      card.className = "feed-card";
-      card.dataset.videoId = videoId;
+      const grid = document.createElement("div");
+      grid.className = "grid-2";
 
-      const thumb = document.createElement("div");
-      thumb.className = "feed-thumb";
-      thumb.style.backgroundImage = `url(${snippet.thumbnails.medium.url})`;
+      items.forEach((item) => {
+        const { snippet, id } = item;
+        const videoId = id.videoId;
 
-      const info = document.createElement("div");
-      info.className = "feed-info";
+        const card = document.createElement("div");
+        card.className = "grid-card";
+        card.dataset.videoId = videoId;
 
-      const title = document.createElement("div");
-      title.className = "feed-title";
-      title.textContent = snippet.title;
+        const thumb = document.createElement("div");
+        thumb.className = "grid-thumb";
+        thumb.style.backgroundImage = `url(${snippet.thumbnails.medium.url})`;
 
-      const channel = document.createElement("div");
-      channel.className = "feed-channel";
-      channel.textContent = snippet.channelTitle;
+        const info = document.createElement("div");
+        info.className = "grid-info";
 
-      const meta = document.createElement("div");
-      meta.className = "feed-meta";
-      meta.textContent = formatMeta(snippet);
+        const title = document.createElement("div");
+        title.className = "grid-title";
+        title.textContent = snippet.title;
 
-      info.appendChild(title);
-      info.appendChild(channel);
-      info.appendChild(meta);
+        const channel = document.createElement("div");
+        channel.className = "grid-channel";
+        channel.textContent = snippet.channelTitle;
 
-      card.appendChild(thumb);
-      card.appendChild(info);
+        const meta = document.createElement("div");
+        meta.className = "grid-meta";
+        meta.textContent = formatMeta(snippet);
 
-      card.addEventListener("click", () => {
-        setMainVideo(item);
+        info.appendChild(title);
+        info.appendChild(channel);
+        info.appendChild(meta);
+
+        card.appendChild(thumb);
+        card.appendChild(info);
+
+        card.addEventListener("click", () => {
+          openVideo(item);
+        });
+
+        grid.appendChild(card);
       });
 
-      feedColumn.appendChild(card);
+      feedScroll.appendChild(grid);
+    }
+
+    function renderPlayer(selectedItem, items) {
+      state.mode = "player";
+      feedScroll.innerHTML = "";
+
+      const { snippet, id } = selectedItem;
+      const videoId = id.videoId;
+      state.currentVideoId = videoId;
+      state.currentVideoIdItem = selectedItem;
+
+      const wrapper = document.createElement("div");
+      wrapper.className = "player-wrapper";
+
+      const playerCard = document.createElement("div");
+      playerCard.className = "player-card";
+
+      const playerVideo = document.createElement("div");
+      playerVideo.className = "player-video";
+
+      const iframe = document.createElement("iframe");
+      iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=0`;
+      iframe.title = "YouTube video player";
+      iframe.allow =
+        "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
+      iframe.allowFullscreen = true;
+
+      playerVideo.appendChild(iframe);
+      playerCard.appendChild(playerVideo);
+
+      const headerRow = document.createElement("div");
+      headerRow.className = "player-header-row";
+
+      const titleBlock = document.createElement("div");
+      titleBlock.className = "player-title-block";
+
+      const videoTitleEl = document.createElement("div");
+      videoTitleEl.className = "video-title";
+      videoTitleEl.textContent = snippet.title;
+
+      const videoMetaEl = document.createElement("div");
+      videoMetaEl.className = "video-meta";
+      const viewsSpan = document.createElement("span");
+      viewsSpan.id = "video-views";
+      const dotSpan = document.createElement("span");
+      dotSpan.textContent = "•";
+      const ageSpan = document.createElement("span");
+      ageSpan.textContent = formatMeta(snippet);
+
+      videoMetaEl.appendChild(viewsSpan);
+      videoMetaEl.appendChild(dotSpan);
+      videoMetaEl.appendChild(ageSpan);
+
+      titleBlock.appendChild(videoTitleEl);
+      titleBlock.appendChild(videoMetaEl);
+
+      const channelBlock = document.createElement("div");
+      channelBlock.className = "channel-block";
+
+      const channelNameEl = document.createElement("div");
+      channelNameEl.className = "channel-name";
+      channelNameEl.textContent = snippet.channelTitle;
+
+      const channelSubsEl = document.createElement("div");
+      channelSubsEl.className = "channel-subs";
+      channelSubsEl.textContent = "Channel";
+
+      const subscribeBtn = document.createElement("button");
+      subscribeBtn.className = "subscribe-btn";
+      subscribeBtn.textContent = "Subscribe";
+
+      const closeBtn = document.createElement("button");
+      closeBtn.className = "close-player-btn";
+      closeBtn.textContent = "✕";
+      closeBtn.addEventListener("click", () => {
+        closePlayer();
+      });
+
+      channelBlock.appendChild(channelNameEl);
+      channelBlock.appendChild(channelSubsEl);
+      channelBlock.appendChild(subscribeBtn);
+      channelBlock.appendChild(closeBtn);
+
+      headerRow.appendChild(titleBlock);
+      headerRow.appendChild(channelBlock);
+
+      playerCard.appendChild(headerRow);
+
+      const engagementRow = document.createElement("div");
+      engagementRow.className = "engagement-row";
+
+      const likeBtn = document.createElement("button");
+      likeBtn.className = "engage-btn";
+      likeBtn.id = "like-btn";
+      likeBtn.textContent = "👍 0";
+
+      const shareBtn = document.createElement("button");
+      shareBtn.className = "engage-btn";
+      shareBtn.textContent = "↗ Share";
+
+      const saveBtn = document.createElement("button");
+      saveBtn.className = "engage-btn";
+      saveBtn.textContent = "💾 Save";
+
+      engagementRow.appendChild(likeBtn);
+      engagementRow.appendChild(shareBtn);
+      engagementRow.appendChild(saveBtn);
+
+      playerCard.appendChild(engagementRow);
+
+      const descBlock = document.createElement("div");
+      descBlock.className = "description-block";
+      descBlock.textContent = snippet.description || "";
+      playerCard.appendChild(descBlock);
+
+      wrapper.appendChild(playerCard);
+
+      const suggestionsList = document.createElement("div");
+      suggestionsList.className = "suggestions-list";
+
+      items
+        .filter((it) => it.id.videoId !== videoId)
+        .forEach((item) => {
+          const sCard = document.createElement("div");
+          sCard.className = "suggest-card";
+
+          const sThumb = document.createElement("div");
+          sThumb.className = "suggest-thumb";
+          sThumb.style.backgroundImage = `url(${item.snippet.thumbnails.medium.url})`;
+
+          const sInfo = document.createElement("div");
+          sInfo.className = "suggest-info";
+
+          const sTitle = document.createElement("div");
+          sTitle.className = "suggest-title";
+          sTitle.textContent = item.snippet.title;
+
+          const sChannel = document.createElement("div");
+          sChannel.className = "suggest-channel";
+          sChannel.textContent = item.snippet.channelTitle;
+
+          const sMeta = document.createElement("div");
+          sMeta.className = "suggest-meta";
+          sMeta.textContent = formatMeta(item.snippet);
+
+          sInfo.appendChild(sTitle);
+          sInfo.appendChild(sChannel);
+          sInfo.appendChild(sMeta);
+
+          sCard.appendChild(sThumb);
+          sCard.appendChild(sInfo);
+
+          sCard.addEventListener("click", () => {
+            openVideo(item);
+          });
+
+          suggestionsList.appendChild(sCard);
+        });
+
+      wrapper.appendChild(suggestionsList);
+      feedScroll.appendChild(wrapper);
+
+      miniThumbEl.style.backgroundImage = `url(${snippet.thumbnails.default.url})`;
+      miniTitleEl.textContent = snippet.title;
+      miniChannelEl.textContent = snippet.channelTitle;
+
+      loadVideoDetails(videoId, viewsSpan, likeBtn);
+    }
+
+    async function loadVideoDetails(videoId, viewsSpan, likeBtn) {
+      try {
+        const url = `${VIDEO_URL}&id=${videoId}&key=${API_KEY}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        const video = data.items?.[0];
+        if (video) {
+          const stats = video.statistics || {};
+          viewsSpan.textContent = stats.viewCount
+            ? `${formatCount(stats.viewCount)} views`
+            : "Views unknown";
+          likeBtn.textContent = `👍 ${formatCount(stats.likeCount)}`;
+        }
+      } catch (err) {
+        console.error("Video details error", err);
+      }
+    }
+
+    function openVideo(item) {
+      renderPlayer(item, state.items);
+    }
+
+    function closePlayer() {
+      state.currentVideoId = null;
+      state.mode = "grid";
+      renderGrid(state.items);
     }
 
     function formatMeta(snippet) {
@@ -700,79 +876,12 @@
       return `${years} years ago`;
     }
 
-    async function setMainVideo(item) {
-      const { snippet, id } = item;
-      const videoId = id.videoId;
-      state.currentVideoId = videoId;
-
-      playerCard.style.display = "flex";
-      playerIframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=0`;
-
-      videoTitleEl.textContent = snippet.title;
-      channelNameEl.textContent = snippet.channelTitle;
-      descriptionBlockEl.textContent = snippet.description;
-
-      miniThumbEl.style.backgroundImage = `url(${snippet.thumbnails.default.url})`;
-      miniTitleEl.textContent = snippet.title;
-      miniChannelEl.textContent = snippet.channelTitle;
-
-      videoDotEl.style.display = "inline";
-
-      try {
-        const url = `${VIDEO_URL}&id=${videoId}&key=${API_KEY}`;
-        const res = await fetch(url);
-        const data = await res.json();
-        const video = data.items?.[0];
-        if (video) {
-          const stats = video.statistics || {};
-          const details = video.contentDetails || {};
-
-          likeCountEl.textContent = formatCount(stats.likeCount);
-          videoViewsEl.textContent = stats.viewCount
-            ? `${formatCount(stats.viewCount)} views`
-            : "Views unknown";
-
-          const durationSeconds = parseISO8601Duration(details.duration);
-          totalTimeEl.textContent = formatTime(durationSeconds);
-          const current = Math.floor(durationSeconds * 0.2);
-          currentTimeEl.textContent = formatTime(current);
-          progressFillEl.style.width = "20%";
-
-          channelSubsEl.textContent = "Channel";
-          videoAgeEl.textContent = ""; // could be filled via snippet if desired
-        }
-      } catch (err) {
-        console.error("Video details error", err);
-      }
-    }
-
-    function closePlayer() {
-      state.currentVideoId = null;
-      playerCard.style.display = "none";
-      playerIframe.src = "";
-    }
-
     function formatCount(n) {
       if (!n) return "0";
       const num = Number(n);
       if (num >= 1_000_000) return (num / 1_000_000).toFixed(1) + "M";
       if (num >= 1_000) return (num / 1_000).toFixed(1) + "K";
       return String(num);
-    }
-
-    function parseISO8601Duration(iso) {
-      if (!iso) return 0;
-      const match = iso.match(/PT(?:(\d+)M)?(?:(\d+)S)?/);
-      if (!match) return 0;
-      const minutes = Number(match[1] || 0);
-      const seconds = Number(match[2] || 0);
-      return minutes * 60 + seconds;
-    }
-
-    function formatTime(sec) {
-      const m = Math.floor(sec / 60);
-      const s = Math.floor(sec % 60);
-      return `${m}:${s.toString().padStart(2, "0")}`;
     }
 
     // Tabs behavior
@@ -799,17 +908,12 @@
     });
 
     // Infinite scroll on right feed
-    feedColumn.addEventListener("scroll", () => {
-      const { scrollTop, scrollHeight, clientHeight } = feedColumn;
+    feedScroll.addEventListener("scroll", () => {
+      const { scrollTop, scrollHeight, clientHeight } = feedScroll;
       const nearBottom = scrollTop + clientHeight >= scrollHeight - 40;
       if (nearBottom && !state.isLoading && state.pageTokens[state.currentTab]) {
         loadNextBatch(state.currentTab);
       }
-    });
-
-    // Close player
-    closePlayerBtn.addEventListener("click", () => {
-      closePlayer();
     });
 
     // EMG pseudo integration
