@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>ViewTube AR – Picture Clone</title>
+  <title>ViewTube AR – 20/80 Split</title>
   <meta name="viewport" content="width=600, initial-scale=1.0" />
   <style>
     :root {
@@ -57,7 +57,7 @@
     .main-layout {
       flex: 1;
       display: grid;
-      grid-template-columns: 0.3fr 0.7fr; /* 30 / 70 split */
+      grid-template-columns: 0.2fr 0.8fr; /* 20 / 80 split */
       gap: 8px;
       padding: 8px 10px 6px;
     }
@@ -108,7 +108,7 @@
       transform: translateX(2px);
     }
 
-    /* RIGHT: search + dynamic content (grid or player+suggestions) */
+    /* RIGHT: search + dynamic content */
     .right-panel {
       display: flex;
       flex-direction: column;
@@ -185,7 +185,7 @@
 
     .grid-thumb {
       width: 100%;
-      padding-top: 56.25%; /* 16:9 */
+      padding-top: 56.25%;
       border-radius: var(--radius-sm);
       background-size: cover;
       background-position: center;
@@ -213,7 +213,7 @@
       color: var(--text-sub);
     }
 
-    /* PLAYER MODE: player + 1-column suggestions */
+    /* PLAYER MODE */
     .player-wrapper {
       display: flex;
       flex-direction: column;
@@ -494,16 +494,11 @@
   </div>
 
   <script>
-    // Active key
-    const API_KEY = "AIzaSyBl0rtZxn-bZ1qlCYMP6oJa1G6SjIsVm40";
-                    "AIzaSyAB9YHScMMMyg79vkBOCkZSdK-Vx-OUlY8";
-                    "AIzaSyAeUdLwPkeD12fszv-KyKdOI6pEauw4J7g";
-                    "AIzaSyDrOFS8dO-4D-cdLKM0SwpJkQrjwHqt15k";
-                    "AIzaSyAQzw9Nt0ziciPRn-QgeyWzlNtYACdgOX8";
-                    "AIzaSyBABTlx52ZqeMKRg_MbNdSkqTXgZ0NnA-g"
-                    
-
-    
+    const API_KEY = "AIzaSyBABTlx52ZqeMKRg_MbNdSkqTXgZ0NnA-g";
+                    "AIzaSyA77fmqMpaQNVC_pu3yS1EWt-Yt47tDizk";
+                    "AIzaSyCMGT7QsoI26qOmNG1MkHY9EwieETucy3k";
+                    "AIzaSyB_k_m3vIPOrBXh-_BLYSqRX90BvsKNCbI";
+                    "AIzaSyAwaWxHaXQPK9tHV5DNbypYffONEZy_YmY"
 
     const SEARCH_URL =
       "https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=20";
@@ -537,6 +532,7 @@
       mode: "grid", // "grid" or "player"
       items: [],
       currentVideoId: null,
+      currentVideoItem: null,
     };
 
     function defaultQueryForTab(tab) {
@@ -576,6 +572,8 @@
       state.pageTokens[tab] = null;
       state.items = [];
       state.mode = "grid";
+      state.currentVideoId = null;
+      state.currentVideoItem = null;
       feedScroll.innerHTML = "";
       await loadNextBatch(tab, true);
     }
@@ -600,9 +598,8 @@
 
         if (state.mode === "grid") {
           renderGrid(state.items);
-        } else {
-          // in player mode, append new suggestions
-          renderPlayer(state.currentVideoIdItem, state.items);
+        } else if (state.currentVideoItem) {
+          renderPlayer(state.currentVideoItem, state.items);
         }
       } catch (err) {
         console.error("YouTube search error", err);
@@ -664,12 +661,12 @@
 
     function renderPlayer(selectedItem, items) {
       state.mode = "player";
-      feedScroll.innerHTML = "";
-
+      state.currentVideoItem = selectedItem;
       const { snippet, id } = selectedItem;
       const videoId = id.videoId;
       state.currentVideoId = videoId;
-      state.currentVideoIdItem = selectedItem;
+
+      feedScroll.innerHTML = "";
 
       const wrapper = document.createElement("div");
       wrapper.className = "player-wrapper";
@@ -703,7 +700,6 @@
       const videoMetaEl = document.createElement("div");
       videoMetaEl.className = "video-meta";
       const viewsSpan = document.createElement("span");
-      viewsSpan.id = "video-views";
       const dotSpan = document.createElement("span");
       dotSpan.textContent = "•";
       const ageSpan = document.createElement("span");
@@ -753,7 +749,6 @@
 
       const likeBtn = document.createElement("button");
       likeBtn.className = "engage-btn";
-      likeBtn.id = "like-btn";
       likeBtn.textContent = "👍 0";
 
       const shareBtn = document.createElement("button");
@@ -853,6 +848,7 @@
 
     function closePlayer() {
       state.currentVideoId = null;
+      state.currentVideoItem = null;
       state.mode = "grid";
       renderGrid(state.items);
     }
