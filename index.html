@@ -2,7 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- MRBD Web App: fixed 600×600 viewport, no scroll, no zoom -->
+<meta name="viewport" content="width=600, height=600, initial-scale=1.0, user-scalable=no">
+<meta name="description" content="ViewTube — holographic YouTube experience for Meta Ray-Ban Display glasses">
+<meta name="mrbd-web-app-capable" content="yes">
 <title>ViewTube — Meta Ray-Ban Display</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
@@ -33,6 +36,143 @@
   --lift-shadow: 0 12px 40px rgba(0,120,255,0.32), 0 0 0 1px rgba(0,200,255,0.25), 0 0 50px rgba(0,80,200,0.15);
 }
 body { font-family:var(--fn); background:#000; color:var(--tp); overflow:hidden; height:100vh; width:100vw; }
+
+/* ══════════════════════════════════════════════════
+   MRBD FOCUSABLE SYSTEM (Official Meta Web App spec)
+   All interactive elements use .focusable class.
+   Neural Band / Cap Touch → ArrowKey + Enter events.
+   ══════════════════════════════════════════════════ */
+.focusable {
+  outline: none;
+  border: 2px solid transparent;
+  border-radius: var(--br);
+  transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+  cursor: pointer;
+  min-height: 44px; /* MRBD minimum tap target */
+  position: relative;
+}
+.focusable:focus {
+  border-color: #00d4ff;
+  box-shadow: 0 0 20px rgba(0,212,255,0.55), 0 0 40px rgba(0,150,255,0.2);
+  transform: scale(1.03);
+  z-index: 50;
+}
+.focusable:focus .vcard-title,
+.focusable:focus .rtitle,
+.focusable:focus .sub-ch-name { color: #00eeff; }
+
+/* Focus indicator ring on all cards when navigating */
+.vcard.focusable:focus { border-color: #00d4ff !important; box-shadow: 0 0 24px rgba(0,212,255,0.6) !important; }
+.rcard.focusable:focus { border-color: #00d4ff !important; box-shadow: 0 0 18px rgba(0,212,255,0.5) !important; }
+.rtab.focusable:focus { border-color: #00d4ff !important; background: rgba(0,212,255,0.15) !important; }
+.tb-btn.focusable:focus { border-color: #00d4ff !important; box-shadow: 0 0 12px rgba(0,212,255,0.5) !important; }
+
+/* Focus skip — dim non-focused siblings when something has focus */
+.vgrid:focus-within .vcard.focusable:not(:focus) { opacity: 0.65; }
+.rtab-content:focus-within .rcard.focusable:not(:focus) { opacity: 0.65; }
+
+/* ══════════════════════════════════════════════════
+   MRBD VIRTUAL KEYBOARD
+   D-pad navigable on-screen character picker.
+   Text input is unsupported on MRBD hardware — this
+   is the correct Web App workaround per the spec.
+   ══════════════════════════════════════════════════ */
+#vkOverlay {
+  position: fixed; inset: 0; z-index: 2000;
+  background: rgba(0,0,0,0.85); backdrop-filter: blur(12px);
+  display: none; flex-direction: column;
+  align-items: center; justify-content: center; gap: 12px;
+  padding: 20px;
+}
+#vkOverlay.open { display: flex; }
+.vk-display {
+  width: 100%; max-width: 400px;
+  background: rgba(0,20,50,0.9);
+  border: 1px solid rgba(0,200,255,0.4);
+  border-radius: 10px; padding: 10px 14px;
+  font-size: 16px; color: #fff;
+  min-height: 44px; display: flex; align-items: center; gap: 4px;
+  box-shadow: 0 0 20px rgba(0,180,255,0.3);
+  letter-spacing: 1px; flex-wrap: wrap;
+}
+.vk-display-text { flex: 1; }
+.vk-cursor {
+  width: 2px; height: 18px;
+  background: #00d4ff;
+  animation: blink 1s step-end infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+.vk-hint {
+  font-size: 10px; color: var(--tm); text-align: center;
+  letter-spacing: 0.5px;
+}
+.vk-grid {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 4px;
+  width: 100%; max-width: 420px;
+}
+.vk-key {
+  background: rgba(0,30,70,0.9);
+  border: 1px solid rgba(0,150,255,0.25);
+  border-radius: 6px;
+  color: rgba(200,230,255,0.9);
+  font-size: 13px; font-family: var(--fn);
+  padding: 8px 0; text-align: center;
+  cursor: pointer;
+  transition: all 100ms;
+  min-height: 36px; display: flex; align-items: center; justify-content: center;
+}
+.vk-key:focus {
+  outline: none;
+  background: rgba(0,180,255,0.3);
+  border-color: #00d4ff;
+  box-shadow: 0 0 16px rgba(0,212,255,0.6);
+  color: #fff;
+  transform: scale(1.1);
+  z-index: 1;
+}
+.vk-key-wide {
+  grid-column: span 2;
+  font-size: 11px; letter-spacing: 0.3px;
+}
+.vk-key-action {
+  background: rgba(0,100,200,0.4);
+  border-color: rgba(0,180,255,0.5);
+  color: #00eeff;
+}
+.vk-key-action:focus {
+  background: rgba(0,150,255,0.5);
+}
+.vk-key-search {
+  grid-column: span 4;
+  background: rgba(0,150,255,0.25);
+  border-color: rgba(0,200,255,0.6);
+  color: #00eeff; font-weight: 700;
+}
+.vk-key-search:focus {
+  background: rgba(0,180,255,0.45);
+  box-shadow: 0 0 24px rgba(0,212,255,0.7);
+}
+
+/* MRBD IMU / GPS status indicator */
+#sensorStatus {
+  position: fixed; top: 54px; right: 14px;
+  display: flex; flex-direction: column; gap: 3px;
+  z-index: 25; pointer-events: none;
+}
+.sensor-pill {
+  background: rgba(0,20,50,0.8);
+  border: 0.5px solid rgba(0,180,255,0.2);
+  border-radius: 10px;
+  padding: 3px 8px;
+  font-size: 9px; color: var(--tm);
+  display: flex; align-items: center; gap: 4px;
+  backdrop-filter: blur(8px);
+}
+.sensor-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--tm); }
+.sensor-dot.on { background: #00ff88; box-shadow: 0 0 6px #00ff88; }
+.sensor-dot.off { background: #ff4444; }
 
 /* ── HOLOGRAPHIC WORLD ── */
 .world-bg {
@@ -167,15 +307,15 @@ body { font-family:var(--fn); background:#000; color:var(--tp); overflow:hidden;
   position: relative;
 }
 
-/* AO inner glow on card faces */
+/* AO inner glow on card faces — pointer-events:none so they never block clicks */
 .vcard::before, .rcard::before, .movie-r::before {
   content:'';
   position:absolute; inset:0; border-radius:inherit;
   background:var(--ao-glow);
-  pointer-events:none; z-index:1;
+  pointer-events:none; z-index:0;
 }
 
-/* Holographic bloom on card edges */
+/* Holographic bloom on card edges — pointer-events:none */
 .vcard::after, .rcard::after {
   content:'';
   position:absolute; inset:-1px; border-radius:calc(var(--br)+1px);
@@ -199,6 +339,7 @@ body { font-family:var(--fn); background:#000; color:var(--tp); overflow:hidden;
   content:'';
   position:absolute; inset:0;
   background:linear-gradient(135deg, rgba(0,200,255,0.08) 0%, transparent 60%);
+  pointer-events:none;
 }
 
 /* Depth-reactive glow — intensifies on hover */
@@ -220,6 +361,7 @@ body { font-family:var(--fn); background:#000; color:var(--tp); overflow:hidden;
   box-shadow: 0 1px 0 rgba(0,200,255,0.08), var(--bloom);
   backdrop-filter: blur(24px) saturate(1.4);
   position: relative;
+  z-index: 20;
 }
 .topbar::after {
   content:'';
@@ -228,7 +370,10 @@ body { font-family:var(--fn); background:#000; color:var(--tp); overflow:hidden;
     transparent 0%, rgba(0,200,255,0.4) 30%,
     rgba(0,160,255,0.6) 50%,
     rgba(0,200,255,0.4) 70%, transparent 100%);
+  pointer-events:none;
 }
+
+/* Search wrap always interactive — handled in main .search-wrap rule above */
 
 /* Logo holographic glow */
 .logo { filter: drop-shadow(0 0 8px rgba(0,200,255,0.5)); }
@@ -382,10 +527,10 @@ body { font-family:var(--fn); background:#000; color:var(--tp); overflow:hidden;
   flex:1; display:flex; align-items:center;
   background:rgba(255,255,255,0.06); border:0.5px solid var(--gb);
   border-radius:18px; padding:0 11px; gap:7px; transition:border-color .2s,box-shadow .2s;
-  position:relative;
+  position:relative; z-index:21;
 }
 .search-wrap:focus-within { border-color:var(--ac); box-shadow:0 0 10px var(--ag); }
-.search-wrap input { background:none; border:none; outline:none; color:var(--tp); font-size:12px; flex:1; font-family:var(--fn); padding:6px 0; }
+.search-wrap input { background:none; border:none; outline:none; color:var(--tp); font-size:12px; flex:1; font-family:var(--fn); padding:7px 0; -webkit-user-select:text; user-select:text; cursor:text; }
 .search-wrap input::placeholder { color:var(--tm); }
 .si { color:var(--ts); cursor:pointer; display:flex; }
 .si svg { width:14px; height:14px; }
@@ -861,8 +1006,8 @@ body { font-family:var(--fn); background:#000; color:var(--tp); overflow:hidden;
 
     <div class="search-wrap" id="searchWrap">
       <div class="si"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="9" r="6"/><path d="m15 15 3 3"/></svg></div>
-      <input type="search" placeholder="Search ViewTube…" id="searchInput" autocomplete="off"
-        autocorrect="off" autocapitalize="off" spellcheck="false"
+      <input type="text" placeholder="Search ViewTube…" id="searchInput"
+        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
         inputmode="search" enterkeyhint="search"
         oninput="handleSearch(this.value)" onfocus="openSearch()" onblur="closeSearchDelay()">
       <div id="sdd"></div>
@@ -966,6 +1111,23 @@ body { font-family:var(--fn); background:#000; color:var(--tp); overflow:hidden;
     </div>
 
   </div>
+</div>
+
+<!-- MRBD Virtual Keyboard (D-pad navigable, workaround for no text input) -->
+<div id="vkOverlay" role="dialog" aria-label="Search keyboard">
+  <div class="vk-display" id="vkDisplay">
+    <span class="vk-display-text" id="vkText"></span>
+    <div class="vk-cursor"></div>
+  </div>
+  <div class="vk-hint">↑↓←→ navigate &nbsp;·&nbsp; Enter = select &nbsp;·&nbsp; Esc = close</div>
+  <div class="vk-grid" id="vkGrid"></div>
+</div>
+
+<!-- MRBD Sensor status HUD -->
+<div id="sensorStatus">
+  <div class="sensor-pill"><div class="sensor-dot" id="imuDot"></div><span id="imuLabel">IMU</span></div>
+  <div class="sensor-pill"><div class="sensor-dot" id="gpsDot"></div><span id="gpsLabel">GPS</span></div>
+  <div class="sensor-pill"><div class="sensor-dot on"></div><span>Neural Band</span></div>
 </div>
 
 <!-- YOUTUBE AUTH POPUP -->
@@ -1406,52 +1568,7 @@ function renderShortCard(s) {
   </div>`;
 }
 
-// ── LEFT HOME GRID ──────────────────────────────────
-function initMainGrid() {
-  // Remove any search result header
-  document.getElementById('vlistArea').querySelectorAll('div[style*="align-items:center"]').forEach(el => el.remove());
-  const pool = Persona.getFeed();
-  initScrollKey('home', pool, 20);
-  const grid = document.getElementById('mainGrid');
-  grid.innerHTML = '';
-  const vlistArea = document.getElementById('vlistArea');
-  // Create a wrapper so the sentinel is inside the scrollable area
-  const wrapper = document.createElement('div');
-  wrapper.id = 'homeScrollWrap';
-  grid.appendChild(wrapper);
-  const sentinel = document.createElement('div');
-  sentinel.id = 'homeLoadMore';
-  sentinel.style.cssText = 'height:36px;display:flex;align-items:center;justify-content:center';
-  grid.appendChild(sentinel);
-
-  function loadBatch() {
-    const batch = getNextBatch('home');
-    if (batch.length === 0) {
-      sentinel.innerHTML = `<span style="font-size:10px;color:var(--tm);padding:8px">✓ All loaded</span>`;
-      obs.disconnect(); return;
-    }
-    wrapper.insertAdjacentHTML('beforeend', `<div class="vgrid">${batch.map(renderVCard).join('')}</div>`);
-    applyTilt();
-  }
-
-  loadBatch(); // first batch
-
-  const obs = new IntersectionObserver(entries => {
-    if (!entries[0].isIntersecting || scrollState.home.loading) return;
-    if (scrollState.home.done) {
-      sentinel.innerHTML = `<span style="font-size:10px;color:var(--tm);padding:8px">✓ All loaded</span>`;
-      obs.disconnect(); return;
-    }
-    scrollState.home.loading = true;
-    sentinel.innerHTML = `<div style="width:18px;height:18px;border:2px solid rgba(0,180,255,.2);border-top-color:var(--ac);border-radius:50%;animation:spin .7s linear infinite"></div>`;
-    setTimeout(() => {
-      scrollState.home.loading = false;
-      sentinel.innerHTML = '';
-      loadBatch();
-    }, 350);
-  }, { root: vlistArea, threshold: 0.05 });
-  obs.observe(sentinel);
-}
+// ── LEFT HOME GRID: see initMainGrid below (uses YT API + buildMainGrid) ──
 
 // ═══════════════════════════════════════════════════
 // RIGHT TABS
@@ -1471,6 +1588,8 @@ function setTab(tab) {
   document.querySelectorAll('.rtab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
   if (tab === 'shorts') { openShortsOverlay(0); return; }
   renderTab();
+  const labels = { home:'Home Feed', shorts:'Shorts', movies:'Movies', playlist:'Playlist', history:'History', subscriptions:'Subscriptions', channel:'Channel' };
+  if (typeof HoloFX !== 'undefined') HoloFX.setStatus('\u2726 ' + (labels[tab] || tab));
 }
 
 // ═══════════════════════════════════════════════════
@@ -1599,7 +1718,13 @@ function renderTab() {
     case 'channel':       renderRChannelInfinite(el); break;
     default:              renderRHomeInfinite(el);
   }
-  applyTilt();
+  // Re-stamp .focusable on newly rendered elements (no recursion)
+  requestAnimationFrame(function() {
+    makeFocusable();
+    // Focus the first card in the right panel for D-pad navigation
+    var first = el.querySelector('.focusable');
+    if (first) first.focus();
+  });
 }
 
 // ── RIGHT HOME — real YT trending + personalized, refreshes every tap ──
@@ -2352,14 +2477,9 @@ function renderRSubs() {
 function playVideo(id) {
   const v = ALL_VIDS.find(x=>x.id===id)||SHORTS.find(x=>x.id===id)||MOVIES.find(x=>x.id===id);
   if (!v) return;
-
-  // Record watch for personalization engine
   Persona.recordWatch(v);
-
-  curVid = v;
-  playing = true;
-  pct = 0;
-
+  curVid = v; playing = true; pct = 0;
+  if (typeof HoloFX !== 'undefined') HoloFX.setStatus('\u25B6 ' + v.title, 3000);
   if (miniOn) {
     document.getElementById('miniVid').textContent = v.emoji||'▶';
     document.getElementById('miniTitle').textContent = v.title;
@@ -2692,61 +2812,430 @@ document.addEventListener('mousemove',e=>{if(!drag)return;mp.style.right='auto';
 document.addEventListener('mouseup',()=>{drag=false;mp.classList.remove('dragging');});
 
 // ═══════════════════════════════════════════════════
-// META GESTURES (Neural Band / Cap Touch)
+// META RAY-BAN DISPLAY — OFFICIAL INPUT SYSTEM
+// Spec: wearables.developer.meta.com/docs/develop/webapps/build
+//
+// Neural Band EMG + Cap Touch produce:
+//   ArrowUp / ArrowDown / ArrowLeft / ArrowRight / Enter / Escape
+// No mouse. No touchscreen. No native keyboard.
+// EVERY interactive element must have class="focusable" + tabindex.
 // ═══════════════════════════════════════════════════
-const MetaGestures = {
-  init() {
-    if (typeof window.MetaDAT !== 'undefined') {
-      window.MetaDAT.display.setTransparency(0.45);
-      window.MetaDAT.display.setProjectionMode('holographic');
-    }
-    if (typeof window.MetaNeuralBand !== 'undefined') {
-      window.MetaNeuralBand.capTouch.onGesture(g => {
-        if(g.type==='single_tap') togglePlay();
-        else if(g.type==='double_tap') toggleMini();
-        else if(g.type==='swipe_forward') seek(10);
-        else if(g.type==='swipe_back') seek(-10);
-        else if(g.type==='swipe_up') {
-          if(document.getElementById('shortsOverlay').classList.contains('open')) goToShort(shortsIdx+1);
-          else openFs();
-        }
-        else if(g.type==='swipe_down') {
-          if(document.getElementById('shortsOverlay').classList.contains('open')) goToShort(shortsIdx-1);
-          else closeFs();
-        }
-        else if(g.type==='long_press') toggleHideUi();
+
+// ── Official DPAD constants (verbatim from spec) ────
+const DPAD = {
+  UP:     'ArrowUp',
+  DOWN:   'ArrowDown',
+  LEFT:   'ArrowLeft',
+  RIGHT:  'ArrowRight',
+  SELECT: 'Enter',
+  BACK:   'Escape',
+};
+
+// ── moveFocus: official spec implementation ─────────
+function moveFocus(direction) {
+  var focusables = Array.from(
+    document.querySelectorAll('.focusable:not([disabled]):not(.hidden)')
+  ).filter(function(el) {
+    var s = window.getComputedStyle(el);
+    return s.display !== 'none' && s.visibility !== 'hidden' && el.offsetParent !== null;
+  });
+  if (!focusables.length) return;
+
+  var idx = focusables.indexOf(document.activeElement);
+  if (idx === -1) {
+    focusables[0].focus();
+    focusables[0].scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    return;
+  }
+
+  var next = (direction === 'up' || direction === 'left')
+    ? (idx > 0 ? idx - 1 : focusables.length - 1)
+    : (idx < focusables.length - 1 ? idx + 1 : 0);
+
+  focusables[next].focus();
+  focusables[next].scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  if (typeof HoloFX !== 'undefined') {
+    var label = focusables[next].getAttribute('aria-label') ||
+                focusables[next].textContent.trim().slice(0, 28);
+    HoloFX.setStatus('\u25C6 ' + label, 1000);
+  }
+}
+
+// ── makeFocusable: stamp .focusable on every interactive element ──
+function makeFocusable() {
+  var sel = '.rtab, .tb-btn, .vcard, .rcard, .movie-r, .pl-item, ' +
+            '.sub-ch-item, .short-r, .cb, .fscb, .di, .mini-btn, ' +
+            '.fs-back-btn, .dots-menu .di';
+  document.querySelectorAll(sel).forEach(function(el) {
+    el.classList.add('focusable');
+    if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '0');
+  });
+}
+
+// ── Master D-pad keydown handler (official spec pattern) ────────
+document.addEventListener('keydown', function(e) {
+
+  // ── Virtual keyboard intercepts all keys when open ──
+  if (document.getElementById('vkOverlay') &&
+      document.getElementById('vkOverlay').classList.contains('open')) {
+    VK.handleKey(e);
+    return;
+  }
+
+  // ── Shorts overlay ──────────────────────────────────
+  if (document.getElementById('shortsOverlay') &&
+      document.getElementById('shortsOverlay').classList.contains('open')) {
+    if (e.key === DPAD.DOWN)   { e.preventDefault(); goToShort(shortsIdx + 1); return; }
+    if (e.key === DPAD.UP)     { e.preventDefault(); goToShort(shortsIdx - 1); return; }
+    if (e.key === DPAD.SELECT) { e.preventDefault(); togglePlay(); return; }
+    if (e.key === DPAD.BACK)   { e.preventDefault(); closeShortsOverlay(); return; }
+    return;
+  }
+
+  // ── Fullscreen player ───────────────────────────────
+  if (document.getElementById('fsPlayer') &&
+      document.getElementById('fsPlayer').classList.contains('open')) {
+    if (e.key === DPAD.LEFT)   { e.preventDefault(); seek(-10); return; }
+    if (e.key === DPAD.RIGHT)  { e.preventDefault(); seek(10); return; }
+    if (e.key === DPAD.SELECT) { e.preventDefault(); togglePlay(); return; }
+    if (e.key === DPAD.BACK)   { e.preventDefault(); closeFs(); return; }
+    return;
+  }
+
+  // ── Standard D-pad navigation ───────────────────────
+  switch (e.key) {
+    case DPAD.UP:
+      e.preventDefault();
+      moveFocus('up');
+      break;
+
+    case DPAD.DOWN:
+      e.preventDefault();
+      moveFocus('down');
+      break;
+
+    case DPAD.LEFT:
+      e.preventDefault();
+      // In player panel: seek back; otherwise navigate focus
+      if (curVid && !miniOn && document.getElementById('playerArea').classList.contains('show')) {
+        seek(-10);
+      } else {
+        moveFocus('left');
+      }
+      break;
+
+    case DPAD.RIGHT:
+      e.preventDefault();
+      if (curVid && !miniOn && document.getElementById('playerArea').classList.contains('show')) {
+        seek(10);
+      } else {
+        moveFocus('right');
+      }
+      break;
+
+    case DPAD.SELECT:
+      e.preventDefault();
+      if (document.activeElement && document.activeElement.classList.contains('focusable')) {
+        document.activeElement.click();
+      }
+      break;
+
+    case DPAD.BACK:
+      e.preventDefault();
+      // Close player → show video list; or go home from any sub-tab
+      if (!miniOn && document.getElementById('playerArea').classList.contains('show')) {
+        document.getElementById('playerArea').classList.remove('show');
+        document.getElementById('vlistArea').style.display = '';
+        curVid = null;
+        if (progTimer) { clearInterval(progTimer); progTimer = null; }
+      } else if (curTab !== 'home') {
+        goHome();
+      }
+      break;
+
+    // Desktop browser simulation shortcuts
+    default:
+      if (e.key === ' ' && curVid) { e.preventDefault(); togglePlay(); }
+      else if (e.key === 'm')      { toggleMini(); }
+      else if (e.key === 'f' && curVid) { openFs(); }
+      else if (e.key === 'h' && curVid) { toggleHideUi(); }
+      break;
+  }
+});
+
+// ═══════════════════════════════════════════════════
+// VIRTUAL KEYBOARD (VK)
+// Text input is NOT supported on MRBD hardware.
+// This D-pad-navigable on-screen picker is the correct
+// Web App workaround per the official spec.
+// Opened whenever the wearer activates the search field.
+// ═══════════════════════════════════════════════════
+var VK = (function() {
+  var text = '';
+  var onSubmitCb = null;
+
+  // Keyboard layout rows (10 per row = 10 columns)
+  var ROWS = [
+    ['1','2','3','4','5','6','7','8','9','0'],
+    ['Q','W','E','R','T','Y','U','I','O','P'],
+    ['A','S','D','F','G','H','J','K','L','\u232B'],
+    ['Z','X','C','V','B','N','M',',','.','!'],
+  ];
+  // Action row — wider keys, rendered separately
+  var ACTIONS = [
+    { label:'SPACE', cols:2 },
+    { label:'@',     cols:1 },
+    { label:'DEL',   cols:2 },
+    { label:'CLEAR', cols:2 },
+    { label:'SEARCH \u2192', cols:3 },
+  ];
+
+  var COLS = 10;
+
+  function build() {
+    var grid = document.getElementById('vkGrid');
+    if (!grid) return;
+    grid.innerHTML = '';
+
+    // Character keys
+    ROWS.forEach(function(row) {
+      row.forEach(function(ch) {
+        var btn = document.createElement('button');
+        btn.className = 'vk-key focusable';
+        btn.textContent = ch;
+        btn.setAttribute('tabindex', '0');
+        btn.addEventListener('click', function() { typeChar(ch); });
+        grid.appendChild(btn);
       });
-      window.MetaNeuralBand.emg.onGesture(g => {
-        if(g.type==='pinch') toggleMini();
-        else if(g.type==='clench') togglePlay();
-        else if(g.type==='spread') openFs();
-      });
+    });
+
+    // Action keys
+    ACTIONS.forEach(function(a) {
+      var btn = document.createElement('button');
+      btn.className = 'vk-key vk-key-action focusable';
+      if (a.label.includes('SEARCH')) btn.className += ' vk-key-search';
+      btn.textContent = a.label;
+      btn.style.gridColumn = 'span ' + a.cols;
+      btn.setAttribute('tabindex', '0');
+      btn.addEventListener('click', function() { typeAction(a.label); });
+      grid.appendChild(btn);
+    });
+  }
+
+  function typeChar(ch) {
+    if (ch === '\u232B') {
+      text = text.slice(0, -1);
     } else {
-      document.addEventListener('keydown',e=>{
-        if(document.getElementById('shortsOverlay').classList.contains('open')) return;
-        if(e.key===' '){e.preventDefault();togglePlay();}
-        else if(e.key==='ArrowRight') seek(10);
-        else if(e.key==='ArrowLeft') seek(-10);
-        else if(e.key==='m') toggleMini();
-        else if(e.key==='f') openFs();
-        else if(e.key==='Escape') closeFs();
-        else if(e.key==='h'&&curVid) toggleHideUi();
-      });
+      text += ch;
     }
+    updateDisplay();
+  }
+
+  function typeAction(label) {
+    if (label === 'SPACE')         { text += ' '; updateDisplay(); }
+    else if (label === '@')        { text += '@'; updateDisplay(); }
+    else if (label === 'DEL')      { text = text.slice(0, -1); updateDisplay(); }
+    else if (label === 'CLEAR')    { text = ''; updateDisplay(); }
+    else if (label.includes('SEARCH')) { submit(); }
+  }
+
+  function updateDisplay() {
+    var el = document.getElementById('vkText');
+    if (el) el.textContent = text;
+    // Also mirror into search input for visual feedback
+    var si = document.getElementById('searchInput');
+    if (si) si.value = text;
+  }
+
+  function open(initialText, cb) {
+    text = initialText || '';
+    onSubmitCb = cb || null;
+    updateDisplay();
+    document.getElementById('vkOverlay').classList.add('open');
+    // Focus first key
+    requestAnimationFrame(function() {
+      var first = document.querySelector('#vkGrid .vk-key.focusable');
+      if (first) first.focus();
+    });
+    if (typeof HoloFX !== 'undefined') HoloFX.setStatus('\u2328 Type with D-pad · Enter = select', 0);
+  }
+
+  function close() {
+    document.getElementById('vkOverlay').classList.remove('open');
+    if (typeof HoloFX !== 'undefined') HoloFX.setStatus('META RAY-BAN \u00b7 HOLOGRAPHIC MODE', 0);
+    // Re-focus the search bar visually
+    var si = document.getElementById('searchInput');
+    if (si) si.value = text;
+  }
+
+  function submit() {
+    var q = text.trim();
+    close();
+    if (q) {
+      if (onSubmitCb) { onSubmitCb(q); }
+      else { openSearchResults(q); }
+    }
+  }
+
+  // D-pad navigation inside the VK grid
+  function handleKey(e) {
+    var keys = Array.from(document.querySelectorAll('#vkGrid .vk-key.focusable'));
+    if (!keys.length) return;
+
+    if (e.key === DPAD.BACK) {
+      e.preventDefault();
+      close();
+      return;
+    }
+    if (e.key === DPAD.SELECT) {
+      e.preventDefault();
+      if (document.activeElement && document.activeElement.classList.contains('vk-key')) {
+        document.activeElement.click();
+      }
+      return;
+    }
+
+    var idx = keys.indexOf(document.activeElement);
+    if (idx === -1) { keys[0].focus(); return; }
+
+    var next = idx;
+    // For the character rows (first 40 keys), move in 10-column grid
+    if (e.key === DPAD.RIGHT)     { next = Math.min(idx + 1, keys.length - 1); }
+    else if (e.key === DPAD.LEFT) { next = Math.max(idx - 1, 0); }
+    else if (e.key === DPAD.DOWN) { next = Math.min(idx + COLS, keys.length - 1); }
+    else if (e.key === DPAD.UP)   { next = idx >= COLS ? Math.max(idx - COLS, 0) : idx; }
+    else return;
+
+    e.preventDefault();
+    keys[next].focus();
+  }
+
+  // Public API
+  return { open: open, close: close, submit: submit, handleKey: handleKey, build: build };
+})();
+
+// ── Wire search field → open VK (no native keyboard) ─
+document.getElementById('searchInput').addEventListener('focus', function(e) {
+  e.target.blur();  // prevent native keyboard on any platform
+  VK.open(e.target.value || '', function(q) {
+    document.getElementById('searchInput').value = q;
+    openSearchResults(q);
+  });
+});
+document.querySelector('.si') && document.querySelector('.si').addEventListener('click', function() {
+  VK.open(document.getElementById('searchInput').value || '', function(q) {
+    document.getElementById('searchInput').value = q;
+    openSearchResults(q);
+  });
+});
+
+// ═══════════════════════════════════════════════════
+// MRBD IMU SENSORS
+// DeviceMotionEvent + DeviceOrientationEvent (W3C standard)
+// Permission must be triggered by user gesture (spec requirement).
+// Spec: wearables.developer.meta.com/docs/develop/webapps/build/#sensors
+// ═══════════════════════════════════════════════════
+var MRBDSensors = {
+  imuActive: false,
+  gpsActive: false,
+  _imuThrottle: null,
+
+  // Call startIMU() from a user gesture (Enter key press, etc.)
+  startIMU: function() {
+    var self = this;
+    function attach() {
+      // DeviceOrientationEvent: heading/tilt/roll
+      window.addEventListener('deviceorientation', function(e) {
+        if (self._imuThrottle) return;  // throttle: max ~20fps
+        self._imuThrottle = setTimeout(function() { self._imuThrottle = null; }, 50);
+        self.imuActive = true;
+        self.heading = e.alpha || 0;
+        self.tilt    = e.beta  || 0;
+        self.roll    = e.gamma || 0;
+        self._updateSensorUI();
+      }, { passive: true });
+
+      // DeviceMotionEvent: accelerometer + gyroscope
+      window.addEventListener('devicemotion', function(e) {
+        if (!e.accelerationIncludingGravity) return;
+        var ax = e.accelerationIncludingGravity.x || 0;
+        var ay = e.accelerationIncludingGravity.y || 0;
+        var az = e.accelerationIncludingGravity.z || 0;
+        self.gforce = Math.sqrt(ax*ax + ay*ay + az*az) / 9.81;
+      }, { passive: true });
+    }
+
+    // iOS requires explicit permission; glasses runtime grants automatically
+    if (typeof DeviceOrientationEvent !== 'undefined' &&
+        typeof DeviceOrientationEvent.requestPermission === 'function') {
+      DeviceOrientationEvent.requestPermission()
+        .then(function(state) { if (state === 'granted') attach(); })
+        .catch(function() {});
+    } else {
+      attach();
+    }
+  },
+
+  // Call startGPS() from a user gesture
+  startGPS: function() {
+    var self = this;
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      function(pos) {
+        self.gpsActive = true;
+        self.lat = pos.coords.latitude;
+        self.lon = pos.coords.longitude;
+        self._updateSensorUI();
+        if (typeof HoloFX !== 'undefined') {
+          HoloFX.setStatus('\u{1F4CD} ' + pos.coords.latitude.toFixed(3) + ', ' + pos.coords.longitude.toFixed(3), 3000);
+        }
+      },
+      function(err) { self.gpsActive = false; self._updateSensorUI(); },
+      { timeout: 12000, maximumAge: 30000, enableHighAccuracy: false }
+    );
+  },
+
+  _updateSensorUI: function() {
+    var imuDot   = document.getElementById('imuDot');
+    var gpsDot   = document.getElementById('gpsDot');
+    var imuLabel = document.getElementById('imuLabel');
+    var gpsLabel = document.getElementById('gpsLabel');
+    if (imuDot)   imuDot.className   = 'sensor-dot ' + (this.imuActive ? 'on' : 'off');
+    if (gpsDot)   gpsDot.className   = 'sensor-dot ' + (this.gpsActive ? 'on' : 'off');
+    if (imuLabel) imuLabel.textContent = this.imuActive ? ('IMU ' + (this.heading||0).toFixed(0) + '\u00b0') : 'IMU';
+    if (gpsLabel) gpsLabel.textContent = this.gpsActive ? 'GPS \u2713' : 'GPS';
+  },
+
+  // Triggered on first keydown (spec: must be user gesture)
+  _started: false,
+  initOnGesture: function() {
+    if (this._started) return;
+    this._started = true;
+    this.startIMU();
+    this.startGPS();
+    if (typeof HoloFX !== 'undefined') HoloFX.setStatus('\u26A1 Sensors activated', 2000);
+  },
+};
+
+// Attach sensor init to first D-pad input (user gesture, per spec)
+document.addEventListener('keydown', function sensorBootstrap(e) {
+  if ([DPAD.UP, DPAD.DOWN, DPAD.LEFT, DPAD.RIGHT, DPAD.SELECT].includes(e.key)) {
+    MRBDSensors.initOnGesture();
+    document.removeEventListener('keydown', sensorBootstrap);
+  }
+}, { once: false });
+
+// ── MetaGestures shim — empty on MRBD, present for compatibility ──
+// On hardware: Neural Band + cap touch → OS → ArrowKey/Enter events above.
+// No custom SDK calls needed for Web Apps (per official spec).
+const MetaGestures = {
+  init: function() {
+    if (typeof HoloFX !== 'undefined') HoloFX.setStatus('META RAY-BAN \u00b7 NEURAL BAND READY', 3000);
   }
 };
 
-// Holographic tilt
-function applyTilt() {
-  document.querySelectorAll('.rcard,.movie-r,.vcard').forEach(c=>{
-    if(c._tilt) return; c._tilt=true;
-    c.addEventListener('mousemove',e=>{
-      const r=c.getBoundingClientRect(),x=((e.clientX-r.left)/r.width-.5)*10,y=((e.clientY-r.top)/r.height-.5)*-7;
-      c.style.transform=`perspective(400px) rotateY(${x}deg) rotateX(${y}deg) translateY(-1px)`;
-    });
-    c.addEventListener('mouseleave',()=>c.style.transform='');
-  });
-}
+
+
 
 // ═══════════════════════════════════════════════════
 // HOLOGRAPHIC FX ENGINE
@@ -2915,24 +3404,7 @@ const HoloFX = {
   },
 };
 
-// Hook status into tab changes
-const _origSetTab = setTab;
-window.setTab = function(tab) {
-  _origSetTab(tab);
-  const labels = { home:'Home Feed', shorts:'Shorts', movies:'Movies', playlist:'Playlist', history:'History', subscriptions:'Subscriptions', channel:'Channel' };
-  HoloFX.setStatus('\u2726 ' + (labels[tab] || tab));
-};
-function setTab(tab) { window.setTab(tab); }
-
-// Hook status into video play
-const _origPlayVideo = playVideo;
-window.playVideo = function(id) {
-  _origPlayVideo(id);
-  if (curVid) HoloFX.setStatus('\u25B6 ' + curVid.title, 3000);
-};
-function playVideo(id) { window.playVideo(id); }
-
-// Hook HoloFX.applyCardTilt into applyTilt
+// ── HoloFX applyTilt hook (non-recursive) ────────
 function applyTilt() { HoloFX.applyCardTilt(); }
 
 // ═══════════════════════════════════════════════════
@@ -2940,8 +3412,16 @@ function applyTilt() { HoloFX.applyCardTilt(); }
 // ═══════════════════════════════════════════════════
 initMainGrid();
 renderTab();
+VK.build();          // Build virtual keyboard grid
+makeFocusable();     // Stamp .focusable on initial DOM
+MRBDSensors._updateSensorUI(); // Show initial sensor status
 MetaGestures.init();
 HoloFX.init();
+// Focus first element after everything renders
+requestAnimationFrame(function() {
+  var first = document.querySelector('.focusable');
+  if (first) first.focus();
+});
 </script>
 </body>
 </html>
